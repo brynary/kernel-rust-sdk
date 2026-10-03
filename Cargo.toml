@@ -5,6 +5,7 @@ edition = "2021"
 rust-version = "1.88"
 description = "Rust client for the Kernel API (https://www.kernel.sh)"
 license = "Apache-2.0"
+repository = "https://github.com/brynary/kernel-rust-sdk"
 readme = "README.md"
 keywords = ["kernel", "browser", "api", "sdk"]
 categories = ["api-bindings", "web-programming::http-client"]

@@ -13,7 +13,7 @@ that those SDKs cover.
 
 ```toml
 [dependencies]
-kernel-sdk = { git = "https://github.com/<owner>/kernel-rust-sdk" }
+kernel-sdk = { git = "https://github.com/brynary/kernel-rust-sdk" }
 tokio = { version = "1", features = ["macros", "rt-multi-thread"] }
 ```
 
