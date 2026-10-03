@@ -11,23 +11,34 @@ on:
         description: "kernel-python-sdk ref (default: latest release)"
         required: false
 
-permissions:
-  contents: write
-  pull-requests: write
+permissions: {}
+
+# Only one sync at a time; a newer run replaces a queued one.
+concurrency:
+  group: ${{ github.workflow }}
+  cancel-in-progress: false
 
 jobs:
   sync:
+    name: Sync
     runs-on: ubuntu-latest
+    permissions:
+      contents: write # push the sync branch
+      pull-requests: write # open the pull request
     steps:
-      - uses: actions/checkout@v4
-      - uses: dtolnay/rust-toolchain@stable
+      - uses: actions/checkout@3d3c42e5aac5ba805825da76410c181273ba90b1 # v7.0.1
         with:
-          components: rustfmt
-      - uses: Swatinem/rust-cache@v2
+          persist-credentials: false
+      - name: Install Rust
+        run: |
+          rustup toolchain install stable --profile minimal --component rustfmt
+          rustup default stable
+      - uses: Swatinem/rust-cache@6323deb102c322ba6fcbdcafc7e3dddab59af2b6 # v2.9.2
       - name: Sync
         env:
           GH_TOKEN: ${{ github.token }}
-        run: codegen/sync.sh "${{ inputs.ref }}"
+          UPSTREAM_REF: ${{ inputs.ref }}
+        run: codegen/sync.sh "$UPSTREAM_REF"
       - name: Test
         run: cargo test
       - name: No dependencies published in the last 24 hours
@@ -35,6 +46,7 @@ jobs:
       - name: Open pull request
         env:
           GH_TOKEN: ${{ github.token }}
+          REPOSITORY: ${{ github.repository }}
         run: |
           if git diff --quiet; then
             echo "no changes"
@@ -47,12 +59,11 @@ jobs:
           git checkout -B "$branch"
           git add -A
           git commit -m "feat: sync with upstream $version"
-          git push origin "$branch"
+          # Credentials are not persisted by checkout, so pass the token only
+          # to this push.
+          git push "https://x-access-token:${GH_TOKEN}@github.com/${REPOSITORY}.git" "$branch"
           if ! gh pr view "$branch" >/dev/null 2>&1; then
-            gh pr create --title "Sync with upstream $version" --body "$(cat <<BODY
-          Regenerated from the latest Kernel OpenAPI spec and kernel-python-sdk api.md.
+            gh pr create --head "$branch" --title "Sync with upstream $version" --body "Regenerated from the latest Kernel OpenAPI spec and kernel-python-sdk api.md.
 
-          See \`codegen/report.json\` for endpoint coverage and \`upstream/VERSION.json\` for the exact inputs.
-          BODY
-          )"
+          See \`codegen/report.json\` for endpoint coverage and \`upstream/VERSION.json\` for the exact inputs."
           fi
