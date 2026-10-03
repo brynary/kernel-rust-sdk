@@ -199,19 +199,6 @@ pub type KernelWalletState = crate::types::KernelWalletState;
 /// Alias for the `KernelWalletVaultItemSpec` type.
 pub type KernelWalletVaultItemSpec = crate::types::KernelWalletVaultItemSpec;
 
-/// Alias for the `ManagedAuthCredentialVaultField` type.
-pub type ManagedAuthCredentialVaultField = crate::types::ManagedAuthCredentialVaultField;
-
-/// Alias for the `ManagedAuthCredentialVaultItemSpec` type.
-pub type ManagedAuthCredentialVaultItemSpec = crate::types::ManagedAuthCredentialVaultItemSpec;
-
-/// Alias for the `ManagedAuthCredentialVaultItemSpecInput` type.
-pub type ManagedAuthCredentialVaultItemSpecInput =
-    crate::types::ManagedAuthCredentialVaultItemSpecInput;
-
-/// Alias for the `ManagedAuthCredentialVaultItemState` type.
-pub type ManagedAuthCredentialVaultItemState = crate::types::ManagedAuthCredentialVaultItemState;
-
 /// Alias for the `OnePasswordCredentialAccountSpec` type.
 pub type OnePasswordCredentialAccountSpec = crate::types::OnePasswordCredentialAccountSpec;
 

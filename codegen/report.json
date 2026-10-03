@@ -1,6 +1,6 @@
 {
   "endpoints": 172,
-  "types": 1028,
+  "types": 1024,
   "api_md_methods_missing_from_spec": [],
   "spec_operations_not_in_api_md": [
     "delete /projects/{id_or_name}",
@@ -125,10 +125,6 @@
     "vaults::KernelCredentialVaultItemState": "KernelCredentialVaultItemState",
     "vaults::KernelWalletState": "KernelWalletState",
     "vaults::KernelWalletVaultItemSpec": "KernelWalletVaultItemSpec",
-    "vaults::ManagedAuthCredentialVaultField": "ManagedAuthCredentialVaultField",
-    "vaults::ManagedAuthCredentialVaultItemSpec": "ManagedAuthCredentialVaultItemSpec",
-    "vaults::ManagedAuthCredentialVaultItemSpecInput": "ManagedAuthCredentialVaultItemSpecInput",
-    "vaults::ManagedAuthCredentialVaultItemState": "ManagedAuthCredentialVaultItemState",
     "vaults::OnePasswordCredentialAccountSpec": "OnePasswordCredentialAccountSpec",
     "vaults::OnePasswordCredentialAccountState": "OnePasswordCredentialAccountState",
     "vaults::OnePasswordCredentialVaultItemSpec": "OnePasswordCredentialVaultItemSpec",
