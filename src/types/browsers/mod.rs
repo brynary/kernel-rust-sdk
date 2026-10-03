@@ -484,6 +484,7 @@ pub type ProcessExecResponse = crate::types::ProcessExecResult;
 #[derive(Debug, Clone, PartialEq, serde::Serialize, serde::Deserialize)]
 pub struct ProcessKillParams {
     /// Signal to send.
+    #[serde(default)]
     pub signal: crate::types::ProcessKillRequestSignal,
 }
 
@@ -606,6 +607,7 @@ pub type ProcessStdoutStreamResponse = crate::types::ProcessStreamEvent;
 /// Parameters for `browsers.logs.stream`.
 #[derive(Debug, Clone, PartialEq, serde::Serialize, serde::Deserialize)]
 pub struct LogStreamParams {
+    #[serde(default)]
     pub source: LogStreamSource,
     #[serde(default, skip_serializing_if = "Option::is_none")]
     pub follow: Option<bool>,

@@ -21,6 +21,8 @@ jobs:
           git diff --exit-code -- src tests codegen/report.json
       - name: Every api.md method maps to a spec operation
         run: python3 -c 'import json,sys; r=json.load(open("codegen/report.json")); sys.exit(1 if r["api_md_methods_missing_from_spec"] or r["warnings"] else 0)'
+      - name: No dependencies published in the last 24 hours
+        run: python3 codegen/check_crate_age.py
       - run: cargo fmt --check
       - run: cargo clippy --all-targets -- -D warnings
       - run: cargo test

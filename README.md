@@ -130,6 +130,32 @@ client
 # Ok(()) }
 ```
 
+### Helpers
+
+These hand-written methods match helpers in the other SDKs:
+
+```rust,no_run
+# use kernel::helpers::audit_log_download::AuditLogDownloadOptions;
+# use kernel::helpers::config_registry_wait::WaitOptions;
+# use kernel::types::AuditLogExportChunkParams;
+# async fn run(client: kernel::Kernel, start: chrono::DateTime<chrono::Utc>, end: chrono::DateTime<chrono::Utc>) -> kernel::Result<()> {
+// Poll a config registry analysis until it finishes.
+let result = client
+    .config_registry()
+    .analyses()
+    .wait_for_result("analysis_id", WaitOptions::default())
+    .await?;
+
+// Download a full audit log export, verifying each chunk's checksum.
+let mut file = tokio::fs::File::create("audit.jsonl.gz").await.unwrap();
+let totals = client
+    .audit_logs()
+    .download(AuditLogExportChunkParams::new(start, end), &mut file, AuditLogDownloadOptions::default())
+    .await?;
+println!("{} rows", totals.rows);
+# Ok(()) }
+```
+
 ### Errors
 
 All methods return `kernel::Result<T>`. API errors carry the status code, a
@@ -190,6 +216,8 @@ support Rust yet, so this repository has its own generator:
   and `tests/api_resources.rs`. Do not edit those by hand.
 - `src/runtime` is hand-written: the HTTP client, retries, errors,
   pagination, SSE, and multipart.
+- `src/helpers` is hand-written: methods added to generated resources, like
+  the `lib/` folders in the other SDKs.
 - `codegen/report.json` records coverage: spec operations not in `api.md`
   (deprecated or internal routes), type aliases, and any naming warnings.
 - `upstream/VERSION.json` records the exact upstream inputs.
@@ -211,7 +239,8 @@ codegen/sync.sh v0.119.0   # a specific release
 
 ```sh
 python3 codegen/generate.py   # regenerate
-cargo test                    # unit, per-endpoint mock, and client tests
+cargo test                    # unit, per-endpoint mock, client, and helper tests
+python3 codegen/check_crate_age.py   # no dependency newer than 24 hours
 KERNEL_API_KEY=... cargo run --example smoke   # live test against the API
 ```
 

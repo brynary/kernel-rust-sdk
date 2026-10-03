@@ -32,6 +32,13 @@ macro_rules! string_enum {
             }
         }
 
+        impl ::std::default::Default for $name {
+            /// An empty `Unknown` value, used when the server omits the field.
+            fn default() -> Self {
+                Self::Unknown(::std::string::String::new())
+            }
+        }
+
         impl ::std::fmt::Display for $name {
             fn fmt(&self, f: &mut ::std::fmt::Formatter<'_>) -> ::std::fmt::Result {
                 f.write_str(self.as_str())

@@ -56,6 +56,7 @@ pub struct AgentCardCardState {
     #[serde(default)]
     pub provider: String,
     /// ready_to_submit is device readiness for at most 30 seconds. consumed means the prepared attempt has settled, not that an order succeeded. stopped cannot be reused. outcome_unknown requires merchant reconciliation and blocks new requests. recovery_required means the original checkout outcome is unresolved. Automatic reuse is blocked. Known authorization IDs must be reconciled through provider observations or support. When no authorization ID was returned, an explicitly confirmed item deletion may abandon the unresolved attempt so the caller can create a replacement; deletion does not prove that the original attempt failed. It does not mean declined or expired.
+    #[serde(default)]
     pub status: AgentCardCardStateStatus,
     #[serde(default, skip_serializing_if = "Option::is_none")]
     pub status_reason: Option<String>,
@@ -158,6 +159,7 @@ pub struct AgentCardCheckoutAuthorization {
     /// HTTP status of the replayed processor response.
     #[serde(default, skip_serializing_if = "Option::is_none")]
     pub replay_status: Option<i64>,
+    #[serde(default)]
     pub status: AgentCardCheckoutAuthorizationStatus,
 }
 
@@ -263,6 +265,7 @@ pub struct AgentCardCheckoutPreparation {
     pub browser_id: String,
     #[serde(default)]
     pub created_at: chrono::DateTime<chrono::Utc>,
+    #[serde(default)]
     pub environment: AgentCardCheckoutPreparationEnvironment,
     /// When ready, the absolute deadline to submit the first native request; no later than provider readiness expiry or 30 seconds after Kernel first observes readiness. Polling never extends this deadline.
     #[serde(default, skip_serializing_if = "Option::is_none")]
@@ -271,8 +274,10 @@ pub struct AgentCardCheckoutPreparation {
     pub id: Option<String>,
     #[serde(default)]
     pub merchant_origin: String,
+    #[serde(default)]
     pub psp: AgentCardPreparedProcessor,
     /// Preparation consumed means egress claimed the preparation and it cannot be reused. It does not mean the attempt settled. Use the enclosing item's status as the lifecycle indicator; item consumed means the attempt settled, not that an order or charge succeeded.
+    #[serde(default)]
     pub status: AgentCardCheckoutPreparationStatus,
 }
 
@@ -398,6 +403,7 @@ impl AgentCardCardVaultItemSpec {
 pub struct AgentCardWalletState {
     #[serde(default)]
     pub provider: String,
+    #[serde(default)]
     pub status: AgentCardWalletStateStatus,
     #[serde(default, skip_serializing_if = "Option::is_none")]
     pub status_reason: Option<String>,
@@ -809,6 +815,7 @@ pub struct AuditLogExportDestination {
     #[serde(default)]
     pub role_arn: String,
     /// Pausing prevents new delivery attempts. An S3 upload already in progress may complete after the pause response; its rows can appear again after the destination is resumed.
+    #[serde(default)]
     pub status: AuditLogExportDestinationStatus,
     #[serde(default)]
     pub r#type: String,
@@ -868,6 +875,7 @@ crate::string_enum! {
 pub struct AuditLogExportDestinationTestResult {
     #[serde(default, skip_serializing_if = "Option::is_none")]
     pub error: Option<AuditLogExportDestinationTestResultError>,
+    #[serde(default)]
     pub stage: AuditLogExportDestinationTestResultStage,
     #[serde(default)]
     pub success: bool,
@@ -890,6 +898,7 @@ impl AuditLogExportDestinationTestResult {
 
 #[derive(Debug, Clone, PartialEq, serde::Serialize, serde::Deserialize)]
 pub struct AuditLogExportDestinationTestResultError {
+    #[serde(default)]
     pub code: AuditLogExportDestinationTestResultErrorCode,
     #[serde(default)]
     pub message: String,
@@ -958,8 +967,10 @@ pub struct AuthContextAuthentication {
     #[serde(default)]
     pub credential_id: Option<String>,
     /// The credential format used to authenticate the request.
+    #[serde(default)]
     pub method: AuthContextAuthenticationMethod,
     /// The source classification resolved by authentication middleware.
+    #[serde(default)]
     pub source: AuthContextAuthenticationSource,
 }
 
@@ -1061,6 +1072,7 @@ pub struct AuthContextPrincipal {
     #[serde(default)]
     pub id: String,
     /// The kind of principal authenticated for the request.
+    #[serde(default)]
     pub r#type: AuthContextPrincipalType,
 }
 
@@ -1132,6 +1144,7 @@ pub type VaultItemExpansionType = String;
 pub struct AvailableVaultItemOperation {
     #[serde(default)]
     pub description: String,
+    #[serde(default)]
     pub r#type: VaultItemOperationType,
 }
 
@@ -1200,6 +1213,7 @@ pub struct ComputerAction {
     #[serde(default, skip_serializing_if = "Option::is_none")]
     pub sleep: Option<SleepAction>,
     /// The type of action to perform.
+    #[serde(default)]
     pub r#type: ComputerActionType,
     #[serde(default, skip_serializing_if = "Option::is_none")]
     pub type_text: Option<TypeTextRequest>,
@@ -1529,6 +1543,7 @@ pub struct Browser {
     #[serde(default, skip_serializing_if = "Option::is_none")]
     pub kiosk_mode: Option<bool>,
     /// Memory allocated to the browser session.
+    #[serde(default)]
     pub memory: BrowserMemory,
     /// Human-readable name of the browser session, if one was set at creation.
     #[serde(default, skip_serializing_if = "Option::is_none")]
@@ -1552,6 +1567,7 @@ pub struct Browser {
     #[serde(default, skip_serializing_if = "Option::is_none")]
     pub proxy_id: Option<String>,
     /// Geographic region of the browser session. Fixed once the session is created.
+    #[serde(default)]
     pub region: Region,
     /// Unique identifier for the browser session
     #[serde(default)]
@@ -2147,8 +2163,8 @@ impl BrowserUsage {
 crate::string_enum! {
     /// Whether final usage billing is still pending or complete. Only present for deleted sessions.
     BrowserUsageStatus {
-        BrowserUsageStatusPending = "pending",
-        BrowserUsageStatusReady = "ready",
+        Pending = "pending",
+        Ready = "ready",
     }
 }
 
@@ -2293,6 +2309,7 @@ pub struct BrowserEventSource {
     #[serde(default, skip_serializing_if = "Option::is_none")]
     pub event: Option<String>,
     /// Event producer. cdp: Chrome DevTools Protocol events from the browser. kernel_api: Kernel API server. extension: injected Chrome extension. local_process: system process running alongside the browser.
+    #[serde(default)]
     pub kind: BrowserEventSourceKind,
     /// Producer-specific context (e.g. CDP target/session/frame IDs).
     #[serde(default, skip_serializing_if = "Option::is_none")]
@@ -2431,6 +2448,7 @@ impl BrowserCaptchaChallengeResultEvent {
 #[derive(Debug, Clone, PartialEq, serde::Serialize, serde::Deserialize)]
 pub struct BrowserCaptchaChallengeResultEventData {
     /// Captcha kind. Enterprise reCAPTCHA variants are grouped into their version bucket (recaptcha_v2 or recaptcha_v3), press-and-hold challenges use press_and_hold, and unlisted kinds use other.
+    #[serde(default)]
     pub captcha_type: BrowserCaptchaType,
     /// Opaque identifier shared by events for one visible challenge. An image-grid captcha may create multiple task_id values for one challenge_id. The same value may continue across a page reload when the challenge episode continues. It does not indicate task ordering or challenge completion.
     pub challenge_id: BrowserCaptchaChallengeId,
@@ -2438,6 +2456,7 @@ pub struct BrowserCaptchaChallengeResultEventData {
     #[serde(default)]
     pub duration_ms: f64,
     /// Terminal outcome of the visible challenge. solved: the page observed the challenge clear after a solver attempt. failure: a terminal solver failure occurred, or all attempts ended while the challenge remained. timeout: the challenge-level wait budget expired while the challenge remained. abandoned: observation ended without an attributable terminal challenge outcome. This includes a dismissed widget or page unload without a solved signal or terminal solver outcome, and a token appearing while multiple same-provider challenges are open, because the producer cannot attribute that token to this visible challenge. A captcha_solve_result with the same challenge_id may therefore report success while the challenge result reports abandoned. A solved challenge does not prove the site accepted the token or that the guarded action succeeded.
+    #[serde(default)]
     pub status: BrowserCaptchaChallengeResultEventDataStatus,
     /// Host of the page where the challenge appeared.
     #[serde(default, skip_serializing_if = "Option::is_none")]
@@ -2483,10 +2502,10 @@ crate::string_enum! {
 crate::string_enum! {
     /// Terminal outcome of the visible challenge. solved: the page observed the challenge clear after a solver attempt. failure: a terminal solver failure occurred, or all attempts ended while the challenge remained. timeout: the challenge-level wait budget expired while the challenge remained. abandoned: observation ended without an attributable terminal challenge outcome. This includes a dismissed widget or page unload without a solved signal or terminal solver outcome, and a token appearing while multiple same-provider challenges are open, because the producer cannot attribute that token to this visible challenge. A captcha_solve_result with the same challenge_id may therefore report success while the challenge result reports abandoned. A solved challenge does not prove the site accepted the token or that the guarded action succeeded.
     BrowserCaptchaChallengeResultEventDataStatus {
-        ChallengeSolved = "solved",
-        ChallengeFailure = "failure",
-        ChallengeTimeout = "timeout",
-        ChallengeAbandoned = "abandoned",
+        Solved = "solved",
+        Failure = "failure",
+        Timeout = "timeout",
+        Abandoned = "abandoned",
     }
 }
 
@@ -2527,6 +2546,7 @@ impl BrowserCaptchaSolveResultEvent {
 #[derive(Debug, Clone, PartialEq, serde::Serialize, serde::Deserialize)]
 pub struct BrowserCaptchaSolveResultEventData {
     /// Captcha kind. Enterprise reCAPTCHA variants are grouped into their version bucket (recaptcha_v2 or recaptcha_v3), press-and-hold challenges use press_and_hold, and unlisted kinds use other.
+    #[serde(default)]
     pub captcha_type: BrowserCaptchaType,
     /// Opaque identifier shared by events for one visible challenge. An image-grid captcha may create multiple task_id values for one challenge_id. The same value may continue across a page reload when the challenge episode continues. It does not indicate task ordering or challenge completion.
     #[serde(default, skip_serializing_if = "Option::is_none")]
@@ -2538,6 +2558,7 @@ pub struct BrowserCaptchaSolveResultEventData {
     #[serde(default, skip_serializing_if = "Option::is_none")]
     pub error_code: Option<String>,
     /// Terminal outcome. success: solver returned a usable solution. failure: solver returned an error (see error_code). timeout: solver did not return within the caller's wait budget. abandoned: caller cancelled or the page navigated away mid-solve.
+    #[serde(default)]
     pub status: BrowserCaptchaSolveResultEventDataStatus,
     /// Opaque identifier shared with the matching captcha_solve_started.
     #[serde(default, skip_serializing_if = "Option::is_none")]
@@ -2623,6 +2644,7 @@ impl BrowserCaptchaSolveStartedEvent {
 #[derive(Debug, Clone, PartialEq, serde::Serialize, serde::Deserialize)]
 pub struct BrowserCaptchaSolveStartedEventData {
     /// Captcha kind. Enterprise reCAPTCHA variants are grouped into their version bucket (recaptcha_v2 or recaptcha_v3), press-and-hold challenges use press_and_hold, and unlisted kinds use other.
+    #[serde(default)]
     pub captcha_type: BrowserCaptchaType,
     /// Opaque identifier shared by events for one visible challenge. An image-grid captcha may create multiple task_id values for one challenge_id. The same value may continue across a page reload when the challenge episode continues. It does not indicate task ordering or challenge completion.
     #[serde(default, skip_serializing_if = "Option::is_none")]
@@ -2874,11 +2896,11 @@ impl BrowserCdpBrowserSetWindowBoundsCommandData {
 crate::string_enum! {
     /// Browser window state requested. Canonical values from devtools-protocol@2d019e73. `other` stands for a value outside that set, so a client cannot put an arbitrary string into the stream.
     BrowserCdpWindowState {
-        BrowserCdpWindowStateNormal = "normal",
-        BrowserCdpWindowStateMinimized = "minimized",
-        BrowserCdpWindowStateMaximized = "maximized",
-        BrowserCdpWindowStateFullscreen = "fullscreen",
-        BrowserCdpWindowStateOther = "other",
+        Normal = "normal",
+        Minimized = "minimized",
+        Maximized = "maximized",
+        Fullscreen = "fullscreen",
+        Other = "other",
     }
 }
 
@@ -3348,6 +3370,7 @@ pub struct BrowserCdpInputDispatchMouseEventCommandData {
     #[serde(default, skip_serializing_if = "Option::is_none")]
     pub delta_y: Option<f64>,
     /// Mouse event phase: `mousePressed`, `mouseReleased`, `mouseMoved` or `mouseWheel`. A value the protocol does not define is reported as `other`.
+    #[serde(default)]
     pub event_type: BrowserCdpMouseEventType,
     /// Normalized pressure, 0 to 1.
     #[serde(default, skip_serializing_if = "Option::is_none")]
@@ -3414,33 +3437,33 @@ impl BrowserCdpInputDispatchMouseEventCommandData {
 crate::string_enum! {
     /// Mouse button named by a command. Canonical values from devtools-protocol@2d019e73. `other` stands for a value outside that set, so a client cannot put an arbitrary string into the stream.
     BrowserCdpMouseButton {
-        BrowserCdpMouseButtonNone = "none",
-        BrowserCdpMouseButtonLeft = "left",
-        BrowserCdpMouseButtonMiddle = "middle",
-        BrowserCdpMouseButtonRight = "right",
-        BrowserCdpMouseButtonBack = "back",
-        BrowserCdpMouseButtonForward = "forward",
-        BrowserCdpMouseButtonOther = "other",
+        None = "none",
+        Left = "left",
+        Middle = "middle",
+        Right = "right",
+        Back = "back",
+        Forward = "forward",
+        Other = "other",
     }
 }
 
 crate::string_enum! {
     /// Mouse event phase. Canonical values from devtools-protocol@2d019e73. `other` stands for a value outside that set, so a client cannot put an arbitrary string into the stream.
     BrowserCdpMouseEventType {
-        BrowserCdpMouseEventTypeMousePressed = "mousePressed",
-        BrowserCdpMouseEventTypeMouseReleased = "mouseReleased",
-        BrowserCdpMouseEventTypeMouseMoved = "mouseMoved",
-        BrowserCdpMouseEventTypeMouseWheel = "mouseWheel",
-        BrowserCdpMouseEventTypeOther = "other",
+        MousePressed = "mousePressed",
+        MouseReleased = "mouseReleased",
+        MouseMoved = "mouseMoved",
+        MouseWheel = "mouseWheel",
+        Other = "other",
     }
 }
 
 crate::string_enum! {
     /// Pointer that generated an input event. Canonical values from devtools-protocol@2d019e73. `other` stands for a value outside that set, so a client cannot put an arbitrary string into the stream.
     BrowserCdpPointerType {
-        BrowserCdpPointerTypeMouse = "mouse",
-        BrowserCdpPointerTypePen = "pen",
-        BrowserCdpPointerTypeOther = "other",
+        Mouse = "mouse",
+        Pen = "pen",
+        Other = "other",
     }
 }
 
@@ -3460,6 +3483,7 @@ pub struct BrowserCdpInputDispatchKeyEventCommandData {
     #[serde(default, skip_serializing_if = "Option::is_none")]
     pub connection_id: Option<String>,
     /// Key event phase: `keyDown`, `keyUp`, `rawKeyDown` or `char`. A value the protocol does not define is reported as `other`.
+    #[serde(default)]
     pub event_type: BrowserCdpKeyEventType,
     /// Whether the key is on the numeric keypad.
     #[serde(default, skip_serializing_if = "Option::is_none")]
@@ -3511,11 +3535,11 @@ impl BrowserCdpInputDispatchKeyEventCommandData {
 crate::string_enum! {
     /// Key event phase. Canonical values from devtools-protocol@2d019e73. `other` stands for a value outside that set, so a client cannot put an arbitrary string into the stream.
     BrowserCdpKeyEventType {
-        BrowserCdpKeyEventTypeKeyDown = "keyDown",
-        BrowserCdpKeyEventTypeKeyUp = "keyUp",
-        BrowserCdpKeyEventTypeRawKeyDown = "rawKeyDown",
-        BrowserCdpKeyEventTypeChar = "char",
-        BrowserCdpKeyEventTypeOther = "other",
+        KeyDown = "keyDown",
+        KeyUp = "keyUp",
+        RawKeyDown = "rawKeyDown",
+        Char = "char",
+        Other = "other",
     }
 }
 
@@ -3611,6 +3635,7 @@ pub struct BrowserCdpInputDispatchTouchEventCommandData {
     #[serde(default, skip_serializing_if = "Option::is_none")]
     pub connection_id: Option<String>,
     /// Touch event phase: `touchStart`, `touchEnd`, `touchMove` or `touchCancel`. A value the protocol does not define is reported as `other`.
+    #[serde(default)]
     pub event_type: BrowserCdpTouchEventType,
     /// Normalized pressure of the first touch point, 0 to 1.
     #[serde(default, skip_serializing_if = "Option::is_none")]
@@ -3687,11 +3712,11 @@ impl BrowserCdpInputDispatchTouchEventCommandData {
 crate::string_enum! {
     /// Touch event phase. Canonical values from devtools-protocol@2d019e73. `other` stands for a value outside that set, so a client cannot put an arbitrary string into the stream.
     BrowserCdpTouchEventType {
-        BrowserCdpTouchEventTypeTouchStart = "touchStart",
-        BrowserCdpTouchEventTypeTouchEnd = "touchEnd",
-        BrowserCdpTouchEventTypeTouchMove = "touchMove",
-        BrowserCdpTouchEventTypeTouchCancel = "touchCancel",
-        BrowserCdpTouchEventTypeOther = "other",
+        TouchStart = "touchStart",
+        TouchEnd = "touchEnd",
+        TouchMove = "touchMove",
+        TouchCancel = "touchCancel",
+        Other = "other",
     }
 }
 
@@ -3717,6 +3742,7 @@ pub struct BrowserCdpInputDispatchDragEventCommandData {
     #[serde(default, skip_serializing_if = "Option::is_none")]
     pub drag_operations_mask: Option<i64>,
     /// Drag event phase: `dragEnter`, `dragOver`, `drop` or `dragCancel`. A value the protocol does not define is reported as `other`.
+    #[serde(default)]
     pub event_type: BrowserCdpDragEventType,
     #[serde(default)]
     pub method: String,
@@ -3758,27 +3784,27 @@ impl BrowserCdpInputDispatchDragEventCommandData {
 crate::string_enum! {
     /// Top-level MIME category of a drag item, from the IANA registry rather than the protocol; a drag item's subtype names the file, so only the category is reported. `other` stands for a value outside that set, so a client cannot put an arbitrary string into the stream.
     BrowserCdpDragMimeCategory {
-        BrowserCdpDragMimeCategoryText = "text",
-        BrowserCdpDragMimeCategoryImage = "image",
-        BrowserCdpDragMimeCategoryAudio = "audio",
-        BrowserCdpDragMimeCategoryVideo = "video",
-        BrowserCdpDragMimeCategoryApplication = "application",
-        BrowserCdpDragMimeCategoryFont = "font",
-        BrowserCdpDragMimeCategoryModel = "model",
-        BrowserCdpDragMimeCategoryMultipart = "multipart",
-        BrowserCdpDragMimeCategoryMessage = "message",
-        BrowserCdpDragMimeCategoryOther = "other",
+        Text = "text",
+        Image = "image",
+        Audio = "audio",
+        Video = "video",
+        Application = "application",
+        Font = "font",
+        Model = "model",
+        Multipart = "multipart",
+        Message = "message",
+        Other = "other",
     }
 }
 
 crate::string_enum! {
     /// Drag event phase. Canonical values from devtools-protocol@2d019e73. `other` stands for a value outside that set, so a client cannot put an arbitrary string into the stream.
     BrowserCdpDragEventType {
-        BrowserCdpDragEventTypeDragEnter = "dragEnter",
-        BrowserCdpDragEventTypeDragOver = "dragOver",
-        BrowserCdpDragEventTypeDrop = "drop",
-        BrowserCdpDragEventTypeDragCancel = "dragCancel",
-        BrowserCdpDragEventTypeOther = "other",
+        DragEnter = "dragEnter",
+        DragOver = "dragOver",
+        Drop = "drop",
+        DragCancel = "dragCancel",
+        Other = "other",
     }
 }
 
@@ -3839,6 +3865,7 @@ pub struct BrowserCdpInputEmulateTouchFromMouseEventCommandData {
     #[serde(default, skip_serializing_if = "Option::is_none")]
     pub delta_y: Option<f64>,
     /// Mouse event phase being emulated as touch. A value the protocol does not define is reported as `other`.
+    #[serde(default)]
     pub event_type: BrowserCdpMouseEventType,
     #[serde(default)]
     pub method: String,
@@ -3935,10 +3962,10 @@ impl Default for BrowserCdpInputSynthesizePinchGestureCommandData {
 crate::string_enum! {
     /// Input source a synthesized gesture emulates. Canonical values from devtools-protocol@2d019e73. `other` stands for a value outside that set, so a client cannot put an arbitrary string into the stream.
     BrowserCdpGestureSourceType {
-        BrowserCdpGestureSourceTypeDefault = "default",
-        BrowserCdpGestureSourceTypeTouch = "touch",
-        BrowserCdpGestureSourceTypeMouse = "mouse",
-        BrowserCdpGestureSourceTypeOther = "other",
+        Default = "default",
+        Touch = "touch",
+        Mouse = "mouse",
+        Other = "other",
     }
 }
 
@@ -4344,10 +4371,10 @@ impl Default for BrowserCdpPageCaptureScreenshotCommandData {
 crate::string_enum! {
     /// Image format requested for a screenshot. Canonical values from devtools-protocol@2d019e73. `other` stands for a value outside that set, so a client cannot put an arbitrary string into the stream.
     BrowserCdpScreenshotFormat {
-        BrowserCdpScreenshotFormatJpeg = "jpeg",
-        BrowserCdpScreenshotFormatPng = "png",
-        BrowserCdpScreenshotFormatWebp = "webp",
-        BrowserCdpScreenshotFormatOther = "other",
+        Jpeg = "jpeg",
+        Png = "png",
+        Webp = "webp",
+        Other = "other",
     }
 }
 
@@ -4393,8 +4420,8 @@ impl Default for BrowserCdpPageCaptureSnapshotCommandData {
 crate::string_enum! {
     /// Format requested for a page snapshot. Canonical values from devtools-protocol@2d019e73. `other` stands for a value outside that set, so a client cannot put an arbitrary string into the stream.
     BrowserCdpSnapshotFormat {
-        BrowserCdpSnapshotFormatMhtml = "mhtml",
-        BrowserCdpSnapshotFormatOther = "other",
+        Mhtml = "mhtml",
+        Other = "other",
     }
 }
 
@@ -4493,34 +4520,34 @@ impl Default for BrowserCdpPageNavigateCommandData {
 crate::string_enum! {
     /// Referrer policy named by a navigation. Canonical values from devtools-protocol@2d019e73. `other` stands for a value outside that set, so a client cannot put an arbitrary string into the stream.
     BrowserCdpReferrerPolicy {
-        BrowserCdpReferrerPolicyNoReferrer = "noReferrer",
-        BrowserCdpReferrerPolicyNoReferrerWhenDowngrade = "noReferrerWhenDowngrade",
-        BrowserCdpReferrerPolicyOrigin = "origin",
-        BrowserCdpReferrerPolicyOriginWhenCrossOrigin = "originWhenCrossOrigin",
-        BrowserCdpReferrerPolicySameOrigin = "sameOrigin",
-        BrowserCdpReferrerPolicyStrictOrigin = "strictOrigin",
-        BrowserCdpReferrerPolicyStrictOriginWhenCrossOrigin = "strictOriginWhenCrossOrigin",
-        BrowserCdpReferrerPolicyUnsafeUrl = "unsafeUrl",
-        BrowserCdpReferrerPolicyOther = "other",
+        NoReferrer = "noReferrer",
+        NoReferrerWhenDowngrade = "noReferrerWhenDowngrade",
+        Origin = "origin",
+        OriginWhenCrossOrigin = "originWhenCrossOrigin",
+        SameOrigin = "sameOrigin",
+        StrictOrigin = "strictOrigin",
+        StrictOriginWhenCrossOrigin = "strictOriginWhenCrossOrigin",
+        UnsafeUrl = "unsafeUrl",
+        Other = "other",
     }
 }
 
 crate::string_enum! {
     /// Navigation reason reported by the caller. Canonical values from devtools-protocol@2d019e73. `other` stands for a value outside that set, so a client cannot put an arbitrary string into the stream.
     BrowserCdpTransitionType {
-        BrowserCdpTransitionTypeLink = "link",
-        BrowserCdpTransitionTypeTyped = "typed",
-        BrowserCdpTransitionTypeAddressBar = "address_bar",
-        BrowserCdpTransitionTypeAutoBookmark = "auto_bookmark",
-        BrowserCdpTransitionTypeAutoSubframe = "auto_subframe",
-        BrowserCdpTransitionTypeManualSubframe = "manual_subframe",
-        BrowserCdpTransitionTypeGenerated = "generated",
-        BrowserCdpTransitionTypeAutoToplevel = "auto_toplevel",
-        BrowserCdpTransitionTypeFormSubmit = "form_submit",
-        BrowserCdpTransitionTypeReload = "reload",
-        BrowserCdpTransitionTypeKeyword = "keyword",
-        BrowserCdpTransitionTypeKeywordGenerated = "keyword_generated",
-        BrowserCdpTransitionTypeOther = "other",
+        Link = "link",
+        Typed = "typed",
+        AddressBar = "address_bar",
+        AutoBookmark = "auto_bookmark",
+        AutoSubframe = "auto_subframe",
+        ManualSubframe = "manual_subframe",
+        Generated = "generated",
+        AutoToplevel = "auto_toplevel",
+        FormSubmit = "form_submit",
+        Reload = "reload",
+        Keyword = "keyword",
+        KeywordGenerated = "keyword_generated",
+        Other = "other",
     }
 }
 
@@ -4710,9 +4737,9 @@ impl Default for BrowserCdpPagePrintToPdfCommandData {
 crate::string_enum! {
     /// How a generated PDF is returned. Canonical values from devtools-protocol@2d019e73. `other` stands for a value outside that set, so a client cannot put an arbitrary string into the stream.
     BrowserCdpPdfTransferMode {
-        BrowserCdpPdfTransferModeReturnAsBase64 = "ReturnAsBase64",
-        BrowserCdpPdfTransferModeReturnAsStream = "ReturnAsStream",
-        BrowserCdpPdfTransferModeOther = "other",
+        ReturnAsBase64 = "ReturnAsBase64",
+        ReturnAsStream = "ReturnAsStream",
+        Other = "other",
     }
 }
 
@@ -4774,9 +4801,9 @@ impl Default for BrowserCdpPageStartScreencastCommandData {
 crate::string_enum! {
     /// Frame format requested for a screencast. Canonical values from devtools-protocol@2d019e73. `other` stands for a value outside that set, so a client cannot put an arbitrary string into the stream.
     BrowserCdpScreencastFormat {
-        BrowserCdpScreencastFormatJpeg = "jpeg",
-        BrowserCdpScreencastFormatPng = "png",
-        BrowserCdpScreencastFormatOther = "other",
+        Jpeg = "jpeg",
+        Png = "png",
+        Other = "other",
     }
 }
 
@@ -4900,6 +4927,7 @@ pub struct BrowserCdpPageSetWebLifecycleStateCommandData {
     #[serde(default, skip_serializing_if = "Option::is_none")]
     pub session_id: Option<String>,
     /// Lifecycle state applied (`frozen` or `active`). A value the protocol does not define is reported as `other`.
+    #[serde(default)]
     pub state: BrowserCdpWebLifecycleState,
 }
 
@@ -4920,9 +4948,9 @@ impl BrowserCdpPageSetWebLifecycleStateCommandData {
 crate::string_enum! {
     /// Page lifecycle state applied. Canonical values from devtools-protocol@2d019e73. `other` stands for a value outside that set, so a client cannot put an arbitrary string into the stream.
     BrowserCdpWebLifecycleState {
-        BrowserCdpWebLifecycleStateFrozen = "frozen",
-        BrowserCdpWebLifecycleStateActive = "active",
-        BrowserCdpWebLifecycleStateOther = "other",
+        Frozen = "frozen",
+        Active = "active",
+        Other = "other",
     }
 }
 
@@ -5303,6 +5331,7 @@ pub struct BrowserCdpDisconnectEventData {
     #[serde(default)]
     pub message_count: i64,
     /// Why the connection ended. client_close: the client initiated the close. upstream_changed: Chromium restarted mid-session and the proxy tore down so the client could reconnect against the new upstream. upstream_error: upstream dial or message pump errored. context_cancelled: the request context was cancelled (typically server shutdown).
+    #[serde(default)]
     pub reason: BrowserCdpDisconnectEventDataReason,
     /// Number of forwarded client frames the classifier never saw, because it could not keep up or because classification failed. An upper bound on lost commands rather than a count: a saturated queue turns away whatever arrives next, which may be library traffic that would have produced no event. Telemetry loss only; every command was still relayed to the browser. Absent on events from a browser image predating the field, which is not the same as zero.
     #[serde(default, skip_serializing_if = "Option::is_none")]
@@ -5652,6 +5681,7 @@ impl BrowserCurlResult {
 #[derive(Debug, Clone, PartialEq, serde::Serialize, serde::Deserialize)]
 pub struct BrowserCurlTransportError {
     /// Canonical error code returned by browser instance API proxy routes
+    #[serde(default)]
     pub code: InstanceProxyErrorCode,
     /// Human-readable error description.
     #[serde(default)]
@@ -6860,6 +6890,7 @@ pub struct BrowserPageCrashedEventData {
     #[serde(default)]
     pub target_id: String,
     /// CDP target type of the page that produced the event.
+    #[serde(default)]
     pub target_type: BrowserTargetType,
     /// URL the page was on when its renderer process crashed.
     #[serde(default)]
@@ -7633,6 +7664,7 @@ pub struct BrowserPool {
     #[serde(default, skip_serializing_if = "Option::is_none")]
     pub profile_id: Option<String>,
     /// Geographic region of the browser pool. Fixed once the pool is created.
+    #[serde(default)]
     pub region: Region,
 }
 
@@ -8346,6 +8378,7 @@ pub struct BrowserProxyErrorEventData {
     #[serde(default, skip_serializing_if = "Option::is_none")]
     pub url: Option<String>,
     /// Proxy-layer error code: the X-Kernel-Proxy-Error response header value from a branded 5xx error page served by the metro egress host-proxy. Values mirror what the proxy emits: destination_blocked, destination_route_unavailable, provider_blacklisted, provider_unreachable, provider_rejected, origin_tls_timeout, origin_response_incomplete, proxy_unavailable, restricted_route_unavailable, upstream_timeout, upstream_dns_failure, upstream_connect_failed. A header value the browser image does not recognize is reported as unknown, with the header value in raw_code.
+    #[serde(default)]
     pub code: BrowserProxyErrorEventDataCode,
     /// HTTP method of the failed request, when known.
     #[serde(default, skip_serializing_if = "Option::is_none")]
@@ -8393,19 +8426,19 @@ impl BrowserProxyErrorEventData {
 crate::string_enum! {
     /// Proxy-layer error code: the X-Kernel-Proxy-Error response header value from a branded 5xx error page served by the metro egress host-proxy. Values mirror what the proxy emits: destination_blocked, destination_route_unavailable, provider_blacklisted, provider_unreachable, provider_rejected, origin_tls_timeout, origin_response_incomplete, proxy_unavailable, restricted_route_unavailable, upstream_timeout, upstream_dns_failure, upstream_connect_failed. A header value the browser image does not recognize is reported as unknown, with the header value in raw_code.
     BrowserProxyErrorEventDataCode {
-        BrowserProxyErrorEventDataCodeDestinationBlocked = "destination_blocked",
-        BrowserProxyErrorEventDataCodeDestinationRouteUnavailable = "destination_route_unavailable",
-        BrowserProxyErrorEventDataCodeProviderBlacklisted = "provider_blacklisted",
-        BrowserProxyErrorEventDataCodeProviderUnreachable = "provider_unreachable",
-        BrowserProxyErrorEventDataCodeProviderRejected = "provider_rejected",
-        BrowserProxyErrorEventDataCodeOriginTlsTimeout = "origin_tls_timeout",
-        BrowserProxyErrorEventDataCodeOriginResponseIncomplete = "origin_response_incomplete",
-        BrowserProxyErrorEventDataCodeProxyUnavailable = "proxy_unavailable",
-        BrowserProxyErrorEventDataCodeRestrictedRouteUnavailable = "restricted_route_unavailable",
-        BrowserProxyErrorEventDataCodeUpstreamTimeout = "upstream_timeout",
-        BrowserProxyErrorEventDataCodeUpstreamDnsFailure = "upstream_dns_failure",
-        BrowserProxyErrorEventDataCodeUpstreamConnectFailed = "upstream_connect_failed",
-        BrowserProxyErrorEventDataCodeUnknown = "unknown",
+        DestinationBlocked = "destination_blocked",
+        DestinationRouteUnavailable = "destination_route_unavailable",
+        ProviderBlacklisted = "provider_blacklisted",
+        ProviderUnreachable = "provider_unreachable",
+        ProviderRejected = "provider_rejected",
+        OriginTlsTimeout = "origin_tls_timeout",
+        OriginResponseIncomplete = "origin_response_incomplete",
+        ProxyUnavailable = "proxy_unavailable",
+        RestrictedRouteUnavailable = "restricted_route_unavailable",
+        UpstreamTimeout = "upstream_timeout",
+        UpstreamDnsFailure = "upstream_dns_failure",
+        UpstreamConnectFailed = "upstream_connect_failed",
+        UnknownValue = "unknown",
     }
 }
 
@@ -8454,6 +8487,7 @@ impl From<BrowserReplImageContent> for BrowserReplContent {
 #[derive(Debug, Clone, PartialEq, serde::Serialize, serde::Deserialize)]
 pub struct BrowserReplTextContent {
     /// `write` is emitted by `repl.write`; `stdout` and `stderr` are emitted by console methods.
+    #[serde(default)]
     pub channel: BrowserReplTextContentChannel,
     #[serde(default)]
     pub text: String,
@@ -8476,9 +8510,9 @@ impl BrowserReplTextContent {
 crate::string_enum! {
     /// `write` is emitted by `repl.write`; `stdout` and `stderr` are emitted by console methods.
     BrowserReplTextContentChannel {
-        BrowserReplTextContentChannelWrite = "write",
-        BrowserReplTextContentChannelStdout = "stdout",
-        BrowserReplTextContentChannelStderr = "stderr",
+        Write = "write",
+        Stdout = "stdout",
+        Stderr = "stderr",
     }
 }
 
@@ -8767,6 +8801,7 @@ impl BrowserServiceCrashedEvent {
 #[derive(Debug, Clone, PartialEq, serde::Serialize, serde::Deserialize)]
 pub struct BrowserServiceCrashedEventData {
     /// Lifecycle phase the crash occurred in. startup: the process died before reaching a healthy running state. running: a previously healthy process died unexpectedly. gave_up: the process manager exhausted its restart attempts and stopped trying.
+    #[serde(default)]
     pub phase: BrowserServiceCrashedEventDataPhase,
     /// PID of the crashed process. Absent when the process manager gave up after exhausting restart attempts.
     #[serde(default, skip_serializing_if = "Option::is_none")]
@@ -10018,6 +10053,7 @@ pub struct LinkCardState {
     #[serde(default)]
     pub provider: String,
     /// recovery_required means an original provider operation has an unresolved outcome. Do not retry, delete, or replace it. Known references may be observed safely, but unknown creation without an ID and uncertain card-material retrieval require manual reconciliation with the provider or support. There is no reset or caller-asserted reconciliation operation.
+    #[serde(default)]
     pub status: LinkCardStateStatus,
     #[serde(default, skip_serializing_if = "Option::is_none")]
     pub status_reason: Option<String>,
@@ -10061,6 +10097,7 @@ pub struct KernelCardState {
     #[serde(default)]
     pub provider: String,
     /// recovery_required means issuing the one-time code has an unresolved outcome. Kernel never issues another code for the item automatically, and the item cannot be deleted or replaced until the original attempt is reconciled with support. When status_reason says the provider refused retrieval before acceptance, no code was issued and a later read retries.
+    #[serde(default)]
     pub status: KernelCardStateStatus,
     #[serde(default, skip_serializing_if = "Option::is_none")]
     pub status_reason: Option<String>,
@@ -10188,7 +10225,7 @@ pub struct ConfigRegistryAnalysis {
     pub expires_at: chrono::DateTime<chrono::Utc>,
     /// Present for failed, canceled, or expired analyses. Messages contain safe retry guidance rather than internal workflow errors.
     #[serde(default)]
-    pub failure: Option<Error>,
+    pub failure: Option<ErrorModel>,
     /// Time the analysis reached a terminal status. Null while it is running.
     #[serde(default)]
     pub finished_at: Option<chrono::DateTime<chrono::Utc>>,
@@ -10199,6 +10236,7 @@ pub struct ConfigRegistryAnalysis {
     #[serde(default, skip_serializing_if = "Option::is_none")]
     pub intent: Option<String>,
     /// Lifecycle status of a background analysis.
+    #[serde(default)]
     pub status: ConfigRegistryAnalysisStatus,
 }
 
@@ -10224,7 +10262,7 @@ impl ConfigRegistryAnalysis {
 }
 
 #[derive(Debug, Clone, PartialEq, serde::Serialize, serde::Deserialize)]
-pub struct Error {
+pub struct ErrorModel {
     /// Application-specific error code (machine-readable)
     #[serde(default)]
     pub code: String,
@@ -10238,8 +10276,8 @@ pub struct Error {
     pub message: String,
 }
 
-impl Error {
-    /// Create a `Error` with the required fields set.
+impl ErrorModel {
+    /// Create a `ErrorModel` with the required fields set.
     #[allow(clippy::too_many_arguments, clippy::new_without_default)]
     pub fn new(code: impl Into<String>, message: impl Into<String>) -> Self {
         Self {
@@ -10281,11 +10319,11 @@ impl Default for ErrorDetail {
 crate::string_enum! {
     /// Lifecycle status of a background analysis.
     ConfigRegistryAnalysisStatus {
-        ConfigRegistryAnalysisStatusRunning = "running",
-        ConfigRegistryAnalysisStatusCompleted = "completed",
-        ConfigRegistryAnalysisStatusFailed = "failed",
-        ConfigRegistryAnalysisStatusCanceled = "canceled",
-        ConfigRegistryAnalysisStatusExpired = "expired",
+        Running = "running",
+        Completed = "completed",
+        Failed = "failed",
+        Canceled = "canceled",
+        Expired = "expired",
     }
 }
 
@@ -10574,6 +10612,7 @@ pub struct ConfigRegistryRecommendation {
     pub browser: ConfigRegistryBrowser,
     pub evidence: ConfigRegistryEvidence,
     /// Specificity of knowledge matched for this recommendation. Exact matches use knowledge for the requested target; host and domain matches use broader fallback knowledge.
+    #[serde(default)]
     pub match_scope: ConfigRegistryRecommendationMatchScope,
     /// Target value that supplied the recommendation.
     #[serde(default)]
@@ -10608,9 +10647,9 @@ impl ConfigRegistryRecommendation {
 crate::string_enum! {
     /// Specificity of knowledge matched for this recommendation. Exact matches use knowledge for the requested target; host and domain matches use broader fallback knowledge.
     ConfigRegistryRecommendationMatchScope {
-        ConfigRegistryRecommendationMatchScopeExact = "exact",
-        ConfigRegistryRecommendationMatchScopeHost = "host",
-        ConfigRegistryRecommendationMatchScopeDomain = "domain",
+        Exact = "exact",
+        Host = "host",
+        Domain = "domain",
     }
 }
 
@@ -10694,6 +10733,7 @@ pub struct ProxyCreateRequest {
     #[serde(default, skip_serializing_if = "Option::is_none")]
     pub protocol: Option<ProxyCreateRequestProtocol>,
     /// Proxy type to use. In terms of quality for avoiding bot-detection, from best to worst: `mobile` \> `residential` \> `isp` \> `datacenter`.
+    #[serde(default)]
     pub r#type: ProxyCreateRequestType,
 }
 
@@ -10940,6 +10980,7 @@ crate::string_enum! {
 #[derive(Debug, Clone, PartialEq, serde::Serialize, serde::Deserialize)]
 pub struct ConfigRegistryNoRecommendation {
     /// Machine-readable reason Kernel cannot currently provide a config recommendation.
+    #[serde(default)]
     pub code: ConfigRegistryNoRecommendationCode,
     /// Human-readable explanation suitable for display.
     #[serde(default)]
@@ -10966,10 +11007,10 @@ impl ConfigRegistryNoRecommendation {
 crate::string_enum! {
     /// Machine-readable reason Kernel cannot currently provide a config recommendation.
     ConfigRegistryNoRecommendationCode {
-        ConfigRegistryNoRecommendationCodeProxyRestricted = "proxy_restricted",
-        ConfigRegistryNoRecommendationCodeTargetNotEvaluable = "target_not_evaluable",
-        ConfigRegistryNoRecommendationCodeNoWorkingConfiguration = "no_working_configuration",
-        ConfigRegistryNoRecommendationCodeInconclusive = "inconclusive",
+        ProxyRestricted = "proxy_restricted",
+        TargetNotEvaluable = "target_not_evaluable",
+        NoWorkingConfiguration = "no_working_configuration",
+        Inconclusive = "inconclusive",
     }
 }
 
@@ -10979,6 +11020,7 @@ pub struct ConfigRegistryRecommendationSummary {
     #[serde(default)]
     pub analysis_id: String,
     /// Lifecycle status of the most recently requested analysis for this exact target.
+    #[serde(default)]
     pub analysis_status: ConfigRegistryAnalysisStatus,
     /// Most recent time the selected project requested an analysis for this exact target.
     #[serde(default)]
@@ -11543,6 +11585,7 @@ impl Default for KernelManagedOAuthClient {
 pub struct OnePasswordCredentialAccountState {
     #[serde(default)]
     pub provider: String,
+    #[serde(default)]
     pub status: OnePasswordCredentialAccountStateStatus,
     #[serde(default, skip_serializing_if = "Option::is_none")]
     pub status_reason: Option<String>,
@@ -11843,6 +11886,7 @@ pub struct CredentialVaultFieldDefinition {
     /// decoded seeds. Browser fill generates an RFC 6238 code at execution time using
     /// HMAC-SHA1, 6 digits, and a 30-second period. Preserve leading zeros; never fill
     /// the seed. Custom algorithms, digits, periods, and form enrollment are unsupported.
+    #[serde(default)]
     pub r#type: CredentialVaultFieldType,
 }
 
@@ -11901,6 +11945,7 @@ pub struct CredentialVaultFieldInput {
     /// decoded seeds. Browser fill generates an RFC 6238 code at execution time using
     /// HMAC-SHA1, 6 digits, and a 30-second period. Preserve leading zeros; never fill
     /// the seed. Custom algorithms, digits, periods, and form enrollment are unsupported.
+    #[serde(default)]
     pub r#type: CredentialVaultFieldType,
     /// Optional initial value satisfying the declared type, at most 16 KiB in UTF-8 bytes. Omit to leave unset; null and empty strings are rejected on creation. Sensitive values are encrypted and never copied into the returned spec.
     #[serde(default, skip_serializing_if = "Option::is_none")]
@@ -12341,6 +12386,7 @@ pub struct KernelCredentialVaultItemState {
     #[serde(default)]
     pub provider: String,
     /// Ready means all required fields have values, not that a login succeeded. Optional fields may remain unset.
+    #[serde(default)]
     pub status: KernelCredentialVaultItemStateStatus,
 }
 
@@ -12377,6 +12423,7 @@ pub struct OnePasswordCredentialVaultItemState {
     pub access_request_id: Option<String>,
     #[serde(default)]
     pub provider: String,
+    #[serde(default)]
     pub status: OnePasswordCredentialVaultItemStateStatus,
     #[serde(default, skip_serializing_if = "Option::is_none")]
     pub status_reason: Option<String>,
@@ -12551,6 +12598,7 @@ pub struct ManagedAuthCredentialVaultItemState {
     #[serde(default)]
     pub provider: String,
     /// Items are created ready, which means the connection has a saved Kernel credential that stores values or a TOTP seed (what has_values or has_totp_secret report on credentials), not that a login succeeded. Unavailable means it no longer does; such items advertise no operations.
+    #[serde(default)]
     pub status: ManagedAuthCredentialVaultItemStateStatus,
     /// Present when status is unavailable. connection_not_found means the connection was deleted. no_credential means the connection's credential was deleted or emptied after the item was created. external_credential means the connection was moved to an external credential provider.
     #[serde(default, skip_serializing_if = "Option::is_none")]
@@ -12579,6 +12627,7 @@ pub struct ManagedAuthCredentialVaultField {
     /// decoded seeds. Browser fill generates an RFC 6238 code at execution time using
     /// HMAC-SHA1, 6 digits, and a 30-second period. Preserve leading zeros; never fill
     /// the seed. Custom algorithms, digits, periods, and form enrollment are unsupported.
+    #[serde(default)]
     pub r#type: CredentialVaultFieldType,
 }
 
@@ -13140,6 +13189,7 @@ pub struct Deployment {
     #[serde(default, skip_serializing_if = "Option::is_none")]
     pub source_url: Option<String>,
     /// Current status of the deployment
+    #[serde(default)]
     pub status: DeploymentStatus,
     /// Status reason
     #[serde(default, skip_serializing_if = "Option::is_none")]
@@ -13326,7 +13376,7 @@ impl DeploymentStateEvent {
 /// An error event from the application.
 #[derive(Debug, Clone, PartialEq, serde::Serialize, serde::Deserialize)]
 pub struct ErrorEvent {
-    pub error: Error,
+    pub error: ErrorModel,
     /// Event type identifier (always "error").
     #[serde(default)]
     pub event: String,
@@ -13339,7 +13389,7 @@ impl ErrorEvent {
     /// Create a `ErrorEvent` with the required fields set.
     #[allow(clippy::too_many_arguments, clippy::new_without_default)]
     pub fn new(
-        error: impl Into<Error>,
+        error: impl Into<ErrorModel>,
         timestamp: impl Into<chrono::DateTime<chrono::Utc>>,
     ) -> Self {
         Self {
@@ -13509,6 +13559,7 @@ pub struct DiscoveredField {
     #[serde(default)]
     pub selector: String,
     /// Field type
+    #[serde(default)]
     pub r#type: DiscoveredFieldType,
 }
 
@@ -13719,6 +13770,7 @@ pub struct FileSystemEvent {
     #[serde(default)]
     pub path: String,
     /// Event type.
+    #[serde(default)]
     pub r#type: FileSystemEventType,
 }
 
@@ -13845,6 +13897,7 @@ pub struct FillVaultItemOperationResult {
     #[serde(default)]
     pub fields: Vec<VaultFillFieldResult>,
     /// Completed only when all fields were filled. Failed when execution stopped with known outcomes. Unknown when any field's outcome cannot be determined. None of these statuses confirms payment or merchant acceptance.
+    #[serde(default)]
     pub status: FillVaultItemOperationResultStatus,
     #[serde(default)]
     pub r#type: String,
@@ -13874,6 +13927,7 @@ pub struct VaultFillFieldResult {
     #[serde(default)]
     pub index: i64,
     /// Filled means the fill action completed, not that the website retained or accepted the value.
+    #[serde(default)]
     pub status: VaultFillFieldResultStatus,
 }
 
@@ -13971,6 +14025,7 @@ impl LinkWalletTokenInput {
 #[derive(Debug, Clone, PartialEq, serde::Serialize, serde::Deserialize)]
 pub struct InstanceProxyError {
     /// Canonical error code returned by browser instance API proxy routes
+    #[serde(default)]
     pub code: InstanceProxyErrorCode,
     /// Human-readable error description for debugging
     #[serde(default)]
@@ -14012,6 +14067,7 @@ pub struct Invocation {
     #[serde(default)]
     pub started_at: chrono::DateTime<chrono::Utc>,
     /// Status of the invocation
+    #[serde(default)]
     pub status: InvocationStatus,
     /// A nonempty, customer-safe summary of the recorded failure output, always present when status is failed and omitted otherwise, including in the first failed invocation_state event. Recognized messages receive a specific summary; other failures receive a generic summary. Message matching does not establish whether the failure originated in the platform or action code. Does not include raw action output or internal error details. Available for historical invocations as well. Human-readable text, not a stable identifier for retry logic.
     #[serde(default, skip_serializing_if = "Option::is_none")]
@@ -14153,6 +14209,7 @@ pub struct InvocationUpdateRequest {
     #[serde(default, skip_serializing_if = "Option::is_none")]
     pub output: Option<String>,
     /// New status for the invocation.
+    #[serde(default)]
     pub status: InvocationUpdateRequestStatus,
 }
 
@@ -14187,6 +14244,7 @@ pub struct InvokeResponse {
     #[serde(default, skip_serializing_if = "Option::is_none")]
     pub output: Option<String>,
     /// Status of the invocation
+    #[serde(default)]
     pub status: InvokeResponseStatus,
     /// A nonempty, customer-safe summary of the recorded failure output, always present when status is failed and omitted otherwise. Recognized messages receive a specific summary; other failures receive a generic summary. Message matching does not establish whether the failure originated in the platform or action code. Does not include raw action output or internal error details. Human-readable text, not a stable identifier for retry logic.
     #[serde(default, skip_serializing_if = "Option::is_none")]
@@ -14245,6 +14303,7 @@ pub struct KernelWalletState {
     #[serde(default)]
     pub provider: String,
     /// pending_authorization asks the cardholder to use the card_enrollment action. connected is ready for supported purchases. reconnect_required asks the cardholder to use a new card_enrollment action after an uncertain enrollment was safely removed. degraded means the enrollment outcome is unknown and the wallet must be deleted before adding another card.
+    #[serde(default)]
     pub status: KernelWalletStateStatus,
     #[serde(default, skip_serializing_if = "Option::is_none")]
     pub status_reason: Option<String>,
@@ -14358,6 +14417,7 @@ impl From<CustomerManagedOAuthClient> for LinkOAuthClient {
 pub struct LinkWalletState {
     #[serde(default)]
     pub provider: String,
+    #[serde(default)]
     pub status: LinkWalletStateStatus,
     #[serde(default, skip_serializing_if = "Option::is_none")]
     pub status_reason: Option<String>,
@@ -14554,8 +14614,8 @@ impl Default for ProxyRef {
 crate::string_enum! {
     /// Controls whether this login reads and writes learned domain skills. Automatic reauths inherit the selected mode until a later accepted login sets enabled or omits this field. Defaults to enabled when omitted.
     LoginRequestSkillMode {
-        LoginRequestSkillModeEnabled = "enabled",
-        LoginRequestSkillModeDisabled = "disabled",
+        Enabled = "enabled",
+        Disabled = "disabled",
     }
 }
 
@@ -14566,6 +14626,7 @@ pub struct LoginResponse {
     #[serde(default)]
     pub flow_expires_at: chrono::DateTime<chrono::Utc>,
     /// Type of login flow started
+    #[serde(default)]
     pub flow_type: LoginResponseFlowType,
     /// One-time code for handoff (internal use)
     #[serde(default, skip_serializing_if = "Option::is_none")]
@@ -14622,6 +14683,7 @@ pub struct MfaOption {
     #[serde(default, skip_serializing_if = "Option::is_none")]
     pub target: Option<String>,
     /// The MFA delivery method type. Includes 'password' for auth method selection pages and 'switch' for generic method-switcher links like "Use another method" that do not name a specific method.
+    #[serde(default)]
     pub r#type: MfaType,
 }
 
@@ -14806,6 +14868,7 @@ pub struct ManagedAuth {
     #[serde(default, skip_serializing_if = "Option::is_none")]
     pub sso_provider: Option<String>,
     /// Last known authentication status of the managed profile. An inconclusive health check preserves this status and does not verify the current session.
+    #[serde(default)]
     pub status: ManagedAuthStatus,
     /// Visible error message from the website (e.g., 'Incorrect password'). Present when the website displays an error during login.
     #[serde(default, skip_serializing_if = "Option::is_none")]
@@ -14939,6 +15002,7 @@ pub struct ManagedAuthChoice {
     #[serde(default, skip_serializing_if = "Option::is_none")]
     pub observed_selector: Option<String>,
     /// Choice type.
+    #[serde(default)]
     pub r#type: ManagedAuthChoiceType,
 }
 
@@ -14982,13 +15046,13 @@ crate::string_enum! {
 crate::string_enum! {
     /// Choice type.
     ManagedAuthChoiceType {
-        ManagedAuthChoiceTypeMfaMethod = "mfa_method",
-        ManagedAuthChoiceTypeSsoProvider = "sso_provider",
-        ManagedAuthChoiceTypeSignInMethod = "sign_in_method",
-        ManagedAuthChoiceTypeAuthMethod = "auth_method",
-        ManagedAuthChoiceTypeIdentifierMethod = "identifier_method",
-        ManagedAuthChoiceTypeAccount = "account",
-        ManagedAuthChoiceTypeOther = "other",
+        MfaMethod = "mfa_method",
+        SsoProvider = "sso_provider",
+        SignInMethod = "sign_in_method",
+        AuthMethod = "auth_method",
+        IdentifierMethod = "identifier_method",
+        Account = "account",
+        Other = "other",
     }
 }
 
@@ -15011,6 +15075,7 @@ pub struct ManagedAuthField {
     #[serde(default, skip_serializing_if = "Option::is_none")]
     pub observed_selector: Option<String>,
     /// Why the field requires user input.
+    #[serde(default)]
     pub reason: ManagedAuthFieldReason,
     /// Credential reference name to store the submitted value under.
     #[serde(default)]
@@ -15019,6 +15084,7 @@ pub struct ManagedAuthField {
     #[serde(default, skip_serializing_if = "Option::is_none")]
     pub required: Option<bool>,
     /// Managed-auth field type.
+    #[serde(default)]
     pub r#type: ManagedAuthFieldType,
 }
 
@@ -15048,30 +15114,30 @@ impl ManagedAuthField {
 crate::string_enum! {
     /// Virtual keyboard hint, independent of field type and browser validation.
     ManagedAuthFieldInputMode {
-        ManagedAuthFieldInputModeText = "text",
-        ManagedAuthFieldInputModeEmail = "email",
-        ManagedAuthFieldInputModeTel = "tel",
-        ManagedAuthFieldInputModeNumeric = "numeric",
+        Text = "text",
+        Email = "email",
+        Tel = "tel",
+        Numeric = "numeric",
     }
 }
 
 crate::string_enum! {
     /// Why the field requires user input.
     ManagedAuthFieldReason {
-        ManagedAuthFieldReasonMissing = "missing",
-        ManagedAuthFieldReasonRejected = "rejected",
+        Missing = "missing",
+        Rejected = "rejected",
     }
 }
 
 crate::string_enum! {
     /// Managed-auth field type.
     ManagedAuthFieldType {
-        ManagedAuthFieldTypeIdentifier = "identifier",
-        ManagedAuthFieldTypePassword = "password",
-        ManagedAuthFieldTypeCode = "code",
-        ManagedAuthFieldTypeTotpCode = "totp_code",
-        ManagedAuthFieldTypeTotpSecret = "totp_secret",
-        ManagedAuthFieldTypeText = "text",
+        Identifier = "identifier",
+        Password = "password",
+        Code = "code",
+        TotpCode = "totp_code",
+        TotpSecret = "totp_secret",
+        Text = "text",
     }
 }
 
@@ -15267,6 +15333,7 @@ impl ManagedAuthCreateRequest {
 #[derive(Debug, Clone, PartialEq, serde::Serialize, serde::Deserialize)]
 pub struct ManagedAuthError {
     /// Machine-readable error code for programmatic handling
+    #[serde(default)]
     pub code: ManagedAuthErrorCode,
     /// Additional technical details for debugging (not shown to end users)
     #[serde(default, skip_serializing_if = "Option::is_none")]
@@ -15403,8 +15470,10 @@ pub struct ManagedAuthStateEvent {
     #[serde(default, skip_serializing_if = "Option::is_none")]
     pub fields: Option<Vec<ManagedAuthField>>,
     /// Current flow status.
+    #[serde(default)]
     pub flow_status: ManagedAuthStateEventFlowStatus,
     /// Current step in the flow.
+    #[serde(default)]
     pub flow_step: ManagedAuthStateEventFlowStep,
     /// Type of the current flow.
     #[serde(default, skip_serializing_if = "Option::is_none")]
@@ -15565,6 +15634,7 @@ pub struct ManagedAuthTimelineEvent {
     /// Outcome of the event. For login/reauth events this is the flow status
     /// (IN_PROGRESS, SUCCESS, EXPIRED, CANCELED, FAILED). For health_check events
     /// it is the observed session state (AUTHENTICATED, NEEDS_AUTH).
+    #[serde(default)]
     pub status: ManagedAuthTimelineEventStatus,
     /// The step the flow reached. Present for login/reauth events.
     #[serde(default, skip_serializing_if = "Option::is_none")]
@@ -15576,6 +15646,7 @@ pub struct ManagedAuthTimelineEvent {
     #[serde(default)]
     pub timestamp: chrono::DateTime<chrono::Utc>,
     /// The kind of event. "login" and "reauth" are authentication attempts; "health_check" is a periodic session-validity check.
+    #[serde(default)]
     pub r#type: ManagedAuthTimelineEventType,
     /// When the event was last updated. Present for login/reauth events.
     #[serde(default, skip_serializing_if = "Option::is_none")]
@@ -15957,6 +16028,7 @@ pub struct OnePasswordFillVaultItemOperationResult {
     #[serde(default, skip_serializing_if = "Option::is_none")]
     pub error_code: Option<OnePasswordFillVaultItemOperationResultErrorCode>,
     /// Kernel's outcome of the extension call. fill_submitted means the extension reported submission, not website authentication. fill_failed means the extension returned a known failure and may include error_code. fill_unknown means submission may have happened without a conclusive response; it has no error_code and must not be retried in the same browser.
+    #[serde(default)]
     pub status: OnePasswordFillVaultItemOperationResultStatus,
     #[serde(default)]
     pub r#type: String,
@@ -16285,8 +16357,10 @@ impl OrgEntitlementLimits {
 #[derive(Debug, Clone, PartialEq, serde::Serialize, serde::Deserialize)]
 pub struct OrgEntitlementPlan {
     /// The plan used to resolve plan-based access. Active trials resolve to START_UP regardless of the contractual plan.
+    #[serde(default)]
     pub effective_id: OrgEntitlementPlanEffectiveId,
     /// The organization's contractual plan identifier. Use the resolved feature and limit values, not this field, for access decisions.
+    #[serde(default)]
     pub id: OrgEntitlementPlanId,
     /// Whether the organization is currently within its trial period.
     #[serde(default)]
@@ -16451,6 +16525,7 @@ pub struct VaultCheckoutContext {
     #[serde(default)]
     pub browser_id: String,
     /// Use production or sandbox for Square, Braintree, Worldpay and Adyen; shared for Bambora and Mercado Pago. Shared endpoints do not establish test mode. Merchant credentials/configuration determine processor test mode, independently of the AgentCard credential mode.
+    #[serde(default)]
     pub environment: VaultCheckoutContextEnvironment,
     /// Canonical HTTPS origin of the top-level merchant document, not a processor iframe. HTTP localhost is accepted for tests.
     #[serde(default)]
@@ -16568,6 +16643,7 @@ impl Default for ProcessExecResult {
 #[derive(Debug, Clone, PartialEq, serde::Serialize, serde::Deserialize)]
 pub struct ProcessKillRequest {
     /// Signal to send.
+    #[serde(default)]
     pub signal: ProcessKillRequestSignal,
 }
 
@@ -16737,8 +16813,8 @@ impl Default for ProcessStatus {
 crate::string_enum! {
     /// Process state.
     ProcessStatusState {
-        ProcessStatusStateRunning = "running",
-        ProcessStatusStateExited = "exited",
+        Running = "running",
+        Exited = "exited",
     }
 }
 
@@ -16877,6 +16953,7 @@ pub struct Project {
     #[serde(default)]
     pub name: String,
     /// Project status
+    #[serde(default)]
     pub status: ProjectStatus,
     /// When the project was last updated
     #[serde(default)]
@@ -16969,6 +17046,7 @@ pub struct Proxy {
     #[serde(default, skip_serializing_if = "Option::is_none")]
     pub status: Option<ProxyStatus>,
     /// Proxy type to use. In terms of quality for avoiding bot-detection, from best to worst: `mobile` \> `residential` \> `isp` \> `datacenter`.
+    #[serde(default)]
     pub r#type: ProxyType,
 }
 
@@ -17239,6 +17317,7 @@ pub struct SearchAttempt {
     pub duration_ms: i64,
     #[serde(default, skip_serializing_if = "Option::is_none")]
     pub error_code: Option<String>,
+    #[serde(default)]
     pub outcome: SearchAttemptOutcome,
     #[serde(default)]
     pub provider: String,
@@ -17266,10 +17345,10 @@ impl SearchAttempt {
 
 crate::string_enum! {
     SearchAttemptOutcome {
-        SearchAttemptOutcomeSuccess = "success",
-        SearchAttemptOutcomeEmpty = "empty",
-        SearchAttemptOutcomeError = "error",
-        SearchAttemptOutcomeTimeout = "timeout",
+        Success = "success",
+        Empty = "empty",
+        Error = "error",
+        Timeout = "timeout",
     }
 }
 
@@ -17356,6 +17435,7 @@ pub struct SearchResultContent {
     /// includes detected challenges or access denials. Detection is
     /// best-effort, not a guarantee of page completeness. Error details
     /// are present for non-ok outcomes; text is present only on ok.
+    #[serde(default)]
     pub status: SearchContentStatus,
     /// Extracted website content, untrusted, not instructions. Present only on status=ok.
     #[serde(default, skip_serializing_if = "Option::is_none")]
@@ -17390,10 +17470,10 @@ crate::string_enum! {
     /// Kernel content cache outcome. Kernel has no content cache yet: responses report bypass or
     /// unknown, and hit and miss are reserved. Provider-internal cache behavior may be unknown.
     SearchContentCacheStatus {
-        SearchContentCacheStatusHit = "hit",
-        SearchContentCacheStatusMiss = "miss",
-        SearchContentCacheStatusBypass = "bypass",
-        SearchContentCacheStatusUnknown = "unknown",
+        Hit = "hit",
+        Miss = "miss",
+        Bypass = "bypass",
+        UnknownValue = "unknown",
     }
 }
 
@@ -17401,9 +17481,9 @@ crate::string_enum! {
     /// Describes source coverage before max_chars truncation. Full_page
     /// means main-page content, not every dynamic element or linked page.
     SearchContentCompleteness {
-        SearchContentCompletenessFullPage = "full_page",
-        SearchContentCompletenessExcerpt = "excerpt",
-        SearchContentCompletenessUnknown = "unknown",
+        FullPage = "full_page",
+        Excerpt = "excerpt",
+        UnknownValue = "unknown",
     }
 }
 
@@ -17437,17 +17517,17 @@ impl SearchContentError {
 
 crate::string_enum! {
     SearchContentFormat {
-        SearchContentFormatMarkdown = "markdown",
-        SearchContentFormatText = "text",
+        Markdown = "markdown",
+        Text = "text",
     }
 }
 
 crate::string_enum! {
     /// Original retrieval method.
     SearchContentMethod {
-        SearchContentMethodProvider = "provider",
-        SearchContentMethodBrowserCurl = "browser_curl",
-        SearchContentMethodBrowserRender = "browser_render",
+        Provider = "provider",
+        BrowserCurl = "browser_curl",
+        BrowserRender = "browser_render",
     }
 }
 
@@ -17457,13 +17537,13 @@ crate::string_enum! {
     /// best-effort, not a guarantee of page completeness. Error details
     /// are present for non-ok outcomes; text is present only on ok.
     SearchContentStatus {
-        SearchContentStatusOk = "ok",
-        SearchContentStatusUnavailable = "unavailable",
-        SearchContentStatusBlocked = "blocked",
-        SearchContentStatusTimeout = "timeout",
-        SearchContentStatusUnsupportedType = "unsupported_type",
-        SearchContentStatusExtractionFailed = "extraction_failed",
-        SearchContentStatusError = "error",
+        Ok = "ok",
+        Unavailable = "unavailable",
+        Blocked = "blocked",
+        Timeout = "timeout",
+        UnsupportedType = "unsupported_type",
+        ExtractionFailed = "extraction_failed",
+        Error = "error",
     }
 }
 
@@ -17557,9 +17637,9 @@ pub type SearchFallbackConditions = Vec<SearchFallbackCondition>;
 
 crate::string_enum! {
     SearchFallbackCondition {
-        SearchFallbackConditionError = "error",
-        SearchFallbackConditionTimeout = "timeout",
-        SearchFallbackConditionEmpty = "empty",
+        Error = "error",
+        Timeout = "timeout",
+        Empty = "empty",
     }
 }
 
@@ -17783,8 +17863,8 @@ impl Default for SearchBraveOptions {
 crate::string_enum! {
     /// Measurement units.
     SearchBraveOptionsUnits {
-        SearchBraveOptionsUnitsMetric = "metric",
-        SearchBraveOptionsUnitsImperial = "imperial",
+        Metric = "metric",
+        Imperial = "imperial",
     }
 }
 
@@ -17895,9 +17975,9 @@ impl Default for SearchExaOptionsContents {
 crate::string_enum! {
     /// Search mode supported by Exa.
     SearchExaOptionsType {
-        SearchExaOptionsTypeAuto = "auto",
-        SearchExaOptionsTypeFast = "fast",
-        SearchExaOptionsTypeInstant = "instant",
+        Auto = "auto",
+        Fast = "fast",
+        Instant = "instant",
     }
 }
 
@@ -17980,9 +18060,9 @@ impl Default for SearchPerplexityOptions {
 crate::string_enum! {
     /// Provider context size supported by the selected model.
     SearchPerplexityOptionsSearchContextSize {
-        SearchPerplexityOptionsSearchContextSizeLow = "low",
-        SearchPerplexityOptionsSearchContextSizeMedium = "medium",
-        SearchPerplexityOptionsSearchContextSizeHigh = "high",
+        Low = "low",
+        Medium = "medium",
+        High = "high",
     }
 }
 
@@ -18384,10 +18464,10 @@ impl Default for SearchParallelOptionsAdvancedSettingsSourcePolicy {
 crate::string_enum! {
     /// Search mode. Basic is used when omitted; each mode can have different latency and charges.
     SearchParallelOptionsMode {
-        SearchParallelOptionsModeTurbo = "turbo",
-        SearchParallelOptionsModeFast = "fast",
-        SearchParallelOptionsModeBasic = "basic",
-        SearchParallelOptionsModeAdvanced = "advanced",
+        Turbo = "turbo",
+        Fast = "fast",
+        Basic = "basic",
+        Advanced = "advanced",
     }
 }
 
@@ -18486,10 +18566,10 @@ impl Default for SearchValyuOptions {
 crate::string_enum! {
     /// Provider result-content length preset.
     SearchValyuOptionsResponseLength {
-        SearchValyuOptionsResponseLengthShort = "short",
-        SearchValyuOptionsResponseLengthMedium = "medium",
-        SearchValyuOptionsResponseLengthLarge = "large",
-        SearchValyuOptionsResponseLengthMax = "max",
+        Short = "short",
+        Medium = "medium",
+        Large = "large",
+        Max = "max",
     }
 }
 
@@ -18752,6 +18832,7 @@ impl Default for SearchYouOptions {
 /// Provider-native page extraction. Both modes may incur per-row charges; full_page may retrieve web and news rows.
 #[derive(Debug, Clone, PartialEq, serde::Serialize, serde::Deserialize)]
 pub struct SearchYouOptionsExtraction {
+    #[serde(default)]
     pub extraction_mode: SearchYouOptionsExtractionExtractionMode,
     #[serde(default, skip_serializing_if = "Option::is_none")]
     pub full_page: Option<SearchYouOptionsExtractionFullPage>,
@@ -18770,8 +18851,8 @@ impl SearchYouOptionsExtraction {
 
 crate::string_enum! {
     SearchYouOptionsExtractionExtractionMode {
-        SearchYouOptionsExtractionExtractionModeHighlights = "highlights",
-        SearchYouOptionsExtractionExtractionModeFullPage = "full_page",
+        Highlights = "highlights",
+        FullPage = "full_page",
     }
 }
 
@@ -18799,8 +18880,8 @@ impl Default for SearchYouOptionsExtractionFullPage {
 
 crate::string_enum! {
     SearchYouOptionsExtractionFullPageExtractionFormatsItem {
-        SearchYouOptionsExtractionFullPageExtractionFormatsItemHtml = "html",
-        SearchYouOptionsExtractionFullPageExtractionFormatsItemMarkdown = "markdown",
+        Html = "html",
+        Markdown = "markdown",
     }
 }
 
@@ -18923,16 +19004,16 @@ impl From<SearchTavilyOptionsIncludeAnswerString> for SearchTavilyOptionsInclude
 
 crate::string_enum! {
     SearchTavilyOptionsIncludeAnswerString {
-        SearchTavilyOptionsIncludeAnswerVariant1Basic = "basic",
-        SearchTavilyOptionsIncludeAnswerVariant1Advanced = "advanced",
+        Basic = "basic",
+        Advanced = "advanced",
     }
 }
 
 crate::string_enum! {
     /// Native filter versus ranking boost semantics. Boost influences ranking rather than restricting results to the listed domains. Requires include_domains.
     SearchTavilyOptionsIncludeDomainsMode {
-        SearchTavilyOptionsIncludeDomainsModeFilter = "filter",
-        SearchTavilyOptionsIncludeDomainsModeBoost = "boost",
+        Filter = "filter",
+        Boost = "boost",
     }
 }
 
@@ -18955,27 +19036,27 @@ impl From<SearchTavilyOptionsIncludeRawContentString> for SearchTavilyOptionsInc
 
 crate::string_enum! {
     SearchTavilyOptionsIncludeRawContentString {
-        SearchTavilyOptionsIncludeRawContentVariant1Markdown = "markdown",
-        SearchTavilyOptionsIncludeRawContentVariant1Text = "text",
+        Markdown = "markdown",
+        Text = "text",
     }
 }
 
 crate::string_enum! {
     /// Provider relevance and latency tier. Some tiers cannot be combined with native safe search; conflicts are described in warnings.
     SearchTavilyOptionsSearchDepth {
-        SearchTavilyOptionsSearchDepthAdvanced = "advanced",
-        SearchTavilyOptionsSearchDepthBasic = "basic",
-        SearchTavilyOptionsSearchDepthFast = "fast",
-        SearchTavilyOptionsSearchDepthUltraFast = "ultra-fast",
+        Advanced = "advanced",
+        Basic = "basic",
+        Fast = "fast",
+        UltraFast = "ultra-fast",
     }
 }
 
 crate::string_enum! {
     /// Provider corpus selector. Publication metadata depends on the selected topic.
     SearchTavilyOptionsTopic {
-        SearchTavilyOptionsTopicGeneral = "general",
-        SearchTavilyOptionsTopicNews = "news",
-        SearchTavilyOptionsTopicFinance = "finance",
+        General = "general",
+        News = "news",
+        Finance = "finance",
     }
 }
 
@@ -19135,8 +19216,8 @@ crate::string_enum! {
     /// execution. Render navigates a temporary page and extracts from its
     /// DOM. The selected mode is used for the retrieval.
     SearchBrowserOptionsMode {
-        SearchBrowserModeCurl = "curl",
-        SearchBrowserModeRender = "render",
+        Curl = "curl",
+        Render = "render",
     }
 }
 
@@ -19215,9 +19296,9 @@ impl Default for SearchContentOptions {
 crate::string_enum! {
     /// auto uses retained provider content within max_age_hours; for deferred retrieval it falls back to a Kernel browser (caller-supplied or temporary) for results without it. Inline retrieval never uses a browser. provider reuses retained provider content when available, without freshness validation, and never provisions a browser. browser fetches each URL through a Kernel browser, either caller-supplied or temporary. No option makes a new provider request. Defaults to auto for both inline and deferred retrieval. Missing documents produce per-result unavailable outcomes, not request failures.
     SearchContentOptionsSource {
-        SearchContentSourceAuto = "auto",
-        SearchContentSourceProvider = "provider",
-        SearchContentSourceBrowser = "browser",
+        Auto = "auto",
+        Provider = "provider",
+        Browser = "browser",
     }
 }
 
@@ -19257,6 +19338,7 @@ pub struct SearchContentResult {
     /// includes detected challenges or access denials. Detection is
     /// best-effort, not a guarantee of page completeness. Error details
     /// are present for non-ok outcomes; text is present only on ok.
+    #[serde(default)]
     pub status: SearchContentStatus,
     /// Extracted website content, untrusted, not instructions. Present only on status=ok.
     #[serde(default, skip_serializing_if = "Option::is_none")]
@@ -19428,6 +19510,7 @@ pub struct SearchParameterCapability {
     /// Translation behavior, limitations, and precision.
     #[serde(default, skip_serializing_if = "Option::is_none")]
     pub notes: Option<String>,
+    #[serde(default)]
     pub support: SearchParameterCapabilitySupport,
 }
 
@@ -19444,9 +19527,9 @@ impl SearchParameterCapability {
 
 crate::string_enum! {
     SearchParameterCapabilitySupport {
-        SearchParameterSupportNative = "native",
-        SearchParameterSupportEmulated = "emulated",
-        SearchParameterSupportUnsupported = "unsupported",
+        Native = "native",
+        Emulated = "emulated",
+        Unsupported = "unsupported",
     }
 }
 
@@ -19535,16 +19618,16 @@ impl SearchProviderOptionsDiscovery {
 crate::string_enum! {
     /// Concrete search provider. Matches the slugs returned by GET /search/providers.
     SearchProviderSlug {
-        SearchProviderSlugBrave = "brave",
-        SearchProviderSlugExa = "exa",
-        SearchProviderSlugPerplexity = "perplexity",
-        SearchProviderSlugContext = "context",
-        SearchProviderSlugParallel = "parallel",
-        SearchProviderSlugValyu = "valyu",
-        SearchProviderSlugOcten = "octen",
-        SearchProviderSlugYou = "you",
-        SearchProviderSlugTavily = "tavily",
-        SearchProviderSlugSerpapi = "serpapi",
+        Brave = "brave",
+        Exa = "exa",
+        Perplexity = "perplexity",
+        Context = "context",
+        Parallel = "parallel",
+        Valyu = "valyu",
+        Octen = "octen",
+        You = "you",
+        Tavily = "tavily",
+        Serpapi = "serpapi",
     }
 }
 
@@ -19643,20 +19726,20 @@ impl From<SearchContentOptions> for SearchRequestContent {
 crate::string_enum! {
     /// Relative search window. Takes precedence over start_date/end_date with a warning if both are set. Provider-native recency behavior is retained, including documented hour-to-day widening. Unsupported filters are rejected only in strict mode.
     SearchRequestRecency {
-        SearchRecencyHour = "hour",
-        SearchRecencyDay = "day",
-        SearchRecencyWeek = "week",
-        SearchRecencyMonth = "month",
-        SearchRecencyYear = "year",
+        Hour = "hour",
+        Day = "day",
+        Week = "week",
+        Month = "month",
+        Year = "year",
     }
 }
 
 crate::string_enum! {
     /// Optional safety preference. Omit to use provider defaults. Unsupported values are dropped with a warning unless strict_params is true. A search filter is not an authorization boundary.
     SearchRequestSafeSearch {
-        SearchSafeSearchOff = "off",
-        SearchSafeSearchModerate = "moderate",
-        SearchSafeSearchStrict = "strict",
+        Off = "off",
+        Moderate = "moderate",
+        Strict = "strict",
     }
 }
 
@@ -20208,6 +20291,7 @@ impl VaultAgentCardProviderConfigRequest {
 pub struct VaultCardExpirationFillField {
     #[serde(default)]
     pub field: String,
+    #[serde(default)]
     pub format: VaultCardExpirationFillFieldFormat,
     /// CSS selector for an editable input or select, or a containing element. Must resolve to one unique editable element across all page frames.
     #[serde(default)]
@@ -20261,6 +20345,7 @@ impl From<VaultCardExpirationFillField> for VaultCardFillField {
 #[derive(Debug, Clone, PartialEq, serde::Serialize, serde::Deserialize)]
 pub struct VaultCardStoredFillField {
     /// Field in the decrypted card, not an alias. Number and CVC preserve leading zeros; month uses two digits and year uses four digits. Billing fields use the provider's stored billing address (name, line1, line2, city, state, postal_code, country) without reformatting. Request only needed billing fields. An absent or empty requested billing field returns 400 field_unavailable before any browser writes; it does not make other card fields unavailable.
+    #[serde(default)]
     pub field: VaultCardStoredFillFieldField,
     /// CSS selector for an editable input or select, or a containing element. Must resolve to one unique editable element across all page frames.
     #[serde(default)]
@@ -20933,6 +21018,7 @@ pub struct WebMcpInvokeVaultItemOperationResult {
     #[serde(default, skip_serializing_if = "Option::is_none")]
     pub output: Option<serde_json::Value>,
     /// Unknown means invocation may have run; do not retry automatically. No status confirms that the website accepted the action.
+    #[serde(default)]
     pub status: WebMcpInvokeVaultItemOperationResultStatus,
     #[serde(default)]
     pub r#type: String,
@@ -21415,6 +21501,7 @@ pub struct WebMcpInvocationResult {
     /// awaiting_submission means a non-autosubmit declarative form was populated but not submitted.
     /// Inspect the form, obtain any required confirmation, then submit through Playwright or computer
     /// interaction without invoking the tool again. The other statuses are terminal results.
+    #[serde(default)]
     pub status: WebMcpInvocationResultStatus,
 }
 
@@ -21829,6 +21916,7 @@ pub struct InvocationUpdateParams {
     #[serde(default, skip_serializing_if = "Option::is_none")]
     pub output: Option<String>,
     /// New status for the invocation.
+    #[serde(default)]
     pub status: InvocationUpdateRequestStatus,
 }
 
@@ -21903,10 +21991,10 @@ impl Default for InvocationListParams {
 
 crate::string_enum! {
     InvocationListStatus {
-        GetInvocationsParamsStatusQueued = "queued",
-        GetInvocationsParamsStatusRunning = "running",
-        GetInvocationsParamsStatusSucceeded = "succeeded",
-        GetInvocationsParamsStatusFailed = "failed",
+        Queued = "queued",
+        Running = "running",
+        Succeeded = "succeeded",
+        Failed = "failed",
     }
 }
 
@@ -21990,18 +22078,18 @@ impl Default for ConfigRegistryListParams {
 
 crate::string_enum! {
     ConfigRegistryListSortBy {
-        ConfigRegistrySortByTarget = "target",
-        ConfigRegistrySortByAnalysisStatus = "analysis_status",
-        ConfigRegistrySortByRecommendedConfig = "recommended_config",
-        ConfigRegistrySortByLastRequestedAt = "last_requested_at",
-        ConfigRegistrySortBySuccessRate = "success_rate",
+        Target = "target",
+        AnalysisStatus = "analysis_status",
+        RecommendedConfig = "recommended_config",
+        LastRequestedAt = "last_requested_at",
+        SuccessRate = "success_rate",
     }
 }
 
 crate::string_enum! {
     ConfigRegistryListSortOrder {
-        ConfigRegistrySortOrderAsc = "asc",
-        ConfigRegistrySortOrderDesc = "desc",
+        Asc = "asc",
+        Desc = "desc",
     }
 }
 
@@ -22313,9 +22401,9 @@ impl Default for BrowserListParams {
 
 crate::string_enum! {
     BrowserListStatus {
-        GetBrowsersParamsStatusActive = "active",
-        GetBrowsersParamsStatusDeleted = "deleted",
-        GetBrowsersParamsStatusAll = "all",
+        Active = "active",
+        Deleted = "deleted",
+        All = "all",
     }
 }
 
@@ -22576,6 +22664,7 @@ pub struct ProxyCreateParams {
     #[serde(default, skip_serializing_if = "Option::is_none")]
     pub protocol: Option<ProxyCreateRequestProtocol>,
     /// Proxy type to use. In terms of quality for avoiding bot-detection, from best to worst: `mobile` \> `residential` \> `isp` \> `datacenter`.
+    #[serde(default)]
     pub r#type: ProxyCreateRequestType,
 }
 
@@ -23736,9 +23825,9 @@ crate::string_enum! {
 
 crate::string_enum! {
     ApiKeyListStatus {
-        ListApiKeysParamsStatusActive = "active",
-        ListApiKeysParamsStatusDeleted = "deleted",
-        ListApiKeysParamsStatusAll = "all",
+        Active = "active",
+        Deleted = "deleted",
+        All = "all",
     }
 }
 
@@ -23967,9 +24056,6 @@ impl SearchCreateParams {
         }
     }
 }
-
-/// Alias for the `Error` type.
-pub type ErrorModel = Error;
 
 /// Alias for the `SseHeartbeatEvent` type.
 pub type HeartbeatEvent = SseHeartbeatEvent;

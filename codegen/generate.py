@@ -232,7 +232,7 @@ def claim(module: tuple, name: str) -> str:
 
 def component_ref(name: str) -> tuple:
     if name not in COMPONENT_TYPES:
-        rname = claim((), pascal(name))
+        rname = claim((), OVERRIDES.get("component_names", {}).get(name) or pascal(name))
         COMPONENT_TYPES[name] = ("named", (), rname)
         TYPES[((), rname)] = build_type(COMPONENTS[name], (), rname)
     return COMPONENT_TYPES[name]
@@ -415,8 +415,19 @@ def build_type(schema: dict, module: tuple, name: str, multipart: bool = False) 
         varnames = schema.get("x-enum-varnames") or []
         values = []
         used = set()
+        stripped = [pascal(x) for x in varnames]
+        # x-enum-varnames often repeat the enum's name ("StatusRunning");
+        # drop the longest shared prefix so variants read Status::Running.
+        if len(stripped) > 1:
+            pre = 0
+            ws = [words(x) for x in stripped]
+            while all(len(w) > pre + 1 for w in ws) and len({tuple(w[: pre + 1]) for w in ws}) == 1:
+                pre += 1
+            short = [pascal("".join(w[pre:])) for w in ws]
+            if pre and len(set(short)) == len(short):
+                stripped = short
         for i, v in enumerate(schema["enum"]):
-            vn = pascal(varnames[i]) if i < len(varnames) else pascal(str(v))
+            vn = stripped[i] if i < len(stripped) else pascal(str(v))
             if vn == "Unknown":
                 vn = "UnknownValue"
             while vn in used:
@@ -706,6 +717,7 @@ def resolve_listed_alias(pyname: str, module: tuple, section: tuple) -> str | No
     if pyname in OVERRIDES.get("type_aliases", {}):
         return OVERRIDES["type_aliases"][pyname]
     by_rust = {pascal(c).lower(): c for c in COMPONENTS}
+    by_rust.update({v.lower(): k for k, v in OVERRIDES.get("component_names", {}).items()})
     if pascal(pyname).lower() in by_rust:
         return by_rust[pascal(pyname).lower()]
     for prefix in [pascal("".join(section[: i + 1])) for i in range(len(section))][::-1] + ["Browser", "WebMcp"]:
@@ -804,6 +816,10 @@ def rs(ty: tuple, cur: tuple, boxed: bool = False) -> str:
     raise ValueError(ty)
 
 
+def is_enum(ty: tuple) -> bool:
+    return ty[0] == "named" and TYPES.get((ty[1], ty[2]), {}).get("kind") == "enum"
+
+
 def is_vec_or_map(ty: tuple) -> bool:
     return ty[0] in ("vec", "map")
 
@@ -833,7 +849,7 @@ def emit_struct(key: tuple, t: dict, scc: dict) -> str:
                 attrs.append(f"rename = {rust_str(f['wire'])}")
             if not f["required"]:
                 attrs.append('default, skip_serializing_if = "Option::is_none"')
-            elif f["nullable"] or is_vec_or_map(f["ty"]) or f["ty"][0] == "prim":
+            elif f["nullable"] or is_vec_or_map(f["ty"]) or f["ty"][0] == "prim" or is_enum(f["ty"]):
                 # Like the first-party SDKs, do not fail when the server
                 # omits a required field; use the zero value instead.
                 attrs.append("default")

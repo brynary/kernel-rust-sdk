@@ -31,6 +31,7 @@
 #[doc = include_str!("../README.md")]
 struct ReadmeDoctests;
 
+pub mod helpers;
 pub mod resources;
 pub mod runtime;
 pub mod types;

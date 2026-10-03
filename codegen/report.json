@@ -1,6 +1,6 @@
 {
   "endpoints": 172,
-  "types": 1029,
+  "types": 1028,
   "api_md_methods_missing_from_spec": [],
   "spec_operations_not_in_api_md": [
     "delete /projects/{id_or_name}",
@@ -14,7 +14,6 @@
     "post /projects"
   ],
   "aliases": {
-    "types::ErrorModel": "Error",
     "types::HeartbeatEvent": "SseHeartbeatEvent",
     "types::Analysis": "ConfigRegistryAnalysis",
     "types::Evidence": "ConfigRegistryEvidence",
