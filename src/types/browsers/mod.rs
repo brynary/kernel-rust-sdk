@@ -260,7 +260,7 @@ pub struct FMoveParams {
 impl FMoveParams {
     /// Create a `FMoveParams` with the required fields set.
     #[allow(clippy::too_many_arguments, clippy::new_without_default)]
-    pub fn new(dest_path: impl Into<String>, src_path: impl Into<String>) -> Self {
+    pub fn new(src_path: impl Into<String>, dest_path: impl Into<String>) -> Self {
         Self {
             dest_path: dest_path.into(),
             src_path: src_path.into(),
@@ -304,7 +304,7 @@ pub struct FSetFilePermissionsParams {
 impl FSetFilePermissionsParams {
     /// Create a `FSetFilePermissionsParams` with the required fields set.
     #[allow(clippy::too_many_arguments, clippy::new_without_default)]
-    pub fn new(mode: impl Into<String>, path: impl Into<String>) -> Self {
+    pub fn new(path: impl Into<String>, mode: impl Into<String>) -> Self {
         Self {
             group: None,
             mode: mode.into(),
@@ -357,7 +357,7 @@ pub struct FUploadFile {
 impl FUploadFile {
     /// Create a `FUploadFile` with the required fields set.
     #[allow(clippy::too_many_arguments, clippy::new_without_default)]
-    pub fn new(dest_path: impl Into<String>, file: impl Into<crate::FileUpload>) -> Self {
+    pub fn new(file: impl Into<crate::FileUpload>, dest_path: impl Into<String>) -> Self {
         Self {
             dest_path: dest_path.into(),
             file: file.into(),
@@ -388,7 +388,7 @@ pub struct FUploadZipParams {
 impl FUploadZipParams {
     /// Create a `FUploadZipParams` with the required fields set.
     #[allow(clippy::too_many_arguments, clippy::new_without_default)]
-    pub fn new(dest_path: impl Into<String>, zip_file: impl Into<crate::FileUpload>) -> Self {
+    pub fn new(zip_file: impl Into<crate::FileUpload>, dest_path: impl Into<String>) -> Self {
         Self {
             dest_path: dest_path.into(),
             zip_file: zip_file.into(),
@@ -514,7 +514,7 @@ pub struct ProcessResizeParams {
 impl ProcessResizeParams {
     /// Create a `ProcessResizeParams` with the required fields set.
     #[allow(clippy::too_many_arguments, clippy::new_without_default)]
-    pub fn new(cols: impl Into<i64>, rows: impl Into<i64>) -> Self {
+    pub fn new(rows: impl Into<i64>, cols: impl Into<i64>) -> Self {
         Self {
             cols: cols.into(),
             rows: rows.into(),
@@ -694,8 +694,8 @@ pub struct ComputerClickMouseParams {
     #[serde(default, skip_serializing_if = "Option::is_none")]
     pub num_clicks: Option<i64>,
     /// Y coordinate of the click position
-    #[serde(default, skip_serializing_if = "Option::is_none")]
-    pub r#true: Option<i64>,
+    #[serde(default)]
+    pub y: i64,
     /// X coordinate of the click position
     #[serde(default)]
     pub x: i64,
@@ -704,13 +704,13 @@ pub struct ComputerClickMouseParams {
 impl ComputerClickMouseParams {
     /// Create a `ComputerClickMouseParams` with the required fields set.
     #[allow(clippy::too_many_arguments, clippy::new_without_default)]
-    pub fn new(x: impl Into<i64>) -> Self {
+    pub fn new(x: impl Into<i64>, y: impl Into<i64>) -> Self {
         Self {
             button: None,
             click_type: None,
             hold_keys: None,
             num_clicks: None,
-            r#true: None,
+            y: y.into(),
             x: x.into(),
         }
     }
@@ -777,8 +777,8 @@ pub struct ComputerMoveMouseParams {
     #[serde(default, skip_serializing_if = "Option::is_none")]
     pub smooth: Option<bool>,
     /// Y coordinate to move the cursor to
-    #[serde(default, skip_serializing_if = "Option::is_none")]
-    pub r#true: Option<i64>,
+    #[serde(default)]
+    pub y: i64,
     /// X coordinate to move the cursor to
     #[serde(default)]
     pub x: i64,
@@ -787,12 +787,12 @@ pub struct ComputerMoveMouseParams {
 impl ComputerMoveMouseParams {
     /// Create a `ComputerMoveMouseParams` with the required fields set.
     #[allow(clippy::too_many_arguments, clippy::new_without_default)]
-    pub fn new(x: impl Into<i64>) -> Self {
+    pub fn new(x: impl Into<i64>, y: impl Into<i64>) -> Self {
         Self {
             duration_ms: None,
             hold_keys: None,
             smooth: None,
-            r#true: None,
+            y: y.into(),
             x: x.into(),
         }
     }
@@ -843,8 +843,8 @@ pub struct ComputerScrollParams {
     #[serde(default, skip_serializing_if = "Option::is_none")]
     pub hold_keys: Option<Vec<String>>,
     /// Y coordinate at which to perform the scroll
-    #[serde(default, skip_serializing_if = "Option::is_none")]
-    pub r#true: Option<i64>,
+    #[serde(default)]
+    pub y: i64,
     /// X coordinate at which to perform the scroll
     #[serde(default)]
     pub x: i64,
@@ -853,12 +853,12 @@ pub struct ComputerScrollParams {
 impl ComputerScrollParams {
     /// Create a `ComputerScrollParams` with the required fields set.
     #[allow(clippy::too_many_arguments, clippy::new_without_default)]
-    pub fn new(x: impl Into<i64>) -> Self {
+    pub fn new(x: impl Into<i64>, y: impl Into<i64>) -> Self {
         Self {
             delta_x: None,
             delta_y: None,
             hold_keys: None,
-            r#true: None,
+            y: y.into(),
             x: x.into(),
         }
     }
@@ -965,8 +965,8 @@ impl WebmcpInvokeToolParams {
     /// Create a `WebmcpInvokeToolParams` with the required fields set.
     #[allow(clippy::too_many_arguments, clippy::new_without_default)]
     pub fn new(
-        input: impl Into<std::collections::HashMap<String, serde_json::Value>>,
         tool_ref: impl Into<String>,
+        input: impl Into<std::collections::HashMap<String, serde_json::Value>>,
     ) -> Self {
         Self {
             input: input.into(),

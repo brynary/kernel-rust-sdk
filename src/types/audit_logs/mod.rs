@@ -24,9 +24,9 @@ impl ExportDestinationCreateParams {
     /// Create a `ExportDestinationCreateParams` with the required fields set.
     #[allow(clippy::too_many_arguments, clippy::new_without_default)]
     pub fn new(
+        region: impl Into<String>,
         bucket: impl Into<String>,
         prefix: impl Into<String>,
-        region: impl Into<String>,
         role_arn: impl Into<String>,
     ) -> Self {
         Self {

@@ -217,13 +217,13 @@ async fn refuses_to_truncate_when_next_offset_is_missing() {
 }
 
 #[tokio::test]
-async fn uploads_files_with_indexed_keys() {
+async fn uploads_files_with_dotted_keys() {
     let (server, client) = setup(0).await;
     Mock::given(method("POST"))
         .and(path("/browsers/abc/fs/upload"))
-        .and(body_string_contains(r#"name="files[0][dest_path]""#))
+        .and(body_string_contains(r#"name="files.0.dest_path""#))
         .and(body_string_contains(
-            r#"name="files[0][file]"; filename="a.txt""#,
+            r#"name="files.0.file"; filename="a.txt""#,
         ))
         .and(body_string_contains("hello"))
         .respond_with(ResponseTemplate::new(204))
@@ -236,8 +236,8 @@ async fn uploads_files_with_indexed_keys() {
         .upload(
             "abc",
             FUploadParams::new(vec![FUploadFile::new(
-                "/tmp/a.txt",
                 FileUpload::new("a.txt", b"hello".to_vec()),
+                "/tmp/a.txt",
             )]),
         )
         .await

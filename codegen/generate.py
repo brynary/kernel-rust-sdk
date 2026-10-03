@@ -23,7 +23,27 @@ from collections import OrderedDict, defaultdict
 from pathlib import Path
 
 ROOT = Path(__file__).resolve().parent.parent
-SPEC = json.loads((ROOT / "upstream/openapi.json").read_text())
+
+
+def fix_yaml_booleans(node):
+    """Undo a YAML 1.1 bug in the published spec: a property key `y` was
+    parsed as the boolean true, so it appears as "true" in `properties` and
+    as `true` in `required`. The first-party SDKs name these fields `y`."""
+    if isinstance(node, dict):
+        props = node.get("properties")
+        if isinstance(props, dict) and "true" in props and "y" not in props:
+            node["properties"] = {("y" if k == "true" else k): v for k, v in props.items()}
+            if isinstance(node.get("required"), list):
+                node["required"] = ["y" if r is True or r == "true" else r for r in node["required"]]
+        for v in node.values():
+            fix_yaml_booleans(v)
+    elif isinstance(node, list):
+        for v in node:
+            fix_yaml_booleans(v)
+    return node
+
+
+SPEC = fix_yaml_booleans(json.loads((ROOT / "upstream/openapi.json").read_text()))
 API_MD = (ROOT / "upstream/api.python.md").read_text()
 OVERRIDES = json.loads((ROOT / "codegen/overrides.json").read_text())
 COMPONENTS = SPEC["components"]["schemas"]
@@ -318,6 +338,7 @@ def build_fields(props: dict, required: list[str], module: tuple, owner: str, mu
             "wire": wire,
             "ty": ty,
             "required": wire in required,
+            "req_index": required.index(wire) if wire in required else None,
             "nullable": nullable(pschema),
             "doc": desc,
             "const": cv,
@@ -368,6 +389,18 @@ def build_type(schema: dict, module: tuple, name: str, multipart: bool = False) 
     if variants_key and not ("properties" in schema and is_constraint_only(schema[variants_key])):
         variants = schema[variants_key]
         disc = schema.get("discriminator", {}).get("propertyName")
+        if not disc and variants and all("$ref" in v for v in variants):
+            # No discriminator in the spec. If every variant has the same
+            # property with a distinct constant value, use it as one, so
+            # decoding does not pick the first variant that happens to fit.
+            objs = [merged_object(v) for v in variants]
+            if all(objs):
+                common = set.intersection(*[set(o[0]) for o in objs])
+                for prop in sorted(common):
+                    vals = [const_value(o[0][prop]) for o in objs]
+                    if all(isinstance(v, str) for v in vals) and len(set(vals)) == len(vals):
+                        disc = prop
+                        break
         raw_names = []
         tys = []
         for i, v in enumerate(variants):
@@ -626,13 +659,14 @@ def build_params(ep: dict):
         used.add(f["name"])
         fields.append(f)
 
-    for p in ep["query_params"] + ep["header_params"]:
+    for i, p in enumerate(ep["query_params"] + ep["header_params"]):
         schema = p.get("schema", {})
         add({
             "name": snake(p["name"]),
             "wire": p["name"],
             "ty": type_of(schema, module, name.removesuffix("Params") + pascal(p["name"])),
             "required": p.get("required", False),
+            "req_index": i - 10_000,
             "nullable": False,
             "doc": p.get("description"),
             "const": None,
@@ -836,6 +870,9 @@ def emit_struct(key: tuple, t: dict, scc: dict) -> str:
     ctor_args = []
     ctor_body = []
     all_optional = True
+    # Constructor arguments follow the spec's `required` order (for example
+    # `(x, y)` and `(src_path, dest_path)`), not the alphabetical field order.
+    arg_order = {}
     for f in t["fields"]:
         boxed = f["ty"][0] == "named" and scc.get((f["ty"][1], f["ty"][2])) == scc.get(key) and (f["ty"][1], f["ty"][2]) in TYPES
         inner = rs(f["ty"], module, boxed)
@@ -867,6 +904,8 @@ def emit_struct(key: tuple, t: dict, scc: dict) -> str:
                 if boxed:
                     val = f"Box::new({arg}.into())"
                 ctor_args.append(f"{arg}: impl Into<{rs(f['ty'], module)}>")
+                ri = f.get("req_index")
+                arg_order[ctor_args[-1]] = (ri if ri is not None else 1_000_000, len(ctor_args))
                 ctor_body.append(f"{fname}: {val}")
         else:
             ctor_body.append(f"{fname}: None" if optional else f"{fname}: Default::default()")
@@ -874,6 +913,7 @@ def emit_struct(key: tuple, t: dict, scc: dict) -> str:
     out += f"impl {name} {{\n"
     out += f"    /// Create a `{name}` with the required fields set.\n"
     out += "    #[allow(clippy::too_many_arguments, clippy::new_without_default)]\n"
+    ctor_args.sort(key=lambda a: arg_order.get(a, (1_000_000, 0)))
     out += f"    pub fn new({', '.join(ctor_args)}) -> Self {{\n"
     out += "        Self {\n" + "".join(f"            {b},\n" for b in ctor_body) + "        }\n    }\n"
     if multipart and t.get("params"):

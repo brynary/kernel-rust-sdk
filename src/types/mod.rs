@@ -94,10 +94,10 @@ impl VaultCardAliases {
     /// Create a `VaultCardAliases` with the required fields set.
     #[allow(clippy::too_many_arguments, clippy::new_without_default)]
     pub fn new(
+        number: impl Into<String>,
         cvc: impl Into<String>,
         exp_month: impl Into<String>,
         exp_year: impl Into<String>,
-        number: impl Into<String>,
     ) -> Self {
         Self {
             cvc: cvc.into(),
@@ -167,13 +167,13 @@ impl AgentCardCheckoutAuthorization {
     /// Create a `AgentCardCheckoutAuthorization` with the required fields set.
     #[allow(clippy::too_many_arguments, clippy::new_without_default)]
     pub fn new(
-        amount_cents: impl Into<i64>,
-        created_at: impl Into<chrono::DateTime<chrono::Utc>>,
-        currency: impl Into<String>,
         id: impl Into<String>,
-        merchant: impl Into<String>,
-        psp: impl Into<String>,
         status: impl Into<AgentCardCheckoutAuthorizationStatus>,
+        psp: impl Into<String>,
+        merchant: impl Into<String>,
+        amount_cents: impl Into<i64>,
+        currency: impl Into<String>,
+        created_at: impl Into<chrono::DateTime<chrono::Utc>>,
     ) -> Self {
         Self {
             actual_cents: None,
@@ -285,12 +285,12 @@ impl AgentCardCheckoutPreparation {
     /// Create a `AgentCardCheckoutPreparation` with the required fields set.
     #[allow(clippy::too_many_arguments, clippy::new_without_default)]
     pub fn new(
+        status: impl Into<AgentCardCheckoutPreparationStatus>,
         browser_id: impl Into<String>,
-        created_at: impl Into<chrono::DateTime<chrono::Utc>>,
-        environment: impl Into<AgentCardCheckoutPreparationEnvironment>,
         merchant_origin: impl Into<String>,
         psp: impl Into<AgentCardPreparedProcessor>,
-        status: impl Into<AgentCardCheckoutPreparationStatus>,
+        environment: impl Into<AgentCardCheckoutPreparationEnvironment>,
+        created_at: impl Into<chrono::DateTime<chrono::Utc>>,
     ) -> Self {
         Self {
             approval_url: None,
@@ -382,10 +382,10 @@ impl AgentCardCardVaultItemSpec {
     /// Create a `AgentCardCardVaultItemSpec` with the required fields set.
     #[allow(clippy::too_many_arguments, clippy::new_without_default)]
     pub fn new(
+        wallet: impl Into<String>,
+        merchant: impl Into<String>,
         amount: impl Into<i64>,
         currency: impl Into<String>,
-        merchant: impl Into<String>,
-        wallet: impl Into<String>,
     ) -> Self {
         Self {
             amount: amount.into(),
@@ -522,11 +522,11 @@ impl ApiKey {
     /// Create a `ApiKey` with the required fields set.
     #[allow(clippy::too_many_arguments, clippy::new_without_default)]
     pub fn new(
+        id: impl Into<String>,
+        name: impl Into<String>,
         created_at: impl Into<chrono::DateTime<chrono::Utc>>,
         created_by: impl Into<ApiKeyCreator>,
-        id: impl Into<String>,
         masked_key: impl Into<String>,
-        name: impl Into<String>,
     ) -> Self {
         Self {
             created_at: created_at.into(),
@@ -558,7 +558,7 @@ pub struct ApiKeyCreator {
 impl ApiKeyCreator {
     /// Create a `ApiKeyCreator` with the required fields set.
     #[allow(clippy::too_many_arguments, clippy::new_without_default)]
-    pub fn new(email: impl Into<String>, id: impl Into<String>) -> Self {
+    pub fn new(id: impl Into<String>, email: impl Into<String>) -> Self {
         Self {
             email: email.into(),
             id: id.into(),
@@ -623,12 +623,12 @@ impl AppVersionSummary {
     /// Create a `AppVersionSummary` with the required fields set.
     #[allow(clippy::too_many_arguments, clippy::new_without_default)]
     pub fn new(
-        actions: impl Into<Vec<AppAction>>,
-        app_name: impl Into<String>,
-        deployment: impl Into<String>,
-        env_vars: impl Into<std::collections::HashMap<String, String>>,
         id: impl Into<String>,
+        app_name: impl Into<String>,
         version: impl Into<String>,
+        deployment: impl Into<String>,
+        actions: impl Into<Vec<AppAction>>,
+        env_vars: impl Into<std::collections::HashMap<String, String>>,
     ) -> Self {
         Self {
             actions: actions.into(),
@@ -675,11 +675,11 @@ impl AppVersionSummaryEvent {
     /// Create a `AppVersionSummaryEvent` with the required fields set.
     #[allow(clippy::too_many_arguments, clippy::new_without_default)]
     pub fn new(
-        actions: impl Into<Vec<AppAction>>,
-        app_name: impl Into<String>,
-        id: impl Into<String>,
         timestamp: impl Into<chrono::DateTime<chrono::Utc>>,
+        id: impl Into<String>,
+        app_name: impl Into<String>,
         version: impl Into<String>,
+        actions: impl Into<Vec<AppAction>>,
     ) -> Self {
         Self {
             actions: actions.into(),
@@ -738,18 +738,18 @@ impl AuditLogEntry {
     /// Create a `AuditLogEntry` with the required fields set.
     #[allow(clippy::too_many_arguments, clippy::new_without_default)]
     pub fn new(
+        timestamp: impl Into<chrono::DateTime<chrono::Utc>>,
         auth_strategy: impl Into<String>,
-        client_ip: impl Into<String>,
-        domain: impl Into<String>,
-        duration_ms: impl Into<i64>,
+        user_id: impl Into<String>,
         email: impl Into<String>,
+        status: impl Into<i64>,
         method: impl Into<String>,
         path: impl Into<String>,
         route: impl Into<String>,
-        status: impl Into<i64>,
-        timestamp: impl Into<chrono::DateTime<chrono::Utc>>,
+        domain: impl Into<String>,
+        duration_ms: impl Into<i64>,
+        client_ip: impl Into<String>,
         user_agent: impl Into<String>,
-        user_id: impl Into<String>,
     ) -> Self {
         Self {
             auth_strategy: auth_strategy.into(),
@@ -827,16 +827,16 @@ impl AuditLogExportDestination {
     /// Create a `AuditLogExportDestination` with the required fields set.
     #[allow(clippy::too_many_arguments, clippy::new_without_default)]
     pub fn new(
+        id: impl Into<String>,
+        region: impl Into<String>,
         bucket: impl Into<String>,
+        prefix: impl Into<String>,
+        role_arn: impl Into<String>,
+        external_id: impl Into<String>,
+        kernel_role_arn: impl Into<String>,
+        status: impl Into<AuditLogExportDestinationStatus>,
         consecutive_failures: impl Into<i64>,
         created_at: impl Into<chrono::DateTime<chrono::Utc>>,
-        external_id: impl Into<String>,
-        id: impl Into<String>,
-        kernel_role_arn: impl Into<String>,
-        prefix: impl Into<String>,
-        region: impl Into<String>,
-        role_arn: impl Into<String>,
-        status: impl Into<AuditLogExportDestinationStatus>,
         updated_at: impl Into<chrono::DateTime<chrono::Utc>>,
     ) -> Self {
         Self {
@@ -885,8 +885,8 @@ impl AuditLogExportDestinationTestResult {
     /// Create a `AuditLogExportDestinationTestResult` with the required fields set.
     #[allow(clippy::too_many_arguments, clippy::new_without_default)]
     pub fn new(
-        stage: impl Into<AuditLogExportDestinationTestResultStage>,
         success: impl Into<bool>,
+        stage: impl Into<AuditLogExportDestinationTestResultStage>,
     ) -> Self {
         Self {
             error: None,
@@ -948,9 +948,9 @@ impl AuthContext {
     #[allow(clippy::too_many_arguments, clippy::new_without_default)]
     pub fn new(
         authentication: impl Into<AuthContextAuthentication>,
-        authorization: impl Into<AuthContextAuthorization>,
-        organization: impl Into<AuthContextOrganization>,
         principal: impl Into<AuthContextPrincipal>,
+        organization: impl Into<AuthContextOrganization>,
+        authorization: impl Into<AuthContextAuthorization>,
     ) -> Self {
         Self {
             authentication: authentication.into(),
@@ -1079,7 +1079,7 @@ pub struct AuthContextPrincipal {
 impl AuthContextPrincipal {
     /// Create a `AuthContextPrincipal` with the required fields set.
     #[allow(clippy::too_many_arguments, clippy::new_without_default)]
-    pub fn new(id: impl Into<String>, type_: impl Into<AuthContextPrincipalType>) -> Self {
+    pub fn new(type_: impl Into<AuthContextPrincipalType>, id: impl Into<String>) -> Self {
         Self {
             id: id.into(),
             r#type: type_.into(),
@@ -1129,7 +1129,7 @@ pub struct AvailableVaultItemExpansion {
 impl AvailableVaultItemExpansion {
     /// Create a `AvailableVaultItemExpansion` with the required fields set.
     #[allow(clippy::too_many_arguments, clippy::new_without_default)]
-    pub fn new(description: impl Into<String>, type_: impl Into<VaultItemExpansionType>) -> Self {
+    pub fn new(type_: impl Into<VaultItemExpansionType>, description: impl Into<String>) -> Self {
         Self {
             description: description.into(),
             r#type: type_.into(),
@@ -1151,7 +1151,7 @@ pub struct AvailableVaultItemOperation {
 impl AvailableVaultItemOperation {
     /// Create a `AvailableVaultItemOperation` with the required fields set.
     #[allow(clippy::too_many_arguments, clippy::new_without_default)]
-    pub fn new(description: impl Into<String>, type_: impl Into<VaultItemOperationType>) -> Self {
+    pub fn new(type_: impl Into<VaultItemOperationType>, description: impl Into<String>) -> Self {
         Self {
             description: description.into(),
             r#type: type_.into(),
@@ -1252,8 +1252,8 @@ pub struct ClickMouseRequest {
     #[serde(default, skip_serializing_if = "Option::is_none")]
     pub num_clicks: Option<i64>,
     /// Y coordinate of the click position
-    #[serde(default, skip_serializing_if = "Option::is_none")]
-    pub r#true: Option<i64>,
+    #[serde(default)]
+    pub y: i64,
     /// X coordinate of the click position
     #[serde(default)]
     pub x: i64,
@@ -1262,13 +1262,13 @@ pub struct ClickMouseRequest {
 impl ClickMouseRequest {
     /// Create a `ClickMouseRequest` with the required fields set.
     #[allow(clippy::too_many_arguments, clippy::new_without_default)]
-    pub fn new(x: impl Into<i64>) -> Self {
+    pub fn new(x: impl Into<i64>, y: impl Into<i64>) -> Self {
         Self {
             button: None,
             click_type: None,
             hold_keys: None,
             num_clicks: None,
-            r#true: None,
+            y: y.into(),
             x: x.into(),
         }
     }
@@ -1360,8 +1360,8 @@ pub struct MoveMouseRequest {
     #[serde(default, skip_serializing_if = "Option::is_none")]
     pub smooth: Option<bool>,
     /// Y coordinate to move the cursor to
-    #[serde(default, skip_serializing_if = "Option::is_none")]
-    pub r#true: Option<i64>,
+    #[serde(default)]
+    pub y: i64,
     /// X coordinate to move the cursor to
     #[serde(default)]
     pub x: i64,
@@ -1370,12 +1370,12 @@ pub struct MoveMouseRequest {
 impl MoveMouseRequest {
     /// Create a `MoveMouseRequest` with the required fields set.
     #[allow(clippy::too_many_arguments, clippy::new_without_default)]
-    pub fn new(x: impl Into<i64>) -> Self {
+    pub fn new(x: impl Into<i64>, y: impl Into<i64>) -> Self {
         Self {
             duration_ms: None,
             hold_keys: None,
             smooth: None,
-            r#true: None,
+            y: y.into(),
             x: x.into(),
         }
     }
@@ -1422,8 +1422,8 @@ pub struct ScrollRequest {
     #[serde(default, skip_serializing_if = "Option::is_none")]
     pub hold_keys: Option<Vec<String>>,
     /// Y coordinate at which to perform the scroll
-    #[serde(default, skip_serializing_if = "Option::is_none")]
-    pub r#true: Option<i64>,
+    #[serde(default)]
+    pub y: i64,
     /// X coordinate at which to perform the scroll
     #[serde(default)]
     pub x: i64,
@@ -1432,12 +1432,12 @@ pub struct ScrollRequest {
 impl ScrollRequest {
     /// Create a `ScrollRequest` with the required fields set.
     #[allow(clippy::too_many_arguments, clippy::new_without_default)]
-    pub fn new(x: impl Into<i64>) -> Self {
+    pub fn new(x: impl Into<i64>, y: impl Into<i64>) -> Self {
         Self {
             delta_x: None,
             delta_y: None,
             hold_keys: None,
-            r#true: None,
+            y: y.into(),
             x: x.into(),
         }
     }
@@ -1618,15 +1618,15 @@ impl Browser {
     /// Create a `Browser` with the required fields set.
     #[allow(clippy::too_many_arguments, clippy::new_without_default)]
     pub fn new(
-        cdp_ws_url: impl Into<String>,
         created_at: impl Into<chrono::DateTime<chrono::Utc>>,
+        cdp_ws_url: impl Into<String>,
+        webdriver_ws_url: impl Into<String>,
+        session_id: impl Into<String>,
+        region: impl Into<Region>,
+        stealth: impl Into<bool>,
         headless: impl Into<bool>,
         memory: impl Into<BrowserMemory>,
-        region: impl Into<Region>,
-        session_id: impl Into<String>,
-        stealth: impl Into<bool>,
         timeout_seconds: impl Into<i64>,
-        webdriver_ws_url: impl Into<String>,
     ) -> Self {
         Self {
             base_url: None,
@@ -1793,8 +1793,8 @@ impl Profile {
     /// Create a `Profile` with the required fields set.
     #[allow(clippy::too_many_arguments, clippy::new_without_default)]
     pub fn new(
-        created_at: impl Into<chrono::DateTime<chrono::Utc>>,
         id: impl Into<String>,
+        created_at: impl Into<chrono::DateTime<chrono::Utc>>,
     ) -> Self {
         Self {
             created_at: created_at.into(),
@@ -2221,7 +2221,7 @@ pub struct BrowserViewport {
 impl BrowserViewport {
     /// Create a `BrowserViewport` with the required fields set.
     #[allow(clippy::too_many_arguments, clippy::new_without_default)]
-    pub fn new(height: impl Into<i64>, width: impl Into<i64>) -> Self {
+    pub fn new(width: impl Into<i64>, height: impl Into<i64>) -> Self {
         Self {
             height: height.into(),
             refresh_rate: None,
@@ -2252,7 +2252,7 @@ pub struct BrowserApiCallEvent {
 impl BrowserApiCallEvent {
     /// Create a `BrowserApiCallEvent` with the required fields set.
     #[allow(clippy::too_many_arguments, clippy::new_without_default)]
-    pub fn new(source: impl Into<BrowserEventSource>, ts: impl Into<i64>) -> Self {
+    pub fn new(ts: impl Into<i64>, source: impl Into<BrowserEventSource>) -> Self {
         Self {
             category: "control".to_owned(),
             data: None,
@@ -2287,10 +2287,10 @@ impl BrowserApiCallEventData {
     /// Create a `BrowserApiCallEventData` with the required fields set.
     #[allow(clippy::too_many_arguments, clippy::new_without_default)]
     pub fn new(
-        duration_ms: impl Into<f64>,
-        operation_id: impl Into<String>,
         request_id: impl Into<String>,
+        operation_id: impl Into<String>,
         status: impl Into<i64>,
+        duration_ms: impl Into<f64>,
     ) -> Self {
         Self {
             code: None,
@@ -2387,11 +2387,11 @@ impl BrowserCallStackCallFrame {
     /// Create a `BrowserCallStackCallFrame` with the required fields set.
     #[allow(clippy::too_many_arguments, clippy::new_without_default)]
     pub fn new(
-        column_number: impl Into<i64>,
         function_name: impl Into<String>,
-        line_number: impl Into<i64>,
         script_id: impl Into<String>,
         url: impl Into<String>,
+        line_number: impl Into<i64>,
+        column_number: impl Into<i64>,
     ) -> Self {
         Self {
             column_number: column_number.into(),
@@ -2429,9 +2429,9 @@ impl BrowserCaptchaChallengeResultEvent {
     /// Create a `BrowserCaptchaChallengeResultEvent` with the required fields set.
     #[allow(clippy::too_many_arguments, clippy::new_without_default)]
     pub fn new(
-        data: impl Into<BrowserCaptchaChallengeResultEventData>,
-        source: impl Into<BrowserEventSource>,
         ts: impl Into<i64>,
+        source: impl Into<BrowserEventSource>,
+        data: impl Into<BrowserCaptchaChallengeResultEventData>,
     ) -> Self {
         Self {
             category: "captcha".to_owned(),
@@ -2471,9 +2471,9 @@ impl BrowserCaptchaChallengeResultEventData {
     #[allow(clippy::too_many_arguments, clippy::new_without_default)]
     pub fn new(
         captcha_type: impl Into<BrowserCaptchaType>,
+        status: impl Into<BrowserCaptchaChallengeResultEventDataStatus>,
         challenge_id: impl Into<BrowserCaptchaChallengeId>,
         duration_ms: impl Into<f64>,
-        status: impl Into<BrowserCaptchaChallengeResultEventDataStatus>,
     ) -> Self {
         Self {
             captcha_type: captcha_type.into(),
@@ -2531,7 +2531,7 @@ pub struct BrowserCaptchaSolveResultEvent {
 impl BrowserCaptchaSolveResultEvent {
     /// Create a `BrowserCaptchaSolveResultEvent` with the required fields set.
     #[allow(clippy::too_many_arguments, clippy::new_without_default)]
-    pub fn new(source: impl Into<BrowserEventSource>, ts: impl Into<i64>) -> Self {
+    pub fn new(ts: impl Into<i64>, source: impl Into<BrowserEventSource>) -> Self {
         Self {
             category: "captcha".to_owned(),
             data: None,
@@ -2576,8 +2576,8 @@ impl BrowserCaptchaSolveResultEventData {
     #[allow(clippy::too_many_arguments, clippy::new_without_default)]
     pub fn new(
         captcha_type: impl Into<BrowserCaptchaType>,
-        duration_ms: impl Into<f64>,
         status: impl Into<BrowserCaptchaSolveResultEventDataStatus>,
+        duration_ms: impl Into<f64>,
     ) -> Self {
         Self {
             captcha_type: captcha_type.into(),
@@ -2625,9 +2625,9 @@ impl BrowserCaptchaSolveStartedEvent {
     /// Create a `BrowserCaptchaSolveStartedEvent` with the required fields set.
     #[allow(clippy::too_many_arguments, clippy::new_without_default)]
     pub fn new(
-        data: impl Into<BrowserCaptchaSolveStartedEventData>,
-        source: impl Into<BrowserEventSource>,
         ts: impl Into<i64>,
+        source: impl Into<BrowserEventSource>,
+        data: impl Into<BrowserCaptchaSolveStartedEventData>,
     ) -> Self {
         Self {
             category: "captcha".to_owned(),
@@ -2928,9 +2928,9 @@ impl BrowserCdpCommandEvent {
     /// Create a `BrowserCdpCommandEvent` with the required fields set.
     #[allow(clippy::too_many_arguments, clippy::new_without_default)]
     pub fn new(
-        data: impl Into<BrowserCdpCommandEventData>,
-        source: impl Into<BrowserEventSource>,
         ts: impl Into<i64>,
+        source: impl Into<BrowserEventSource>,
+        data: impl Into<BrowserCdpCommandEventData>,
     ) -> Self {
         Self {
             category: "control".to_owned(),
@@ -3397,7 +3397,7 @@ pub struct BrowserCdpInputDispatchMouseEventCommandData {
     pub tilt_y: Option<f64>,
     /// Viewport y coordinate in CSS pixels.
     #[serde(default, skip_serializing_if = "Option::is_none")]
-    pub r#true: Option<f64>,
+    pub y: Option<f64>,
     /// Pen clockwise rotation, in degrees.
     #[serde(default, skip_serializing_if = "Option::is_none")]
     pub twist: Option<i64>,
@@ -3427,7 +3427,7 @@ impl BrowserCdpInputDispatchMouseEventCommandData {
             tangential_pressure: None,
             tilt_x: None,
             tilt_y: None,
-            r#true: None,
+            y: None,
             twist: None,
             x: None,
         }
@@ -3671,7 +3671,7 @@ pub struct BrowserCdpInputDispatchTouchEventCommandData {
     pub touch_point_count: i64,
     /// Viewport y coordinate of the first touch point.
     #[serde(default, skip_serializing_if = "Option::is_none")]
-    pub r#true: Option<f64>,
+    pub y: Option<f64>,
     /// Clockwise rotation of the first touch point, in degrees.
     #[serde(default, skip_serializing_if = "Option::is_none")]
     pub twist: Option<i64>,
@@ -3702,7 +3702,7 @@ impl BrowserCdpInputDispatchTouchEventCommandData {
             tilt_x: None,
             tilt_y: None,
             touch_point_count: touch_point_count.into(),
-            r#true: None,
+            y: None,
             twist: None,
             x: None,
         }
@@ -3754,7 +3754,7 @@ pub struct BrowserCdpInputDispatchDragEventCommandData {
     pub session_id: Option<String>,
     /// Viewport y coordinate in CSS pixels.
     #[serde(default, skip_serializing_if = "Option::is_none")]
-    pub r#true: Option<f64>,
+    pub y: Option<f64>,
     /// Viewport x coordinate in CSS pixels.
     #[serde(default, skip_serializing_if = "Option::is_none")]
     pub x: Option<f64>,
@@ -3775,7 +3775,7 @@ impl BrowserCdpInputDispatchDragEventCommandData {
             method: "Input.dispatchDragEvent".to_owned(),
             modifiers: None,
             session_id: None,
-            r#true: None,
+            y: None,
             x: None,
         }
     }
@@ -3877,7 +3877,7 @@ pub struct BrowserCdpInputEmulateTouchFromMouseEventCommandData {
     pub session_id: Option<String>,
     /// Viewport y coordinate in CSS pixels.
     #[serde(default, skip_serializing_if = "Option::is_none")]
-    pub r#true: Option<f64>,
+    pub y: Option<f64>,
     /// Viewport x coordinate in CSS pixels.
     #[serde(default, skip_serializing_if = "Option::is_none")]
     pub x: Option<f64>,
@@ -3898,7 +3898,7 @@ impl BrowserCdpInputEmulateTouchFromMouseEventCommandData {
             method: "Input.emulateTouchFromMouseEvent".to_owned(),
             modifiers: None,
             session_id: None,
-            r#true: None,
+            y: None,
             x: None,
         }
     }
@@ -3929,7 +3929,7 @@ pub struct BrowserCdpInputSynthesizePinchGestureCommandData {
     pub session_id: Option<String>,
     /// Viewport y coordinate in CSS pixels.
     #[serde(default, skip_serializing_if = "Option::is_none")]
-    pub r#true: Option<f64>,
+    pub y: Option<f64>,
     /// Viewport x coordinate in CSS pixels.
     #[serde(default, skip_serializing_if = "Option::is_none")]
     pub x: Option<f64>,
@@ -3947,7 +3947,7 @@ impl BrowserCdpInputSynthesizePinchGestureCommandData {
             relative_speed: None,
             scale_factor: None,
             session_id: None,
-            r#true: None,
+            y: None,
             x: None,
         }
     }
@@ -4000,7 +4000,7 @@ pub struct BrowserCdpInputSynthesizeScrollGestureCommandData {
     pub speed: Option<i64>,
     /// Viewport y coordinate in CSS pixels.
     #[serde(default, skip_serializing_if = "Option::is_none")]
-    pub r#true: Option<f64>,
+    pub y: Option<f64>,
     /// Viewport x coordinate in CSS pixels.
     #[serde(default, skip_serializing_if = "Option::is_none")]
     pub x: Option<f64>,
@@ -4032,7 +4032,7 @@ impl BrowserCdpInputSynthesizeScrollGestureCommandData {
             repeat_delay_ms: None,
             session_id: None,
             speed: None,
-            r#true: None,
+            y: None,
             x: None,
             x_distance: None,
             x_overscroll: None,
@@ -4073,7 +4073,7 @@ pub struct BrowserCdpInputSynthesizeTapGestureCommandData {
     pub tap_count: Option<i64>,
     /// Viewport y coordinate in CSS pixels.
     #[serde(default, skip_serializing_if = "Option::is_none")]
-    pub r#true: Option<f64>,
+    pub y: Option<f64>,
     /// Viewport x coordinate in CSS pixels.
     #[serde(default, skip_serializing_if = "Option::is_none")]
     pub x: Option<f64>,
@@ -4091,7 +4091,7 @@ impl BrowserCdpInputSynthesizeTapGestureCommandData {
             method: "Input.synthesizeTapGesture".to_owned(),
             session_id: None,
             tap_count: None,
-            r#true: None,
+            y: None,
             x: None,
         }
     }
@@ -5250,7 +5250,7 @@ pub struct BrowserCdpConnectEvent {
 impl BrowserCdpConnectEvent {
     /// Create a `BrowserCdpConnectEvent` with the required fields set.
     #[allow(clippy::too_many_arguments, clippy::new_without_default)]
-    pub fn new(source: impl Into<BrowserEventSource>, ts: impl Into<i64>) -> Self {
+    pub fn new(ts: impl Into<i64>, source: impl Into<BrowserEventSource>) -> Self {
         Self {
             category: "connection".to_owned(),
             data: None,
@@ -5307,7 +5307,7 @@ pub struct BrowserCdpDisconnectEvent {
 impl BrowserCdpDisconnectEvent {
     /// Create a `BrowserCdpDisconnectEvent` with the required fields set.
     #[allow(clippy::too_many_arguments, clippy::new_without_default)]
-    pub fn new(source: impl Into<BrowserEventSource>, ts: impl Into<i64>) -> Self {
+    pub fn new(ts: impl Into<i64>, source: impl Into<BrowserEventSource>) -> Self {
         Self {
             category: "connection".to_owned(),
             data: None,
@@ -5392,7 +5392,7 @@ pub struct BrowserConsoleErrorEvent {
 impl BrowserConsoleErrorEvent {
     /// Create a `BrowserConsoleErrorEvent` with the required fields set.
     #[allow(clippy::too_many_arguments, clippy::new_without_default)]
-    pub fn new(source: impl Into<BrowserEventSource>, ts: impl Into<i64>) -> Self {
+    pub fn new(ts: impl Into<i64>, source: impl Into<BrowserEventSource>) -> Self {
         Self {
             category: "console".to_owned(),
             data: None,
@@ -5508,7 +5508,7 @@ pub struct BrowserConsoleLogEvent {
 impl BrowserConsoleLogEvent {
     /// Create a `BrowserConsoleLogEvent` with the required fields set.
     #[allow(clippy::too_many_arguments, clippy::new_without_default)]
-    pub fn new(source: impl Into<BrowserEventSource>, ts: impl Into<i64>) -> Self {
+    pub fn new(ts: impl Into<i64>, source: impl Into<BrowserEventSource>) -> Self {
         Self {
             category: "console".to_owned(),
             data: None,
@@ -5663,10 +5663,10 @@ impl BrowserCurlResult {
     /// Create a `BrowserCurlResult` with the required fields set.
     #[allow(clippy::too_many_arguments, clippy::new_without_default)]
     pub fn new(
+        status: impl Into<i64>,
+        headers: impl Into<std::collections::HashMap<String, Vec<String>>>,
         body: impl Into<String>,
         duration_ms: impl Into<i64>,
-        headers: impl Into<std::collections::HashMap<String, Vec<String>>>,
-        status: impl Into<i64>,
     ) -> Self {
         Self {
             body: body.into(),
@@ -5824,7 +5824,7 @@ pub struct BrowserInteractionClickEvent {
 impl BrowserInteractionClickEvent {
     /// Create a `BrowserInteractionClickEvent` with the required fields set.
     #[allow(clippy::too_many_arguments, clippy::new_without_default)]
-    pub fn new(source: impl Into<BrowserEventSource>, ts: impl Into<i64>) -> Self {
+    pub fn new(ts: impl Into<i64>, source: impl Into<BrowserEventSource>) -> Self {
         Self {
             category: "interaction".to_owned(),
             data: None,
@@ -5870,7 +5870,7 @@ pub struct BrowserInteractionClickEventData {
     pub text: Option<String>,
     /// Viewport y-coordinate of the click in CSS pixels.
     #[serde(default, skip_serializing_if = "Option::is_none")]
-    pub r#true: Option<i64>,
+    pub y: Option<i64>,
     /// Viewport x-coordinate of the click in CSS pixels.
     #[serde(default, skip_serializing_if = "Option::is_none")]
     pub x: Option<i64>,
@@ -5891,7 +5891,7 @@ impl BrowserInteractionClickEventData {
             selector: None,
             tag: None,
             text: None,
-            r#true: None,
+            y: None,
             x: None,
         }
     }
@@ -5925,7 +5925,7 @@ pub struct BrowserInteractionKeyEvent {
 impl BrowserInteractionKeyEvent {
     /// Create a `BrowserInteractionKeyEvent` with the required fields set.
     #[allow(clippy::too_many_arguments, clippy::new_without_default)]
-    pub fn new(source: impl Into<BrowserEventSource>, ts: impl Into<i64>) -> Self {
+    pub fn new(ts: impl Into<i64>, source: impl Into<BrowserEventSource>) -> Self {
         Self {
             category: "interaction".to_owned(),
             data: None,
@@ -6018,7 +6018,7 @@ pub struct BrowserInteractionScrollSettledEvent {
 impl BrowserInteractionScrollSettledEvent {
     /// Create a `BrowserInteractionScrollSettledEvent` with the required fields set.
     #[allow(clippy::too_many_arguments, clippy::new_without_default)]
-    pub fn new(source: impl Into<BrowserEventSource>, ts: impl Into<i64>) -> Self {
+    pub fn new(ts: impl Into<i64>, source: impl Into<BrowserEventSource>) -> Self {
         Self {
             category: "interaction".to_owned(),
             data: None,
@@ -6119,7 +6119,7 @@ pub struct BrowserLiveViewConnectEvent {
 impl BrowserLiveViewConnectEvent {
     /// Create a `BrowserLiveViewConnectEvent` with the required fields set.
     #[allow(clippy::too_many_arguments, clippy::new_without_default)]
-    pub fn new(source: impl Into<BrowserEventSource>, ts: impl Into<i64>) -> Self {
+    pub fn new(ts: impl Into<i64>, source: impl Into<BrowserEventSource>) -> Self {
         Self {
             category: "connection".to_owned(),
             data: None,
@@ -6170,7 +6170,7 @@ pub struct BrowserLiveViewDisconnectEvent {
 impl BrowserLiveViewDisconnectEvent {
     /// Create a `BrowserLiveViewDisconnectEvent` with the required fields set.
     #[allow(clippy::too_many_arguments, clippy::new_without_default)]
-    pub fn new(source: impl Into<BrowserEventSource>, ts: impl Into<i64>) -> Self {
+    pub fn new(ts: impl Into<i64>, source: impl Into<BrowserEventSource>) -> Self {
         Self {
             category: "connection".to_owned(),
             data: None,
@@ -6195,7 +6195,7 @@ pub struct BrowserLiveViewDisconnectEventData {
 impl BrowserLiveViewDisconnectEventData {
     /// Create a `BrowserLiveViewDisconnectEventData` with the required fields set.
     #[allow(clippy::too_many_arguments, clippy::new_without_default)]
-    pub fn new(duration_ms: impl Into<f64>, session_id: impl Into<String>) -> Self {
+    pub fn new(session_id: impl Into<String>, duration_ms: impl Into<f64>) -> Self {
         Self {
             duration_ms: duration_ms.into(),
             session_id: session_id.into(),
@@ -6233,7 +6233,7 @@ pub struct BrowserMonitorDisconnectedEvent {
 impl BrowserMonitorDisconnectedEvent {
     /// Create a `BrowserMonitorDisconnectedEvent` with the required fields set.
     #[allow(clippy::too_many_arguments, clippy::new_without_default)]
-    pub fn new(source: impl Into<BrowserEventSource>, ts: impl Into<i64>) -> Self {
+    pub fn new(ts: impl Into<i64>, source: impl Into<BrowserEventSource>) -> Self {
         Self {
             category: "monitor".to_owned(),
             data: None,
@@ -6288,7 +6288,7 @@ pub struct BrowserMonitorInitFailedEvent {
 impl BrowserMonitorInitFailedEvent {
     /// Create a `BrowserMonitorInitFailedEvent` with the required fields set.
     #[allow(clippy::too_many_arguments, clippy::new_without_default)]
-    pub fn new(source: impl Into<BrowserEventSource>, ts: impl Into<i64>) -> Self {
+    pub fn new(ts: impl Into<i64>, source: impl Into<BrowserEventSource>) -> Self {
         Self {
             category: "monitor".to_owned(),
             data: None,
@@ -6343,7 +6343,7 @@ pub struct BrowserMonitorReconnectFailedEvent {
 impl BrowserMonitorReconnectFailedEvent {
     /// Create a `BrowserMonitorReconnectFailedEvent` with the required fields set.
     #[allow(clippy::too_many_arguments, clippy::new_without_default)]
-    pub fn new(source: impl Into<BrowserEventSource>, ts: impl Into<i64>) -> Self {
+    pub fn new(ts: impl Into<i64>, source: impl Into<BrowserEventSource>) -> Self {
         Self {
             category: "monitor".to_owned(),
             data: None,
@@ -6398,7 +6398,7 @@ pub struct BrowserMonitorReconnectedEvent {
 impl BrowserMonitorReconnectedEvent {
     /// Create a `BrowserMonitorReconnectedEvent` with the required fields set.
     #[allow(clippy::too_many_arguments, clippy::new_without_default)]
-    pub fn new(source: impl Into<BrowserEventSource>, ts: impl Into<i64>) -> Self {
+    pub fn new(ts: impl Into<i64>, source: impl Into<BrowserEventSource>) -> Self {
         Self {
             category: "monitor".to_owned(),
             data: None,
@@ -6455,7 +6455,7 @@ pub struct BrowserMonitorScreenshotEvent {
 impl BrowserMonitorScreenshotEvent {
     /// Create a `BrowserMonitorScreenshotEvent` with the required fields set.
     #[allow(clippy::too_many_arguments, clippy::new_without_default)]
-    pub fn new(source: impl Into<BrowserEventSource>, ts: impl Into<i64>) -> Self {
+    pub fn new(ts: impl Into<i64>, source: impl Into<BrowserEventSource>) -> Self {
         Self {
             category: "screenshot".to_owned(),
             data: None,
@@ -6511,7 +6511,7 @@ pub struct BrowserNetworkIdleEvent {
 impl BrowserNetworkIdleEvent {
     /// Create a `BrowserNetworkIdleEvent` with the required fields set.
     #[allow(clippy::too_many_arguments, clippy::new_without_default)]
-    pub fn new(source: impl Into<BrowserEventSource>, ts: impl Into<i64>) -> Self {
+    pub fn new(ts: impl Into<i64>, source: impl Into<BrowserEventSource>) -> Self {
         Self {
             category: "network".to_owned(),
             data: None,
@@ -6545,7 +6545,7 @@ pub struct BrowserNetworkLoadingFailedEvent {
 impl BrowserNetworkLoadingFailedEvent {
     /// Create a `BrowserNetworkLoadingFailedEvent` with the required fields set.
     #[allow(clippy::too_many_arguments, clippy::new_without_default)]
-    pub fn new(source: impl Into<BrowserEventSource>, ts: impl Into<i64>) -> Self {
+    pub fn new(ts: impl Into<i64>, source: impl Into<BrowserEventSource>) -> Self {
         Self {
             category: "network".to_owned(),
             data: None,
@@ -6642,7 +6642,7 @@ pub struct BrowserNetworkRequestEvent {
 impl BrowserNetworkRequestEvent {
     /// Create a `BrowserNetworkRequestEvent` with the required fields set.
     #[allow(clippy::too_many_arguments, clippy::new_without_default)]
-    pub fn new(source: impl Into<BrowserEventSource>, ts: impl Into<i64>) -> Self {
+    pub fn new(ts: impl Into<i64>, source: impl Into<BrowserEventSource>) -> Self {
         Self {
             category: "network".to_owned(),
             data: None,
@@ -6759,7 +6759,7 @@ pub struct BrowserNetworkResponseEvent {
 impl BrowserNetworkResponseEvent {
     /// Create a `BrowserNetworkResponseEvent` with the required fields set.
     #[allow(clippy::too_many_arguments, clippy::new_without_default)]
-    pub fn new(source: impl Into<BrowserEventSource>, ts: impl Into<i64>) -> Self {
+    pub fn new(ts: impl Into<i64>, source: impl Into<BrowserEventSource>) -> Self {
         Self {
             category: "network".to_owned(),
             data: None,
@@ -6872,7 +6872,7 @@ pub struct BrowserPageCrashedEvent {
 impl BrowserPageCrashedEvent {
     /// Create a `BrowserPageCrashedEvent` with the required fields set.
     #[allow(clippy::too_many_arguments, clippy::new_without_default)]
-    pub fn new(source: impl Into<BrowserEventSource>, ts: impl Into<i64>) -> Self {
+    pub fn new(ts: impl Into<i64>, source: impl Into<BrowserEventSource>) -> Self {
         Self {
             category: "page".to_owned(),
             data: None,
@@ -6935,7 +6935,7 @@ pub struct BrowserPageDomContentLoadedEvent {
 impl BrowserPageDomContentLoadedEvent {
     /// Create a `BrowserPageDomContentLoadedEvent` with the required fields set.
     #[allow(clippy::too_many_arguments, clippy::new_without_default)]
-    pub fn new(source: impl Into<BrowserEventSource>, ts: impl Into<i64>) -> Self {
+    pub fn new(ts: impl Into<i64>, source: impl Into<BrowserEventSource>) -> Self {
         Self {
             category: "page".to_owned(),
             data: None,
@@ -7021,7 +7021,7 @@ pub struct BrowserPageLayoutSettledEvent {
 impl BrowserPageLayoutSettledEvent {
     /// Create a `BrowserPageLayoutSettledEvent` with the required fields set.
     #[allow(clippy::too_many_arguments, clippy::new_without_default)]
-    pub fn new(source: impl Into<BrowserEventSource>, ts: impl Into<i64>) -> Self {
+    pub fn new(ts: impl Into<i64>, source: impl Into<BrowserEventSource>) -> Self {
         Self {
             category: "page".to_owned(),
             data: None,
@@ -7055,7 +7055,7 @@ pub struct BrowserPageLayoutShiftEvent {
 impl BrowserPageLayoutShiftEvent {
     /// Create a `BrowserPageLayoutShiftEvent` with the required fields set.
     #[allow(clippy::too_many_arguments, clippy::new_without_default)]
-    pub fn new(source: impl Into<BrowserEventSource>, ts: impl Into<i64>) -> Self {
+    pub fn new(ts: impl Into<i64>, source: impl Into<BrowserEventSource>) -> Self {
         Self {
             category: "page".to_owned(),
             data: None,
@@ -7180,7 +7180,7 @@ pub struct BrowserPageLcpEvent {
 impl BrowserPageLcpEvent {
     /// Create a `BrowserPageLcpEvent` with the required fields set.
     #[allow(clippy::too_many_arguments, clippy::new_without_default)]
-    pub fn new(source: impl Into<BrowserEventSource>, ts: impl Into<i64>) -> Self {
+    pub fn new(ts: impl Into<i64>, source: impl Into<BrowserEventSource>) -> Self {
         Self {
             category: "page".to_owned(),
             data: None,
@@ -7317,7 +7317,7 @@ pub struct BrowserPageLoadEvent {
 impl BrowserPageLoadEvent {
     /// Create a `BrowserPageLoadEvent` with the required fields set.
     #[allow(clippy::too_many_arguments, clippy::new_without_default)]
-    pub fn new(source: impl Into<BrowserEventSource>, ts: impl Into<i64>) -> Self {
+    pub fn new(ts: impl Into<i64>, source: impl Into<BrowserEventSource>) -> Self {
         Self {
             category: "page".to_owned(),
             data: None,
@@ -7402,7 +7402,7 @@ pub struct BrowserPageNavigationEvent {
 impl BrowserPageNavigationEvent {
     /// Create a `BrowserPageNavigationEvent` with the required fields set.
     #[allow(clippy::too_many_arguments, clippy::new_without_default)]
-    pub fn new(source: impl Into<BrowserEventSource>, ts: impl Into<i64>) -> Self {
+    pub fn new(ts: impl Into<i64>, source: impl Into<BrowserEventSource>) -> Self {
         Self {
             category: "page".to_owned(),
             data: None,
@@ -7484,7 +7484,7 @@ pub struct BrowserPageNavigationSettledEvent {
 impl BrowserPageNavigationSettledEvent {
     /// Create a `BrowserPageNavigationSettledEvent` with the required fields set.
     #[allow(clippy::too_many_arguments, clippy::new_without_default)]
-    pub fn new(source: impl Into<BrowserEventSource>, ts: impl Into<i64>) -> Self {
+    pub fn new(ts: impl Into<i64>, source: impl Into<BrowserEventSource>) -> Self {
         Self {
             category: "page".to_owned(),
             data: None,
@@ -7518,7 +7518,7 @@ pub struct BrowserPageTabOpenedEvent {
 impl BrowserPageTabOpenedEvent {
     /// Create a `BrowserPageTabOpenedEvent` with the required fields set.
     #[allow(clippy::too_many_arguments, clippy::new_without_default)]
-    pub fn new(source: impl Into<BrowserEventSource>, ts: impl Into<i64>) -> Self {
+    pub fn new(ts: impl Into<i64>, source: impl Into<BrowserEventSource>) -> Self {
         Self {
             category: "page".to_owned(),
             data: None,
@@ -7591,7 +7591,7 @@ pub struct BrowserPlatformApiCallEvent {
 impl BrowserPlatformApiCallEvent {
     /// Create a `BrowserPlatformApiCallEvent` with the required fields set.
     #[allow(clippy::too_many_arguments, clippy::new_without_default)]
-    pub fn new(source: impl Into<BrowserEventSource>, ts: impl Into<i64>) -> Self {
+    pub fn new(ts: impl Into<i64>, source: impl Into<BrowserEventSource>) -> Self {
         Self {
             category: "platform".to_owned(),
             data: None,
@@ -7623,10 +7623,10 @@ impl BrowserPlatformApiCallEventData {
     /// Create a `BrowserPlatformApiCallEventData` with the required fields set.
     #[allow(clippy::too_many_arguments, clippy::new_without_default)]
     pub fn new(
-        duration_ms: impl Into<f64>,
-        operation_id: impl Into<String>,
         request_id: impl Into<String>,
+        operation_id: impl Into<String>,
         status: impl Into<i64>,
+        duration_ms: impl Into<f64>,
     ) -> Self {
         Self {
             duration_ms: duration_ms.into(),
@@ -7672,13 +7672,13 @@ impl BrowserPool {
     /// Create a `BrowserPool` with the required fields set.
     #[allow(clippy::too_many_arguments, clippy::new_without_default)]
     pub fn new(
-        acquired_count: impl Into<i64>,
-        available_count: impl Into<i64>,
-        browser_pool_config: impl Into<BrowserPoolConfig>,
-        created_at: impl Into<chrono::DateTime<chrono::Utc>>,
-        extension_ids: impl Into<Vec<String>>,
         id: impl Into<String>,
+        available_count: impl Into<i64>,
+        acquired_count: impl Into<i64>,
+        created_at: impl Into<chrono::DateTime<chrono::Utc>>,
         region: impl Into<Region>,
+        browser_pool_config: impl Into<BrowserPoolConfig>,
+        extension_ids: impl Into<Vec<String>>,
     ) -> Self {
         Self {
             acquired_count: acquired_count.into(),
@@ -8342,7 +8342,7 @@ pub struct BrowserProxyErrorEvent {
 impl BrowserProxyErrorEvent {
     /// Create a `BrowserProxyErrorEvent` with the required fields set.
     #[allow(clippy::too_many_arguments, clippy::new_without_default)]
-    pub fn new(source: impl Into<BrowserEventSource>, ts: impl Into<i64>) -> Self {
+    pub fn new(ts: impl Into<i64>, source: impl Into<BrowserEventSource>) -> Self {
         Self {
             category: "network".to_owned(),
             data: None,
@@ -8401,8 +8401,8 @@ impl BrowserProxyErrorEventData {
     /// Create a `BrowserProxyErrorEventData` with the required fields set.
     #[allow(clippy::too_many_arguments, clippy::new_without_default)]
     pub fn new(
-        code: impl Into<BrowserProxyErrorEventDataCode>,
         request_id: impl Into<String>,
+        code: impl Into<BrowserProxyErrorEventDataCode>,
         status: impl Into<i64>,
     ) -> Self {
         Self {
@@ -8529,7 +8529,7 @@ pub struct BrowserReplImageContent {
 impl BrowserReplImageContent {
     /// Create a `BrowserReplImageContent` with the required fields set.
     #[allow(clippy::too_many_arguments, clippy::new_without_default)]
-    pub fn new(data_b64: impl Into<String>, mime_type: impl Into<String>) -> Self {
+    pub fn new(mime_type: impl Into<String>, data_b64: impl Into<String>) -> Self {
         Self {
             data_b64: data_b64.into(),
             mime_type: mime_type.into(),
@@ -8604,7 +8604,7 @@ pub struct BrowserReplResult {
 impl BrowserReplResult {
     /// Create a `BrowserReplResult` with the required fields set.
     #[allow(clippy::too_many_arguments, clippy::new_without_default)]
-    pub fn new(repl_id: impl Into<String>, success: impl Into<bool>) -> Self {
+    pub fn new(success: impl Into<bool>, repl_id: impl Into<String>) -> Self {
         Self {
             content: None,
             content_truncated: None,
@@ -8786,7 +8786,7 @@ pub struct BrowserServiceCrashedEvent {
 impl BrowserServiceCrashedEvent {
     /// Create a `BrowserServiceCrashedEvent` with the required fields set.
     #[allow(clippy::too_many_arguments, clippy::new_without_default)]
-    pub fn new(source: impl Into<BrowserEventSource>, ts: impl Into<i64>) -> Self {
+    pub fn new(ts: impl Into<i64>, source: impl Into<BrowserEventSource>) -> Self {
         Self {
             category: "system".to_owned(),
             data: None,
@@ -8815,8 +8815,8 @@ impl BrowserServiceCrashedEventData {
     /// Create a `BrowserServiceCrashedEventData` with the required fields set.
     #[allow(clippy::too_many_arguments, clippy::new_without_default)]
     pub fn new(
-        phase: impl Into<BrowserServiceCrashedEventDataPhase>,
         service_name: impl Into<String>,
+        phase: impl Into<BrowserServiceCrashedEventDataPhase>,
     ) -> Self {
         Self {
             phase: phase.into(),
@@ -8857,7 +8857,7 @@ pub struct BrowserSystemOomKillEvent {
 impl BrowserSystemOomKillEvent {
     /// Create a `BrowserSystemOomKillEvent` with the required fields set.
     #[allow(clippy::too_many_arguments, clippy::new_without_default)]
-    pub fn new(source: impl Into<BrowserEventSource>, ts: impl Into<i64>) -> Self {
+    pub fn new(ts: impl Into<i64>, source: impl Into<BrowserEventSource>) -> Self {
         Self {
             category: "system".to_owned(),
             data: None,
@@ -8904,8 +8904,8 @@ impl BrowserSystemOomKillEventData {
     /// Create a `BrowserSystemOomKillEventData` with the required fields set.
     #[allow(clippy::too_many_arguments, clippy::new_without_default)]
     pub fn new(
-        pid: impl Into<i64>,
         process_name: impl Into<String>,
+        pid: impl Into<i64>,
         rss_kb: impl Into<i64>,
     ) -> Self {
         Self {
@@ -8948,7 +8948,7 @@ pub struct BrowserSystemOomKillEventDataTopTask {
 impl BrowserSystemOomKillEventDataTopTask {
     /// Create a `BrowserSystemOomKillEventDataTopTask` with the required fields set.
     #[allow(clippy::too_many_arguments, clippy::new_without_default)]
-    pub fn new(name: impl Into<String>, pid: impl Into<i64>, rss_kb: impl Into<i64>) -> Self {
+    pub fn new(pid: impl Into<i64>, name: impl Into<String>, rss_kb: impl Into<i64>) -> Self {
         Self {
             name: name.into(),
             pid: pid.into(),
@@ -9352,7 +9352,7 @@ pub struct BrowserTelemetryEventEnvelope {
 impl BrowserTelemetryEventEnvelope {
     /// Create a `BrowserTelemetryEventEnvelope` with the required fields set.
     #[allow(clippy::too_many_arguments, clippy::new_without_default)]
-    pub fn new(event: impl Into<BrowserTelemetryEvent>, seq: impl Into<i64>) -> Self {
+    pub fn new(seq: impl Into<i64>, event: impl Into<BrowserTelemetryEvent>) -> Self {
         Self {
             event: event.into(),
             seq: seq.into(),
@@ -9440,7 +9440,7 @@ pub struct BrowserViewportUpdate {
 impl BrowserViewportUpdate {
     /// Create a `BrowserViewportUpdate` with the required fields set.
     #[allow(clippy::too_many_arguments, clippy::new_without_default)]
-    pub fn new(height: impl Into<i64>, width: impl Into<i64>) -> Self {
+    pub fn new(width: impl Into<i64>, height: impl Into<i64>) -> Self {
         Self {
             height: height.into(),
             refresh_rate: None,
@@ -9498,13 +9498,13 @@ impl CardVaultItem {
     /// Create a `CardVaultItem` with the required fields set.
     #[allow(clippy::too_many_arguments, clippy::new_without_default)]
     pub fn new(
-        available_expansions: impl Into<Vec<AvailableVaultItemExpansion>>,
-        available_operations: impl Into<Vec<AvailableVaultItemOperation>>,
-        created_at: impl Into<chrono::DateTime<chrono::Utc>>,
         id: impl Into<String>,
         key: impl Into<String>,
         spec: impl Into<CardVaultItemSpec>,
         state: impl Into<CardVaultItemState>,
+        available_operations: impl Into<Vec<AvailableVaultItemOperation>>,
+        available_expansions: impl Into<Vec<AvailableVaultItemExpansion>>,
+        created_at: impl Into<chrono::DateTime<chrono::Utc>>,
         updated_at: impl Into<chrono::DateTime<chrono::Utc>>,
     ) -> Self {
         Self {
@@ -9857,13 +9857,13 @@ impl LinkCardVaultItemSpec {
     /// Create a `LinkCardVaultItemSpec` with the required fields set.
     #[allow(clippy::too_many_arguments, clippy::new_without_default)]
     pub fn new(
+        wallet: impl Into<String>,
+        payment_method_id: impl Into<String>,
         amount: impl Into<i64>,
-        context: impl Into<String>,
         currency: impl Into<String>,
         merchant_name: impl Into<String>,
         merchant_url: impl Into<String>,
-        payment_method_id: impl Into<String>,
-        wallet: impl Into<String>,
+        context: impl Into<String>,
     ) -> Self {
         Self {
             amount: amount.into(),
@@ -9938,9 +9938,9 @@ impl LinkTotal {
     /// Create a `LinkTotal` with the required fields set.
     #[allow(clippy::too_many_arguments, clippy::new_without_default)]
     pub fn new(
-        amount: impl Into<i64>,
-        display_text: impl Into<String>,
         type_: impl Into<String>,
+        display_text: impl Into<String>,
+        amount: impl Into<i64>,
     ) -> Self {
         Self {
             amount: amount.into(),
@@ -9975,11 +9975,11 @@ impl KernelCardVaultItemSpec {
     /// Create a `KernelCardVaultItemSpec` with the required fields set.
     #[allow(clippy::too_many_arguments, clippy::new_without_default)]
     pub fn new(
+        wallet: impl Into<String>,
         amount: impl Into<i64>,
         currency: impl Into<String>,
         merchant_name: impl Into<String>,
         merchant_url: impl Into<String>,
-        wallet: impl Into<String>,
     ) -> Self {
         Self {
             amount: amount.into(),
@@ -10244,10 +10244,10 @@ impl ConfigRegistryAnalysis {
     /// Create a `ConfigRegistryAnalysis` with the required fields set.
     #[allow(clippy::too_many_arguments, clippy::new_without_default)]
     pub fn new(
-        created_at: impl Into<chrono::DateTime<chrono::Utc>>,
-        expires_at: impl Into<chrono::DateTime<chrono::Utc>>,
         id: impl Into<String>,
         status: impl Into<ConfigRegistryAnalysisStatus>,
+        created_at: impl Into<chrono::DateTime<chrono::Utc>>,
+        expires_at: impl Into<chrono::DateTime<chrono::Utc>>,
     ) -> Self {
         Self {
             created_at: created_at.into(),
@@ -10342,7 +10342,7 @@ pub struct ConfigRegistryAnalysisInProgressError {
 impl ConfigRegistryAnalysisInProgressError {
     /// Create a `ConfigRegistryAnalysisInProgressError` with the required fields set.
     #[allow(clippy::too_many_arguments, clippy::new_without_default)]
-    pub fn new(analysis_id: impl Into<String>, message: impl Into<String>) -> Self {
+    pub fn new(message: impl Into<String>, analysis_id: impl Into<String>) -> Self {
         Self {
             analysis_id: analysis_id.into(),
             code: "analysis_in_progress".to_owned(),
@@ -10361,8 +10361,8 @@ impl ConfigRegistryAnalysisSummary {
     /// Create a `ConfigRegistryAnalysisSummary` with the required fields set.
     #[allow(clippy::too_many_arguments, clippy::new_without_default)]
     pub fn new(
-        analysis: impl Into<ConfigRegistryAnalysis>,
         target: impl Into<ConfigRegistryTarget>,
+        analysis: impl Into<ConfigRegistryAnalysis>,
     ) -> Self {
         Self {
             analysis: analysis.into(),
@@ -10388,9 +10388,9 @@ impl ConfigRegistryTarget {
     /// Create a `ConfigRegistryTarget` with the required fields set.
     #[allow(clippy::too_many_arguments, clippy::new_without_default)]
     pub fn new(
-        domain: impl Into<String>,
-        host: impl Into<String>,
         normalized: impl Into<String>,
+        host: impl Into<String>,
+        domain: impl Into<String>,
     ) -> Self {
         Self {
             domain: domain.into(),
@@ -10427,9 +10427,9 @@ impl ConfigRegistryBrowser {
     /// Create a `ConfigRegistryBrowser` with the required fields set.
     #[allow(clippy::too_many_arguments, clippy::new_without_default)]
     pub fn new(
-        gpu: impl Into<bool>,
-        headless: impl Into<bool>,
         stealth: impl Into<bool>,
+        headless: impl Into<bool>,
+        gpu: impl Into<bool>,
         viewport: impl Into<BrowserViewport>,
     ) -> Self {
         Self {
@@ -10492,13 +10492,13 @@ impl ConfigRegistryEvidence {
     /// Create a `ConfigRegistryEvidence` with the required fields set.
     #[allow(clippy::too_many_arguments, clippy::new_without_default)]
     pub fn new(
+        success_rate: impl Into<f64>,
+        sample_size: impl Into<i64>,
         accessed: impl Into<i64>,
         blocked: impl Into<i64>,
         inconclusive: impl Into<i64>,
-        last_observed_at: impl Into<chrono::DateTime<chrono::Utc>>,
         run_count: impl Into<i64>,
-        sample_size: impl Into<i64>,
-        success_rate: impl Into<f64>,
+        last_observed_at: impl Into<chrono::DateTime<chrono::Utc>>,
     ) -> Self {
         Self {
             accessed: accessed.into(),
@@ -10628,10 +10628,10 @@ impl ConfigRegistryRecommendation {
     #[allow(clippy::too_many_arguments, clippy::new_without_default)]
     pub fn new(
         browser: impl Into<ConfigRegistryBrowser>,
-        evidence: impl Into<ConfigRegistryEvidence>,
+        proxy: impl Into<ConfigRegistryProxy>,
         match_scope: impl Into<ConfigRegistryRecommendationMatchScope>,
         matched_target: impl Into<String>,
-        proxy: impl Into<ConfigRegistryProxy>,
+        evidence: impl Into<ConfigRegistryEvidence>,
     ) -> Self {
         Self {
             browser: browser.into(),
@@ -11043,10 +11043,10 @@ impl ConfigRegistryRecommendationSummary {
     /// Create a `ConfigRegistryRecommendationSummary` with the required fields set.
     #[allow(clippy::too_many_arguments, clippy::new_without_default)]
     pub fn new(
+        target: impl Into<String>,
         analysis_id: impl Into<String>,
         analysis_status: impl Into<ConfigRegistryAnalysisStatus>,
         last_requested_at: impl Into<chrono::DateTime<chrono::Utc>>,
-        target: impl Into<String>,
     ) -> Self {
         Self {
             analysis_id: analysis_id.into(),
@@ -11182,9 +11182,9 @@ impl CreateAuditLogExportDestinationRequest {
     /// Create a `CreateAuditLogExportDestinationRequest` with the required fields set.
     #[allow(clippy::too_many_arguments, clippy::new_without_default)]
     pub fn new(
+        region: impl Into<String>,
         bucket: impl Into<String>,
         prefix: impl Into<String>,
-        region: impl Into<String>,
         role_arn: impl Into<String>,
     ) -> Self {
         Self {
@@ -11262,8 +11262,8 @@ impl CreateCredentialRequest {
     /// Create a `CreateCredentialRequest` with the required fields set.
     #[allow(clippy::too_many_arguments, clippy::new_without_default)]
     pub fn new(
-        domain: impl Into<String>,
         name: impl Into<String>,
+        domain: impl Into<String>,
         values: impl Into<std::collections::HashMap<String, String>>,
     ) -> Self {
         Self {
@@ -11361,11 +11361,11 @@ impl CreatedApiKey {
     /// Create a `CreatedApiKey` with the required fields set.
     #[allow(clippy::too_many_arguments, clippy::new_without_default)]
     pub fn new(
+        id: impl Into<String>,
+        name: impl Into<String>,
         created_at: impl Into<chrono::DateTime<chrono::Utc>>,
         created_by: impl Into<ApiKeyCreator>,
-        id: impl Into<String>,
         masked_key: impl Into<String>,
-        name: impl Into<String>,
         key: impl Into<String>,
     ) -> Self {
         Self {
@@ -11434,10 +11434,10 @@ impl Credential {
     /// Create a `Credential` with the required fields set.
     #[allow(clippy::too_many_arguments, clippy::new_without_default)]
     pub fn new(
-        created_at: impl Into<chrono::DateTime<chrono::Utc>>,
-        domain: impl Into<String>,
         id: impl Into<String>,
         name: impl Into<String>,
+        domain: impl Into<String>,
+        created_at: impl Into<chrono::DateTime<chrono::Utc>>,
         updated_at: impl Into<chrono::DateTime<chrono::Utc>>,
     ) -> Self {
         Self {
@@ -11498,13 +11498,13 @@ impl CredentialAccountVaultItem {
     /// Create a `CredentialAccountVaultItem` with the required fields set.
     #[allow(clippy::too_many_arguments, clippy::new_without_default)]
     pub fn new(
-        available_expansions: impl Into<Vec<AvailableVaultItemExpansion>>,
-        available_operations: impl Into<Vec<AvailableVaultItemOperation>>,
-        created_at: impl Into<chrono::DateTime<chrono::Utc>>,
         id: impl Into<String>,
         key: impl Into<String>,
         spec: impl Into<OnePasswordCredentialAccountSpec>,
         state: impl Into<OnePasswordCredentialAccountState>,
+        available_operations: impl Into<Vec<AvailableVaultItemOperation>>,
+        available_expansions: impl Into<Vec<AvailableVaultItemExpansion>>,
+        created_at: impl Into<chrono::DateTime<chrono::Utc>>,
         updated_at: impl Into<chrono::DateTime<chrono::Utc>>,
     ) -> Self {
         Self {
@@ -11672,8 +11672,8 @@ impl CredentialCollectionAction {
     /// Create a `CredentialCollectionAction` with the required fields set.
     #[allow(clippy::too_many_arguments, clippy::new_without_default)]
     pub fn new(
-        expires_at: impl Into<chrono::DateTime<chrono::Utc>>,
         url: impl Into<String>,
+        expires_at: impl Into<chrono::DateTime<chrono::Utc>>,
     ) -> Self {
         Self {
             expires_at: expires_at.into(),
@@ -11713,11 +11713,11 @@ impl CredentialProvider {
     /// Create a `CredentialProvider` with the required fields set.
     #[allow(clippy::too_many_arguments, clippy::new_without_default)]
     pub fn new(
-        created_at: impl Into<chrono::DateTime<chrono::Utc>>,
-        enabled: impl Into<bool>,
         id: impl Into<String>,
         name: impl Into<String>,
+        enabled: impl Into<bool>,
         priority: impl Into<i64>,
+        created_at: impl Into<chrono::DateTime<chrono::Utc>>,
         updated_at: impl Into<chrono::DateTime<chrono::Utc>>,
     ) -> Self {
         Self {
@@ -11760,10 +11760,10 @@ impl CredentialProviderItem {
     #[allow(clippy::too_many_arguments, clippy::new_without_default)]
     pub fn new(
         id: impl Into<String>,
-        path: impl Into<String>,
         title: impl Into<String>,
         vault_id: impl Into<String>,
         vault_name: impl Into<String>,
+        path: impl Into<String>,
     ) -> Self {
         Self {
             id: id.into(),
@@ -11895,9 +11895,9 @@ impl CredentialVaultFieldDefinition {
     #[allow(clippy::too_many_arguments, clippy::new_without_default)]
     pub fn new(
         name: impl Into<String>,
+        type_: impl Into<CredentialVaultFieldType>,
         required: impl Into<bool>,
         sensitive: impl Into<bool>,
-        type_: impl Into<CredentialVaultFieldType>,
     ) -> Self {
         Self {
             label: None,
@@ -12039,15 +12039,15 @@ impl CredentialVaultItem {
     /// Create a `CredentialVaultItem` with the required fields set.
     #[allow(clippy::too_many_arguments, clippy::new_without_default)]
     pub fn new(
-        available_expansions: impl Into<Vec<AvailableVaultItemExpansion>>,
-        available_operations: impl Into<Vec<AvailableVaultItemOperation>>,
-        created_at: impl Into<chrono::DateTime<chrono::Utc>>,
         id: impl Into<String>,
         key: impl Into<String>,
+        version: impl Into<i64>,
         spec: impl Into<CredentialVaultItemSpec>,
         state: impl Into<CredentialVaultItemState>,
+        available_operations: impl Into<Vec<AvailableVaultItemOperation>>,
+        available_expansions: impl Into<Vec<AvailableVaultItemExpansion>>,
+        created_at: impl Into<chrono::DateTime<chrono::Utc>>,
         updated_at: impl Into<chrono::DateTime<chrono::Utc>>,
-        version: impl Into<i64>,
     ) -> Self {
         Self {
             action: None,
@@ -12121,7 +12121,7 @@ pub struct OnePasswordAccessApprovalAction {
 impl OnePasswordAccessApprovalAction {
     /// Create a `OnePasswordAccessApprovalAction` with the required fields set.
     #[allow(clippy::too_many_arguments, clippy::new_without_default)]
-    pub fn new(instructions: impl Into<String>, url: impl Into<String>) -> Self {
+    pub fn new(url: impl Into<String>, instructions: impl Into<String>) -> Self {
         Self {
             instructions: instructions.into(),
             name: "1password_access_approval".to_owned(),
@@ -12248,8 +12248,8 @@ impl OnePasswordCredentialRequests {
     /// Create a `OnePasswordCredentialRequests` with the required fields set.
     #[allow(clippy::too_many_arguments, clippy::new_without_default)]
     pub fn new(
-        entries: impl Into<Vec<OnePasswordCredentialRequestEntry>>,
         version: impl Into<i64>,
+        entries: impl Into<Vec<OnePasswordCredentialRequestEntry>>,
     ) -> Self {
         Self {
             entries: entries.into(),
@@ -12275,8 +12275,8 @@ impl OnePasswordCredentialRequestEntry {
     /// Create a `OnePasswordCredentialRequestEntry` with the required fields set.
     #[allow(clippy::too_many_arguments, clippy::new_without_default)]
     pub fn new(
-        parameters: impl Into<OnePasswordCredentialRequestEntryParameters>,
         type_: impl Into<String>,
+        parameters: impl Into<OnePasswordCredentialRequestEntryParameters>,
     ) -> Self {
         Self {
             keywords: None,
@@ -12394,8 +12394,8 @@ impl KernelCredentialVaultItemState {
     /// Create a `KernelCredentialVaultItemState` with the required fields set.
     #[allow(clippy::too_many_arguments, clippy::new_without_default)]
     pub fn new(
-        fields: impl Into<std::collections::HashMap<String, CredentialVaultFieldState>>,
         status: impl Into<KernelCredentialVaultItemStateStatus>,
+        fields: impl Into<std::collections::HashMap<String, CredentialVaultFieldState>>,
     ) -> Self {
         Self {
             fields: fields.into(),
@@ -12479,9 +12479,9 @@ impl OnePasswordAccessRequestState {
     /// Create a `OnePasswordAccessRequestState` with the required fields set.
     #[allow(clippy::too_many_arguments, clippy::new_without_default)]
     pub fn new(
-        has_autofill_token: impl Into<bool>,
         id: impl Into<String>,
         state: impl Into<String>,
+        has_autofill_token: impl Into<bool>,
     ) -> Self {
         Self {
             created_at: None,
@@ -12898,7 +12898,7 @@ pub struct CredentialVaultItemUpdateRequest {
 impl CredentialVaultItemUpdateRequest {
     /// Create a `CredentialVaultItemUpdateRequest` with the required fields set.
     #[allow(clippy::too_many_arguments, clippy::new_without_default)]
-    pub fn new(spec: impl Into<CredentialVaultItemSpecUpdate>, version: impl Into<i64>) -> Self {
+    pub fn new(version: impl Into<i64>, spec: impl Into<CredentialVaultItemSpecUpdate>) -> Self {
         Self {
             expected_item_id: None,
             spec: spec.into(),
@@ -12962,9 +12962,9 @@ impl CustomWebMcpDefinition {
     #[allow(clippy::too_many_arguments, clippy::new_without_default)]
     pub fn new(
         id: impl Into<String>,
+        namespace: impl Into<String>,
         kind: impl Into<String>,
         match_: impl Into<CustomWebMcpMatch>,
-        namespace: impl Into<String>,
         tool: impl Into<WebMcpToolMetadata>,
     ) -> Self {
         Self {
@@ -13023,9 +13023,9 @@ impl WebMcpToolMetadata {
     /// Create a `WebMcpToolMetadata` with the required fields set.
     #[allow(clippy::too_many_arguments, clippy::new_without_default)]
     pub fn new(
+        name: impl Into<String>,
         description: impl Into<String>,
         input_schema: impl Into<std::collections::HashMap<String, serde_json::Value>>,
-        name: impl Into<String>,
     ) -> Self {
         Self {
             annotations: None,
@@ -13203,9 +13203,9 @@ impl Deployment {
     /// Create a `Deployment` with the required fields set.
     #[allow(clippy::too_many_arguments, clippy::new_without_default)]
     pub fn new(
-        created_at: impl Into<chrono::DateTime<chrono::Utc>>,
         id: impl Into<String>,
         status: impl Into<DeploymentStatus>,
+        created_at: impl Into<chrono::DateTime<chrono::Utc>>,
     ) -> Self {
         Self {
             created_at: created_at.into(),
@@ -13389,8 +13389,8 @@ impl ErrorEvent {
     /// Create a `ErrorEvent` with the required fields set.
     #[allow(clippy::too_many_arguments, clippy::new_without_default)]
     pub fn new(
-        error: impl Into<ErrorModel>,
         timestamp: impl Into<chrono::DateTime<chrono::Utc>>,
+        error: impl Into<ErrorModel>,
     ) -> Self {
         Self {
             error: error.into(),
@@ -13497,9 +13497,9 @@ impl DeploymentSource {
     /// Create a `DeploymentSource` with the required fields set.
     #[allow(clippy::too_many_arguments, clippy::new_without_default)]
     pub fn new(
-        entrypoint: impl Into<String>,
-        ref_: impl Into<String>,
         url: impl Into<String>,
+        ref_: impl Into<String>,
+        entrypoint: impl Into<String>,
     ) -> Self {
         Self {
             auth: None,
@@ -13567,10 +13567,10 @@ impl DiscoveredField {
     /// Create a `DiscoveredField` with the required fields set.
     #[allow(clippy::too_many_arguments, clippy::new_without_default)]
     pub fn new(
-        label: impl Into<String>,
         name: impl Into<String>,
-        selector: impl Into<String>,
         type_: impl Into<DiscoveredFieldType>,
+        label: impl Into<String>,
+        selector: impl Into<String>,
     ) -> Self {
         Self {
             hint: None,
@@ -13698,8 +13698,8 @@ impl Extension {
     /// Create a `Extension` with the required fields set.
     #[allow(clippy::too_many_arguments, clippy::new_without_default)]
     pub fn new(
-        created_at: impl Into<chrono::DateTime<chrono::Utc>>,
         id: impl Into<String>,
+        created_at: impl Into<chrono::DateTime<chrono::Utc>>,
         size_bytes: impl Into<i64>,
     ) -> Self {
         Self {
@@ -13739,12 +13739,12 @@ impl FileInfo {
     /// Create a `FileInfo` with the required fields set.
     #[allow(clippy::too_many_arguments, clippy::new_without_default)]
     pub fn new(
-        is_dir: impl Into<bool>,
-        mod_time: impl Into<chrono::DateTime<chrono::Utc>>,
-        mode: impl Into<String>,
         name: impl Into<String>,
         path: impl Into<String>,
         size_bytes: impl Into<i64>,
+        is_dir: impl Into<bool>,
+        mod_time: impl Into<chrono::DateTime<chrono::Utc>>,
+        mode: impl Into<String>,
     ) -> Self {
         Self {
             is_dir: is_dir.into(),
@@ -13777,7 +13777,7 @@ pub struct FileSystemEvent {
 impl FileSystemEvent {
     /// Create a `FileSystemEvent` with the required fields set.
     #[allow(clippy::too_many_arguments, clippy::new_without_default)]
-    pub fn new(path: impl Into<String>, type_: impl Into<FileSystemEventType>) -> Self {
+    pub fn new(type_: impl Into<FileSystemEventType>, path: impl Into<String>) -> Self {
         Self {
             is_dir: None,
             name: None,
@@ -13907,8 +13907,8 @@ impl FillVaultItemOperationResult {
     /// Create a `FillVaultItemOperationResult` with the required fields set.
     #[allow(clippy::too_many_arguments, clippy::new_without_default)]
     pub fn new(
-        fields: impl Into<Vec<VaultFillFieldResult>>,
         status: impl Into<FillVaultItemOperationResultStatus>,
+        fields: impl Into<Vec<VaultFillFieldResult>>,
     ) -> Self {
         Self {
             fields: fields.into(),
@@ -14081,12 +14081,12 @@ impl Invocation {
     /// Create a `Invocation` with the required fields set.
     #[allow(clippy::too_many_arguments, clippy::new_without_default)]
     pub fn new(
-        action_name: impl Into<String>,
-        app_name: impl Into<String>,
         id: impl Into<String>,
+        app_name: impl Into<String>,
+        version: impl Into<String>,
+        action_name: impl Into<String>,
         started_at: impl Into<chrono::DateTime<chrono::Utc>>,
         status: impl Into<InvocationStatus>,
-        version: impl Into<String>,
     ) -> Self {
         Self {
             action_name: action_name.into(),
@@ -14255,8 +14255,8 @@ impl InvokeResponse {
     /// Create a `InvokeResponse` with the required fields set.
     #[allow(clippy::too_many_arguments, clippy::new_without_default)]
     pub fn new(
-        action_name: impl Into<String>,
         id: impl Into<String>,
+        action_name: impl Into<String>,
         status: impl Into<InvokeResponseStatus>,
     ) -> Self {
         Self {
@@ -14646,10 +14646,10 @@ impl LoginResponse {
     /// Create a `LoginResponse` with the required fields set.
     #[allow(clippy::too_many_arguments, clippy::new_without_default)]
     pub fn new(
-        flow_expires_at: impl Into<chrono::DateTime<chrono::Utc>>,
+        id: impl Into<String>,
         flow_type: impl Into<LoginResponseFlowType>,
         hosted_url: impl Into<String>,
-        id: impl Into<String>,
+        flow_expires_at: impl Into<chrono::DateTime<chrono::Utc>>,
     ) -> Self {
         Self {
             flow_expires_at: flow_expires_at.into(),
@@ -14690,7 +14690,7 @@ pub struct MfaOption {
 impl MfaOption {
     /// Create a `MfaOption` with the required fields set.
     #[allow(clippy::too_many_arguments, clippy::new_without_default)]
-    pub fn new(label: impl Into<String>, type_: impl Into<MfaType>) -> Self {
+    pub fn new(type_: impl Into<MfaType>, label: impl Into<String>) -> Self {
         Self {
             description: None,
             label: label.into(),
@@ -14879,12 +14879,12 @@ impl ManagedAuth {
     /// Create a `ManagedAuth` with the required fields set.
     #[allow(clippy::too_many_arguments, clippy::new_without_default)]
     pub fn new(
-        domain: impl Into<String>,
         id: impl Into<String>,
         profile_name: impl Into<String>,
-        record_session: impl Into<bool>,
-        save_credentials: impl Into<bool>,
+        domain: impl Into<String>,
         status: impl Into<ManagedAuthStatus>,
+        save_credentials: impl Into<bool>,
+        record_session: impl Into<bool>,
     ) -> Self {
         Self {
             allowed_domains: None,
@@ -15011,8 +15011,8 @@ impl ManagedAuthChoice {
     #[allow(clippy::too_many_arguments, clippy::new_without_default)]
     pub fn new(
         id: impl Into<String>,
-        label: impl Into<String>,
         type_: impl Into<ManagedAuthChoiceType>,
+        label: impl Into<String>,
     ) -> Self {
         Self {
             context: None,
@@ -15093,9 +15093,9 @@ impl ManagedAuthField {
     #[allow(clippy::too_many_arguments, clippy::new_without_default)]
     pub fn new(
         id: impl Into<String>,
-        reason: impl Into<ManagedAuthFieldReason>,
         ref_: impl Into<String>,
         type_: impl Into<ManagedAuthFieldType>,
+        reason: impl Into<ManagedAuthFieldReason>,
     ) -> Self {
         Self {
             hint: None,
@@ -15189,9 +15189,9 @@ impl SsoButton {
     /// Create a `SsoButton` with the required fields set.
     #[allow(clippy::too_many_arguments, clippy::new_without_default)]
     pub fn new(
-        label: impl Into<String>,
-        provider: impl Into<String>,
         selector: impl Into<String>,
+        provider: impl Into<String>,
+        label: impl Into<String>,
     ) -> Self {
         Self {
             label: label.into(),
@@ -15511,9 +15511,9 @@ impl ManagedAuthStateEvent {
     /// Create a `ManagedAuthStateEvent` with the required fields set.
     #[allow(clippy::too_many_arguments, clippy::new_without_default)]
     pub fn new(
+        timestamp: impl Into<chrono::DateTime<chrono::Utc>>,
         flow_status: impl Into<ManagedAuthStateEventFlowStatus>,
         flow_step: impl Into<ManagedAuthStateEventFlowStep>,
-        timestamp: impl Into<chrono::DateTime<chrono::Utc>>,
     ) -> Self {
         Self {
             choices: None,
@@ -15660,10 +15660,10 @@ impl ManagedAuthTimelineEvent {
     /// Create a `ManagedAuthTimelineEvent` with the required fields set.
     #[allow(clippy::too_many_arguments, clippy::new_without_default)]
     pub fn new(
-        id: impl Into<String>,
-        status: impl Into<ManagedAuthTimelineEventStatus>,
-        timestamp: impl Into<chrono::DateTime<chrono::Utc>>,
         type_: impl Into<ManagedAuthTimelineEventType>,
+        id: impl Into<String>,
+        timestamp: impl Into<chrono::DateTime<chrono::Utc>>,
+        status: impl Into<ManagedAuthTimelineEventStatus>,
     ) -> Self {
         Self {
             browser_session_id: None,
@@ -15808,8 +15808,8 @@ impl Default for ManagedAuthUpdateRequest {
 #[derive(Debug, Clone, PartialEq, serde::Serialize, serde::Deserialize)]
 pub struct MousePositionResponse {
     /// Y coordinate of the cursor
-    #[serde(default, skip_serializing_if = "Option::is_none")]
-    pub r#true: Option<i64>,
+    #[serde(default)]
+    pub y: i64,
     /// X coordinate of the cursor
     #[serde(default)]
     pub x: i64,
@@ -15818,9 +15818,9 @@ pub struct MousePositionResponse {
 impl MousePositionResponse {
     /// Create a `MousePositionResponse` with the required fields set.
     #[allow(clippy::too_many_arguments, clippy::new_without_default)]
-    pub fn new(x: impl Into<i64>) -> Self {
+    pub fn new(x: impl Into<i64>, y: impl Into<i64>) -> Self {
         Self {
-            r#true: None,
+            y: y.into(),
             x: x.into(),
         }
     }
@@ -15839,7 +15839,7 @@ pub struct MovePathRequest {
 impl MovePathRequest {
     /// Create a `MovePathRequest` with the required fields set.
     #[allow(clippy::too_many_arguments, clippy::new_without_default)]
-    pub fn new(dest_path: impl Into<String>, src_path: impl Into<String>) -> Self {
+    pub fn new(src_path: impl Into<String>, dest_path: impl Into<String>) -> Self {
         Self {
             dest_path: dest_path.into(),
             src_path: src_path.into(),
@@ -15885,12 +15885,12 @@ impl OtlpDestination {
     /// Create a `OtlpDestination` with the required fields set.
     #[allow(clippy::too_many_arguments, clippy::new_without_default)]
     pub fn new(
-        consecutive_failures: impl Into<i64>,
-        created_at: impl Into<chrono::DateTime<chrono::Utc>>,
-        endpoint: impl Into<String>,
-        headers: impl Into<std::collections::HashMap<String, String>>,
         id: impl Into<String>,
         name: impl Into<String>,
+        endpoint: impl Into<String>,
+        headers: impl Into<std::collections::HashMap<String, String>>,
+        consecutive_failures: impl Into<i64>,
+        created_at: impl Into<chrono::DateTime<chrono::Utc>>,
         updated_at: impl Into<chrono::DateTime<chrono::Utc>>,
     ) -> Self {
         Self {
@@ -15929,7 +15929,7 @@ pub struct OtlpDestinationCreateRequest {
 impl OtlpDestinationCreateRequest {
     /// Create a `OtlpDestinationCreateRequest` with the required fields set.
     #[allow(clippy::too_many_arguments, clippy::new_without_default)]
-    pub fn new(endpoint: impl Into<String>, name: impl Into<String>) -> Self {
+    pub fn new(name: impl Into<String>, endpoint: impl Into<String>) -> Self {
         Self {
             description: None,
             endpoint: endpoint.into(),
@@ -16248,20 +16248,20 @@ impl OrgEntitlementFeatures {
     /// Create a `OrgEntitlementFeatures` with the required fields set.
     #[allow(clippy::too_many_arguments, clippy::new_without_default)]
     pub fn new(
+        profiles: impl Into<OrgEntitlementFeature>,
+        file_io: impl Into<OrgEntitlementFeature>,
+        browser_replays: impl Into<OrgBrowserReplayEntitlement>,
         browser_extensions: impl Into<OrgBrowserExtensionEntitlement>,
         browser_pools: impl Into<OrgEntitlementFeature>,
-        browser_replays: impl Into<OrgBrowserReplayEntitlement>,
-        credential_providers: impl Into<OrgEntitlementFeature>,
-        credentials: impl Into<OrgEntitlementFeature>,
-        custom_proxies: impl Into<OrgEntitlementFeature>,
-        file_io: impl Into<OrgEntitlementFeature>,
-        gpu: impl Into<OrgEntitlementFeature>,
         managed_auth: impl Into<OrgManagedAuthEntitlement>,
+        credentials: impl Into<OrgEntitlementFeature>,
+        credential_providers: impl Into<OrgEntitlementFeature>,
         managed_proxies: impl Into<OrgEntitlementFeature>,
-        profiles: impl Into<OrgEntitlementFeature>,
+        custom_proxies: impl Into<OrgEntitlementFeature>,
         proxy_bypass_hosts: impl Into<OrgEntitlementFeature>,
-        search: impl Into<OrgEntitlementFeature>,
+        gpu: impl Into<OrgEntitlementFeature>,
         vaults: impl Into<OrgEntitlementFeature>,
+        search: impl Into<OrgEntitlementFeature>,
     ) -> Self {
         Self {
             browser_extensions: browser_extensions.into(),
@@ -16306,9 +16306,9 @@ impl OrgManagedAuthEntitlement {
     #[allow(clippy::too_many_arguments, clippy::new_without_default)]
     pub fn new(
         enabled: impl Into<bool>,
+        health_check_interval_min_seconds: impl Into<i64>,
         health_check_interval_default_seconds: impl Into<i64>,
         health_check_interval_max_seconds: impl Into<i64>,
-        health_check_interval_min_seconds: impl Into<i64>,
     ) -> Self {
         Self {
             enabled: enabled.into(),
@@ -16340,9 +16340,9 @@ impl OrgEntitlementLimits {
     /// Create a `OrgEntitlementLimits` with the required fields set.
     #[allow(clippy::too_many_arguments, clippy::new_without_default)]
     pub fn new(
-        default_max_concurrent_invocations_per_app: impl Into<i64>,
         max_concurrent_browsers: impl Into<i64>,
         max_concurrent_invocations: impl Into<i64>,
+        default_max_concurrent_invocations_per_app: impl Into<i64>,
     ) -> Self {
         Self {
             default_max_concurrent_invocations_per_app: default_max_concurrent_invocations_per_app
@@ -16377,8 +16377,8 @@ impl OrgEntitlementPlan {
     /// Create a `OrgEntitlementPlan` with the required fields set.
     #[allow(clippy::too_many_arguments, clippy::new_without_default)]
     pub fn new(
-        effective_id: impl Into<OrgEntitlementPlanEffectiveId>,
         id: impl Into<OrgEntitlementPlanId>,
+        effective_id: impl Into<OrgEntitlementPlanEffectiveId>,
         is_trialing: impl Into<bool>,
     ) -> Self {
         Self {
@@ -16433,9 +16433,9 @@ impl OrgEntitlements {
     /// Create a `OrgEntitlements` with the required fields set.
     #[allow(clippy::too_many_arguments, clippy::new_without_default)]
     pub fn new(
+        plan: impl Into<OrgEntitlementPlan>,
         features: impl Into<OrgEntitlementFeatures>,
         limits: impl Into<OrgEntitlementLimits>,
-        plan: impl Into<OrgEntitlementPlan>,
     ) -> Self {
         Self {
             features: features.into(),
@@ -16481,8 +16481,8 @@ impl OrgLimits {
     #[allow(clippy::too_many_arguments, clippy::new_without_default)]
     pub fn new(
         auth_connections_used: impl Into<i64>,
-        min_health_check_interval_seconds: impl Into<i64>,
         vaults_used: impl Into<i64>,
+        min_health_check_interval_seconds: impl Into<i64>,
     ) -> Self {
         Self {
             auth_connections_used: auth_connections_used.into(),
@@ -16540,8 +16540,8 @@ impl VaultCheckoutContext {
     #[allow(clippy::too_many_arguments, clippy::new_without_default)]
     pub fn new(
         browser_id: impl Into<String>,
-        environment: impl Into<VaultCheckoutContextEnvironment>,
         merchant_origin: impl Into<String>,
+        environment: impl Into<VaultCheckoutContextEnvironment>,
     ) -> Self {
         Self {
             browser_id: browser_id.into(),
@@ -16681,7 +16681,7 @@ pub struct ProcessResizeRequest {
 impl ProcessResizeRequest {
     /// Create a `ProcessResizeRequest` with the required fields set.
     #[allow(clippy::too_many_arguments, clippy::new_without_default)]
-    pub fn new(cols: impl Into<i64>, rows: impl Into<i64>) -> Self {
+    pub fn new(rows: impl Into<i64>, cols: impl Into<i64>) -> Self {
         Self {
             cols: cols.into(),
             rows: rows.into(),
@@ -16964,10 +16964,10 @@ impl Project {
     /// Create a `Project` with the required fields set.
     #[allow(clippy::too_many_arguments, clippy::new_without_default)]
     pub fn new(
-        created_at: impl Into<chrono::DateTime<chrono::Utc>>,
         id: impl Into<String>,
         name: impl Into<String>,
         status: impl Into<ProjectStatus>,
+        created_at: impl Into<chrono::DateTime<chrono::Utc>>,
         updated_at: impl Into<chrono::DateTime<chrono::Utc>>,
     ) -> Self {
         Self {
@@ -17209,8 +17209,8 @@ pub struct ScreenshotRegion {
     #[serde(default)]
     pub height: i64,
     /// Y coordinate of the region's top-left corner
-    #[serde(default, skip_serializing_if = "Option::is_none")]
-    pub r#true: Option<i64>,
+    #[serde(default)]
+    pub y: i64,
     /// Width of the region in pixels
     #[serde(default)]
     pub width: i64,
@@ -17222,10 +17222,15 @@ pub struct ScreenshotRegion {
 impl ScreenshotRegion {
     /// Create a `ScreenshotRegion` with the required fields set.
     #[allow(clippy::too_many_arguments, clippy::new_without_default)]
-    pub fn new(height: impl Into<i64>, width: impl Into<i64>, x: impl Into<i64>) -> Self {
+    pub fn new(
+        x: impl Into<i64>,
+        y: impl Into<i64>,
+        width: impl Into<i64>,
+        height: impl Into<i64>,
+    ) -> Self {
         Self {
             height: height.into(),
-            r#true: None,
+            y: y.into(),
             width: width.into(),
             x: x.into(),
         }
@@ -17287,14 +17292,14 @@ impl Search {
     /// Create a `Search` with the required fields set.
     #[allow(clippy::too_many_arguments, clippy::new_without_default)]
     pub fn new(
-        attempts: impl Into<Vec<SearchAttempt>>,
-        expires_at: impl Into<chrono::DateTime<chrono::Utc>>,
         id: impl Into<String>,
+        expires_at: impl Into<chrono::DateTime<chrono::Utc>>,
         provider: impl Into<String>,
-        query: impl Into<String>,
         results: impl Into<Vec<SearchResult>>,
-        usage: impl Into<SearchUsage>,
+        attempts: impl Into<Vec<SearchAttempt>>,
         warnings: impl Into<Vec<SearchWarning>>,
+        query: impl Into<String>,
+        usage: impl Into<SearchUsage>,
     ) -> Self {
         Self {
             answer: None,
@@ -17329,9 +17334,9 @@ impl SearchAttempt {
     /// Create a `SearchAttempt` with the required fields set.
     #[allow(clippy::too_many_arguments, clippy::new_without_default)]
     pub fn new(
-        duration_ms: impl Into<i64>,
-        outcome: impl Into<SearchAttemptOutcome>,
         provider: impl Into<String>,
+        outcome: impl Into<SearchAttemptOutcome>,
+        duration_ms: impl Into<i64>,
     ) -> Self {
         Self {
             duration_ms: duration_ms.into(),
@@ -17386,7 +17391,7 @@ pub struct SearchResult {
 impl SearchResult {
     /// Create a `SearchResult` with the required fields set.
     #[allow(clippy::too_many_arguments, clippy::new_without_default)]
-    pub fn new(id: impl Into<String>, rank: impl Into<i64>, url: impl Into<String>) -> Self {
+    pub fn new(id: impl Into<String>, url: impl Into<String>, rank: impl Into<i64>) -> Self {
         Self {
             additional_snippets: None,
             content: None,
@@ -17563,7 +17568,7 @@ pub struct SearchUsage {
 impl SearchUsage {
     /// Create a `SearchUsage` with the required fields set.
     #[allow(clippy::too_many_arguments, clippy::new_without_default)]
-    pub fn new(content_fetches: impl Into<i64>, results_count: impl Into<i64>) -> Self {
+    pub fn new(results_count: impl Into<i64>, content_fetches: impl Into<i64>) -> Self {
         Self {
             content_fetches: content_fetches.into(),
             cost: None,
@@ -19238,9 +19243,9 @@ impl SearchContentCapabilities {
     /// Create a `SearchContentCapabilities` with the required fields set.
     #[allow(clippy::too_many_arguments, clippy::new_without_default)]
     pub fn new(
-        freshness_control: impl Into<bool>,
         inline: impl Into<bool>,
         post_hoc: impl Into<bool>,
+        freshness_control: impl Into<bool>,
     ) -> Self {
         Self {
             freshness_control: freshness_control.into(),
@@ -19356,8 +19361,8 @@ impl SearchContentResult {
     #[allow(clippy::too_many_arguments, clippy::new_without_default)]
     pub fn new(
         result_id: impl Into<String>,
-        status: impl Into<SearchContentStatus>,
         url: impl Into<String>,
+        status: impl Into<SearchContentStatus>,
     ) -> Self {
         Self {
             cache_status: None,
@@ -19428,10 +19433,10 @@ impl SearchContentsResponse {
     /// Create a `SearchContentsResponse` with the required fields set.
     #[allow(clippy::too_many_arguments, clippy::new_without_default)]
     pub fn new(
-        contents: impl Into<Vec<SearchContentResult>>,
         search_id: impl Into<String>,
-        usage: impl Into<SearchUsage>,
+        contents: impl Into<Vec<SearchContentResult>>,
         warnings: impl Into<Vec<SearchWarning>>,
+        usage: impl Into<SearchUsage>,
     ) -> Self {
         Self {
             contents: contents.into(),
@@ -19484,13 +19489,13 @@ impl SearchParameterCapabilities {
     #[allow(clippy::too_many_arguments, clippy::new_without_default)]
     pub fn new(
         country: impl Into<SearchParameterCapability>,
-        end_date: impl Into<SearchParameterCapability>,
-        exclude_domains: impl Into<SearchParameterCapability>,
-        include_domains: impl Into<SearchParameterCapability>,
         language: impl Into<SearchParameterCapability>,
+        include_domains: impl Into<SearchParameterCapability>,
+        exclude_domains: impl Into<SearchParameterCapability>,
+        start_date: impl Into<SearchParameterCapability>,
+        end_date: impl Into<SearchParameterCapability>,
         recency: impl Into<SearchParameterCapability>,
         safe_search: impl Into<SearchParameterCapability>,
-        start_date: impl Into<SearchParameterCapability>,
     ) -> Self {
         Self {
             country: country.into(),
@@ -19571,11 +19576,11 @@ impl SearchProvider {
     /// Create a `SearchProvider` with the required fields set.
     #[allow(clippy::too_many_arguments, clippy::new_without_default)]
     pub fn new(
-        content: impl Into<SearchContentCapabilities>,
+        slug: impl Into<String>,
         max_results_cap: impl Into<i64>,
         params: impl Into<SearchParameterCapabilities>,
+        content: impl Into<SearchContentCapabilities>,
         provider_options: impl Into<SearchProviderOptionsDiscovery>,
-        slug: impl Into<String>,
     ) -> Self {
         Self {
             content: content.into(),
@@ -19604,8 +19609,8 @@ impl SearchProviderOptionsDiscovery {
     /// Create a `SearchProviderOptionsDiscovery` with the required fields set.
     #[allow(clippy::too_many_arguments, clippy::new_without_default)]
     pub fn new(
-        schema: impl Into<std::collections::HashMap<String, serde_json::Value>>,
         schema_ref: impl Into<String>,
+        schema: impl Into<std::collections::HashMap<String, serde_json::Value>>,
     ) -> Self {
         Self {
             examples: None,
@@ -19814,7 +19819,7 @@ pub struct SetFilePermissionsRequest {
 impl SetFilePermissionsRequest {
     /// Create a `SetFilePermissionsRequest` with the required fields set.
     #[allow(clippy::too_many_arguments, clippy::new_without_default)]
-    pub fn new(mode: impl Into<String>, path: impl Into<String>) -> Self {
+    pub fn new(path: impl Into<String>, mode: impl Into<String>) -> Self {
         Self {
             group: None,
             mode: mode.into(),
@@ -20182,9 +20187,9 @@ impl Vault {
     /// Create a `Vault` with the required fields set.
     #[allow(clippy::too_many_arguments, clippy::new_without_default)]
     pub fn new(
-        created_at: impl Into<chrono::DateTime<chrono::Utc>>,
         id: impl Into<String>,
         name: impl Into<String>,
+        created_at: impl Into<chrono::DateTime<chrono::Utc>>,
         updated_at: impl Into<chrono::DateTime<chrono::Utc>>,
     ) -> Self {
         Self {
@@ -20241,11 +20246,11 @@ impl VaultAgentCardProviderConfig {
     /// Create a `VaultAgentCardProviderConfig` with the required fields set.
     #[allow(clippy::too_many_arguments, clippy::new_without_default)]
     pub fn new(
-        client_id: impl Into<String>,
-        created_at: impl Into<chrono::DateTime<chrono::Utc>>,
         id: impl Into<String>,
         name: impl Into<String>,
+        client_id: impl Into<String>,
         test_mode: impl Into<bool>,
+        created_at: impl Into<chrono::DateTime<chrono::Utc>>,
         updated_at: impl Into<chrono::DateTime<chrono::Utc>>,
     ) -> Self {
         Self {
@@ -20275,8 +20280,8 @@ impl VaultAgentCardProviderConfigRequest {
     /// Create a `VaultAgentCardProviderConfigRequest` with the required fields set.
     #[allow(clippy::too_many_arguments, clippy::new_without_default)]
     pub fn new(
-        credentials: impl Into<VaultAgentCardProviderClientCredentials>,
         name: impl Into<String>,
+        credentials: impl Into<VaultAgentCardProviderClientCredentials>,
     ) -> Self {
         Self {
             credentials: credentials.into(),
@@ -20476,13 +20481,13 @@ impl WalletVaultItem {
     /// Create a `WalletVaultItem` with the required fields set.
     #[allow(clippy::too_many_arguments, clippy::new_without_default)]
     pub fn new(
-        available_expansions: impl Into<Vec<AvailableVaultItemExpansion>>,
-        available_operations: impl Into<Vec<AvailableVaultItemOperation>>,
-        created_at: impl Into<chrono::DateTime<chrono::Utc>>,
         id: impl Into<String>,
         key: impl Into<String>,
         spec: impl Into<WalletVaultItemSpec>,
         state: impl Into<WalletVaultItemState>,
+        available_operations: impl Into<Vec<AvailableVaultItemOperation>>,
+        available_expansions: impl Into<Vec<AvailableVaultItemExpansion>>,
+        created_at: impl Into<chrono::DateTime<chrono::Utc>>,
         updated_at: impl Into<chrono::DateTime<chrono::Utc>>,
     ) -> Self {
         Self {
@@ -20546,12 +20551,12 @@ impl VaultPaymentMethod {
     /// Create a `VaultPaymentMethod` with the required fields set.
     #[allow(clippy::too_many_arguments, clippy::new_without_default)]
     pub fn new(
-        capabilities: impl Into<VaultPaymentMethodCapabilities>,
-        display: impl Into<VaultPaymentMethodDisplay>,
         id: impl Into<String>,
-        is_default: impl Into<bool>,
         provider: impl Into<String>,
         type_: impl Into<String>,
+        is_default: impl Into<bool>,
+        display: impl Into<VaultPaymentMethodDisplay>,
+        capabilities: impl Into<VaultPaymentMethodCapabilities>,
     ) -> Self {
         Self {
             capabilities: capabilities.into(),
@@ -20755,9 +20760,9 @@ impl VaultItemEvent {
     /// Create a `VaultItemEvent` with the required fields set.
     #[allow(clippy::too_many_arguments, clippy::new_without_default)]
     pub fn new(
-        created_at: impl Into<chrono::DateTime<chrono::Utc>>,
         id: impl Into<String>,
         name: impl Into<String>,
+        created_at: impl Into<chrono::DateTime<chrono::Utc>>,
     ) -> Self {
         Self {
             browser_id: None,
@@ -20925,11 +20930,11 @@ impl WebMcpInvokeVaultItemOperationRequest {
     /// Create a `WebMcpInvokeVaultItemOperationRequest` with the required fields set.
     #[allow(clippy::too_many_arguments, clippy::new_without_default)]
     pub fn new(
-        bindings: impl Into<Vec<VaultWebMcpBinding>>,
         browser_id: impl Into<String>,
-        input: impl Into<std::collections::HashMap<String, serde_json::Value>>,
-        page_url: impl Into<String>,
         tool_ref: impl Into<String>,
+        page_url: impl Into<String>,
+        input: impl Into<std::collections::HashMap<String, serde_json::Value>>,
+        bindings: impl Into<Vec<VaultWebMcpBinding>>,
     ) -> Self {
         Self {
             bindings: bindings.into(),
@@ -21180,7 +21185,7 @@ impl From<KernelWalletVaultItemSpec> for WalletVaultItemRequestSpec {
 }
 
 /// Type must match the stored item; an update cannot change item type. Legacy card updates may omit type. Credential updates require explicit type and version. Wallet updates are unsupported.
-#[derive(Debug, Clone, PartialEq, serde::Serialize, serde::Deserialize)]
+#[derive(Debug, Clone, PartialEq, serde::Serialize)]
 #[serde(untagged)]
 #[non_exhaustive]
 pub enum VaultItemUpdateRequest {
@@ -21188,6 +21193,25 @@ pub enum VaultItemUpdateRequest {
     Credential(CredentialVaultItemUpdateRequest),
     /// A value not known to this version of the SDK.
     Unknown(serde_json::Value),
+}
+
+impl<'de> serde::Deserialize<'de> for VaultItemUpdateRequest {
+    fn deserialize<D: serde::Deserializer<'de>>(d: D) -> Result<Self, D::Error> {
+        let value = <serde_json::Value as serde::Deserialize>::deserialize(d)?;
+        let tag = value
+            .get("type")
+            .and_then(|t| t.as_str())
+            .map(str::to_owned);
+        match tag.as_deref() {
+            Some("card") => serde_json::from_value(value)
+                .map(Self::Card)
+                .map_err(serde::de::Error::custom),
+            Some("credential") => serde_json::from_value(value)
+                .map(Self::Credential)
+                .map_err(serde::de::Error::custom),
+            _ => Ok(Self::Unknown(value)),
+        }
+    }
 }
 
 impl From<CardVaultItemUpdateRequest> for VaultItemUpdateRequest {
@@ -21251,10 +21275,10 @@ impl VaultLinkProviderConfig {
     /// Create a `VaultLinkProviderConfig` with the required fields set.
     #[allow(clippy::too_many_arguments, clippy::new_without_default)]
     pub fn new(
-        client_id: impl Into<String>,
-        created_at: impl Into<chrono::DateTime<chrono::Utc>>,
         id: impl Into<String>,
         name: impl Into<String>,
+        client_id: impl Into<String>,
+        created_at: impl Into<chrono::DateTime<chrono::Utc>>,
         updated_at: impl Into<chrono::DateTime<chrono::Utc>>,
     ) -> Self {
         Self {
@@ -21284,8 +21308,8 @@ impl VaultLinkProviderConfigRequest {
     /// Create a `VaultLinkProviderConfigRequest` with the required fields set.
     #[allow(clippy::too_many_arguments, clippy::new_without_default)]
     pub fn new(
-        credentials: impl Into<VaultLinkProviderClientCredentials>,
         name: impl Into<String>,
+        credentials: impl Into<VaultLinkProviderClientCredentials>,
     ) -> Self {
         Self {
             credentials: credentials.into(),
@@ -21548,8 +21572,8 @@ impl WebMcpInvokeRequest {
     /// Create a `WebMcpInvokeRequest` with the required fields set.
     #[allow(clippy::too_many_arguments, clippy::new_without_default)]
     pub fn new(
-        input: impl Into<std::collections::HashMap<String, serde_json::Value>>,
         tool_ref: impl Into<String>,
+        input: impl Into<std::collections::HashMap<String, serde_json::Value>>,
     ) -> Self {
         Self {
             input: input.into(),
@@ -21575,9 +21599,9 @@ impl WebMcpTool {
     /// Create a `WebMcpTool` with the required fields set.
     #[allow(clippy::too_many_arguments, clippy::new_without_default)]
     pub fn new(
-        source: impl Into<WebMcpToolSource>,
-        tool: impl Into<WebMcpToolMetadata>,
         tool_ref: impl Into<String>,
+        tool: impl Into<WebMcpToolMetadata>,
+        source: impl Into<WebMcpToolSource>,
     ) -> Self {
         Self {
             source: source.into(),
@@ -21615,10 +21639,10 @@ impl WebMcpToolSource {
     /// Create a `WebMcpToolSource` with the required fields set.
     #[allow(clippy::too_many_arguments, clippy::new_without_default)]
     pub fn new(
+        window_id: impl Into<i64>,
+        tab_id: impl Into<i64>,
         page_title: impl Into<String>,
         page_url: impl Into<String>,
-        tab_id: impl Into<i64>,
-        window_id: impl Into<i64>,
     ) -> Self {
         Self {
             custom: None,
@@ -21890,9 +21914,9 @@ impl InvocationCreateParams {
     /// Create a `InvocationCreateParams` with the required fields set.
     #[allow(clippy::too_many_arguments, clippy::new_without_default)]
     pub fn new(
-        action_name: impl Into<String>,
         app_name: impl Into<String>,
         version: impl Into<String>,
+        action_name: impl Into<String>,
     ) -> Self {
         Self {
             action_name: action_name.into(),
@@ -22494,7 +22518,7 @@ pub struct BrowserLoadExtensionsExtension {
 impl BrowserLoadExtensionsExtension {
     /// Create a `BrowserLoadExtensionsExtension` with the required fields set.
     #[allow(clippy::too_many_arguments, clippy::new_without_default)]
-    pub fn new(name: impl Into<String>, zip_file: impl Into<crate::FileUpload>) -> Self {
+    pub fn new(zip_file: impl Into<crate::FileUpload>, name: impl Into<String>) -> Self {
         Self {
             name: name.into(),
             zip_file: zip_file.into(),
@@ -23356,8 +23380,8 @@ impl CredentialCreateParams {
     /// Create a `CredentialCreateParams` with the required fields set.
     #[allow(clippy::too_many_arguments, clippy::new_without_default)]
     pub fn new(
-        domain: impl Into<String>,
         name: impl Into<String>,
+        domain: impl Into<String>,
         values: impl Into<std::collections::HashMap<String, String>>,
     ) -> Self {
         Self {

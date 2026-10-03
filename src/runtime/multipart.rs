@@ -1,8 +1,10 @@
 //! `multipart/form-data` encoding.
 //!
-//! Follows the first-party SDKs: arrays use `key[i]`, objects that hold files
-//! use `key[name]`, and other objects are sent as one JSON-encoded part
-//! (except `env_vars`, which is always flattened to `env_vars[KEY]`).
+//! Arrays use `key.0`, `key.1`, and fields of objects that hold files use
+//! `key.name`, like the Go SDK. The API rejects the bracket form
+//! (`key[0][name]`) for some endpoints. Other objects are sent as one
+//! JSON-encoded part, except `env_vars`, which is flattened to
+//! `env_vars[KEY]`.
 
 use bytes::Bytes;
 use reqwest::multipart::{Form, Part};
@@ -62,7 +64,7 @@ impl MultipartEncode for FileUpload {
 impl<T: MultipartEncode> MultipartEncode for Vec<T> {
     fn encode(&self, key: &str, form: &mut MultipartForm) {
         for (i, item) in self.iter().enumerate() {
-            item.encode(&format!("{key}[{i}]"), form);
+            item.encode(&format!("{key}.{i}"), form);
         }
     }
 }
@@ -98,7 +100,7 @@ impl MultipartForm {
         if parent.is_empty() {
             name.to_owned()
         } else {
-            format!("{parent}[{name}]")
+            format!("{parent}.{name}")
         }
     }
 
@@ -125,11 +127,11 @@ impl MultipartForm {
                 .push((key.to_owned(), PartValue::Text(v.to_string()))),
             Value::Array(items) => {
                 for (i, item) in items.iter().enumerate() {
-                    self.json_value(&format!("{key}[{i}]"), item);
+                    self.json_value(&format!("{key}.{i}"), item);
                 }
             }
             Value::Object(map) => {
-                let last = key.rsplit('[').next().unwrap_or(key).trim_end_matches(']');
+                let last = key.rsplit('.').next().unwrap_or(key);
                 if last == "env_vars" {
                     for (k, item) in map {
                         self.json_value(&format!("{key}[{k}]"), item);
@@ -185,7 +187,7 @@ mod tests {
         vec![FileUpload::new("a.zip", vec![1u8])].encode("files", &mut form);
         assert_eq!(
             form.keys(),
-            vec!["env_vars[A]", "source", "force", "files[0]"]
+            vec!["env_vars[A]", "source", "force", "files.0"]
         );
     }
 }

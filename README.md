@@ -270,7 +270,8 @@ codegen/sync.sh v0.119.0   # a specific release
 python3 codegen/generate.py   # regenerate
 cargo test                    # unit, per-endpoint mock, client, and helper tests
 python3 codegen/check_crate_age.py   # no dependency newer than 24 hours
-KERNEL_API_KEY=... cargo run --example smoke   # live test against the API
+KERNEL_API_KEY=... cargo run --example smoke   # quick live test against the API
+KERNEL_API_KEY=... cargo run --example live_e2e -- app.zip   # every endpoint, live
 ```
 
 The minimum supported Rust version is 1.88.

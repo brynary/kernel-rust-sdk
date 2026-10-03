@@ -832,7 +832,7 @@ async fn browsers_computer_batch() {
         .expect(1)
         .mount(&server)
         .await;
-    let params: kernel::types::browsers::ComputerBatchParams = serde_json::from_str("{\"actions\": [{\"click_mouse\": {\"x\": 1}, \"drag_mouse\": {\"path\": [[1]]}, \"move_mouse\": {\"x\": 1}, \"press_key\": {\"keys\": [\"string\"]}, \"scroll\": {\"x\": 1}, \"set_cursor\": {\"hidden\": true}, \"sleep\": {\"duration_ms\": 1}, \"type\": \"click_mouse\", \"type_text\": {\"text\": \"string\"}}]}").expect("params");
+    let params: kernel::types::browsers::ComputerBatchParams = serde_json::from_str("{\"actions\": [{\"click_mouse\": {\"y\": 1, \"x\": 1}, \"drag_mouse\": {\"path\": [[1]]}, \"move_mouse\": {\"y\": 1, \"x\": 1}, \"press_key\": {\"keys\": [\"string\"]}, \"scroll\": {\"y\": 1, \"x\": 1}, \"set_cursor\": {\"hidden\": true}, \"sleep\": {\"duration_ms\": 1}, \"type\": \"click_mouse\", \"type_text\": {\"text\": \"string\"}}]}").expect("params");
     let result = client.browsers().computer().batch("abc", params).await;
     result.expect("request");
 }
@@ -847,7 +847,7 @@ async fn browsers_computer_capture_screenshot() {
         .mount(&server)
         .await;
     let params: kernel::types::browsers::ComputerCaptureScreenshotParams =
-        serde_json::from_str("{\"region\": {\"height\": 1, \"true\": 1, \"width\": 1, \"x\": 1}}")
+        serde_json::from_str("{\"region\": {\"height\": 1, \"y\": 1, \"width\": 1, \"x\": 1}}")
             .expect("params");
     let result = client
         .browsers()
@@ -867,7 +867,7 @@ async fn browsers_computer_click_mouse() {
         .expect(1)
         .mount(&server)
         .await;
-    let params: kernel::types::browsers::ComputerClickMouseParams = serde_json::from_str("{\"button\": \"left\", \"click_type\": \"down\", \"hold_keys\": [\"string\"], \"num_clicks\": 1, \"true\": 1, \"x\": 1}").expect("params");
+    let params: kernel::types::browsers::ComputerClickMouseParams = serde_json::from_str("{\"button\": \"left\", \"click_type\": \"down\", \"hold_keys\": [\"string\"], \"num_clicks\": 1, \"y\": 1, \"x\": 1}").expect("params");
     let result = client
         .browsers()
         .computer()
@@ -896,7 +896,7 @@ async fn browsers_computer_get_mouse_position() {
     Mock::given(method("POST"))
         .and(path("/browsers/abc/computer/get_mouse_position"))
         .respond_with(
-            ResponseTemplate::new(200).set_body_raw("{\"true\": 1, \"x\": 1}", "application/json"),
+            ResponseTemplate::new(200).set_body_raw("{\"y\": 1, \"x\": 1}", "application/json"),
         )
         .expect(1)
         .mount(&server)
@@ -914,7 +914,10 @@ async fn browsers_computer_move_mouse() {
         .expect(1)
         .mount(&server)
         .await;
-    let params: kernel::types::browsers::ComputerMoveMouseParams = serde_json::from_str("{\"duration_ms\": 50, \"hold_keys\": [\"string\"], \"smooth\": true, \"true\": 1, \"x\": 1}").expect("params");
+    let params: kernel::types::browsers::ComputerMoveMouseParams = serde_json::from_str(
+        "{\"duration_ms\": 50, \"hold_keys\": [\"string\"], \"smooth\": true, \"y\": 1, \"x\": 1}",
+    )
+    .expect("params");
     let result = client.browsers().computer().move_mouse("abc", params).await;
     result.expect("request");
 }
@@ -961,7 +964,7 @@ async fn browsers_computer_scroll() {
         .mount(&server)
         .await;
     let params: kernel::types::browsers::ComputerScrollParams = serde_json::from_str(
-        "{\"delta_x\": 1, \"delta_y\": 1, \"hold_keys\": [\"string\"], \"true\": 1, \"x\": 1}",
+        "{\"delta_x\": 1, \"delta_y\": 1, \"hold_keys\": [\"string\"], \"y\": 1, \"x\": 1}",
     )
     .expect("params");
     let result = client.browsers().computer().scroll("abc", params).await;

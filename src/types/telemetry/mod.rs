@@ -22,7 +22,7 @@ pub struct DestinationCreateParams {
 impl DestinationCreateParams {
     /// Create a `DestinationCreateParams` with the required fields set.
     #[allow(clippy::too_many_arguments, clippy::new_without_default)]
-    pub fn new(endpoint: impl Into<String>, name: impl Into<String>) -> Self {
+    pub fn new(name: impl Into<String>, endpoint: impl Into<String>) -> Self {
         Self {
             description: None,
             endpoint: endpoint.into(),
