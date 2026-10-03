@@ -192,6 +192,26 @@ let patient = client.with_options(kernel::RequestOptions::new().timeout(Duration
 # Ok(()) }
 ```
 
+### Direct-to-VM routing
+
+Like the other SDKs, the client caches each browser's VM address and session
+token from browser responses. Calls to `computer`, `fs`, `process`,
+`playwright`, `curl`, `logs/stream`, and `telemetry/stream` then go straight
+to the browser VM. In testing, this cut `process.exec` latency from about
+86 ms to 35 ms. If the VM rejects the token, the client drops the route and
+retries through the control plane.
+
+Set the routed subresources with `KERNEL_BROWSER_ROUTING_SUBRESOURCES`
+(comma-separated; empty disables routing) or in code:
+
+```rust,no_run
+# fn run() -> kernel::Result<()> {
+let client = kernel::Kernel::builder()
+    .browser_routing(kernel::RoutingConfig::disabled())
+    .build()?;
+# Ok(()) }
+```
+
 ### Forward compatibility
 
 String enums have an `Unknown(String)` variant, and unions have an

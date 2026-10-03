@@ -15,6 +15,7 @@ name = "kernel"
 [dependencies]
 bytes = "1"
 chrono = { version = "0.4", default-features = false, features = ["serde", "std", "clock"] }
+http = "1"
 futures-util = { version = "0.3", default-features = false, features = ["std"] }
 reqwest = { version = "0.13", default-features = false, features = ["stream", "rustls", "multipart"] }
 serde = { version = "1", features = ["derive"] }

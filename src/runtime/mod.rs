@@ -6,6 +6,7 @@ pub mod error;
 pub mod multipart;
 pub mod pagination;
 pub mod query;
+pub mod routing;
 pub mod streaming;
 
 /// Imports used by the generated resource modules.

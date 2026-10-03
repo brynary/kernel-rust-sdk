@@ -40,4 +40,5 @@ pub use runtime::client::{ClientBuilder, Environment, Kernel, RequestOptions, VE
 pub use runtime::error::{ApiError, ApiErrorKind, Error, Result};
 pub use runtime::multipart::FileUpload;
 pub use runtime::pagination::{OffsetPagination, PageTokenPagination};
+pub use runtime::routing::{BrowserRoute, BrowserRouteCache, RoutingConfig};
 pub use runtime::streaming::{BinaryResponse, EventStream, ServerSentEvent};

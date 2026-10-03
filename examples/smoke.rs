@@ -20,6 +20,13 @@ async fn main() -> kernel::Result<()> {
         })
         .await?;
     println!("created browser {}", browser.session_id);
+    println!(
+        "direct-to-VM route cached: {}",
+        client
+            .browser_route_cache()
+            .get(&browser.session_id)
+            .is_some()
+    );
 
     let result = async {
         let fetched = client

@@ -15,6 +15,7 @@ use super::error::{ApiError, Error, Result};
 use super::multipart::MultipartForm;
 use super::pagination::{OffsetPagination, PageTokenPagination};
 use super::query::Query;
+use super::routing::{self, BrowserRouteCache, RoutingConfig};
 use super::streaming::{BinaryResponse, EventStream};
 
 /// The SDK version.
@@ -115,6 +116,7 @@ pub struct ClientBuilder {
     environment: Option<Environment>,
     options: RequestOptions,
     http_client: Option<reqwest::Client>,
+    routing: Option<RoutingConfig>,
 }
 
 impl ClientBuilder {
@@ -162,6 +164,15 @@ impl ClientBuilder {
         self
     }
 
+    /// Set which browser subresources go directly to the browser VM.
+    /// Defaults to the `KERNEL_BROWSER_ROUTING_SUBRESOURCES` environment
+    /// variable, then to [`routing::DEFAULT_SUBRESOURCES`]. Use
+    /// [`RoutingConfig::disabled`] to send every request to the control plane.
+    pub fn browser_routing(mut self, config: RoutingConfig) -> Self {
+        self.routing = Some(config);
+        self
+    }
+
     /// Use a custom `reqwest` client (for proxies, custom TLS, and so on).
     pub fn http_client(mut self, client: reqwest::Client) -> Self {
         self.http_client = Some(client);
@@ -205,6 +216,8 @@ impl ClientBuilder {
                 http,
                 api_key,
                 base_url,
+                routing: self.routing.unwrap_or_else(RoutingConfig::from_env),
+                routes: BrowserRouteCache::default(),
             }),
             options: self.options,
         })
@@ -223,6 +236,8 @@ struct Inner {
     http: reqwest::Client,
     api_key: String,
     base_url: String,
+    routing: RoutingConfig,
+    routes: BrowserRouteCache,
 }
 
 /// The Kernel API client.
@@ -269,6 +284,12 @@ impl Kernel {
         &self.inner.base_url
     }
 
+    /// The cache of browser VM routes used for direct-to-VM requests.
+    /// Browser responses fill it automatically.
+    pub fn browser_route_cache(&self) -> &BrowserRouteCache {
+        &self.inner.routes
+    }
+
     fn url(&self, path: &str, query: &Query) -> Result<url::Url> {
         let mut url = url::Url::parse(&format!("{}{}", self.inner.base_url, path))
             .map_err(|e| Error::Other(format!("invalid request URL: {e}")))?;
@@ -281,8 +302,16 @@ impl Kernel {
         Ok(url)
     }
 
-    fn build_request(&self, req: &ApiRequest, retry_count: u32) -> Result<reqwest::RequestBuilder> {
-        let url = self.url(&req.path, &req.query)?;
+    fn build_request(
+        &self,
+        req: &ApiRequest,
+        retry_count: u32,
+        direct: Option<&routing::DirectRoute>,
+    ) -> Result<reqwest::RequestBuilder> {
+        let url = match direct {
+            Some(d) => d.url.clone(),
+            None => self.url(&req.path, &req.query)?,
+        };
         let mut rb = self.inner.http.request(req.method.clone(), url);
         let timeout = self.options.timeout.unwrap_or(DEFAULT_TIMEOUT);
         let mut headers = HeaderMap::new();
@@ -313,6 +342,10 @@ impl Kernel {
         for (k, v) in &self.options.extra_headers {
             headers.insert(k.clone(), v.clone());
         }
+        if direct.is_some() {
+            // The VM authenticates with the session JWT in the query string.
+            headers.remove(AUTHORIZATION);
+        }
         rb = match &req.body {
             Body::None => rb,
             Body::Json(v) => {
@@ -329,13 +362,50 @@ impl Kernel {
     }
 
     /// Send a request, retrying when allowed, and return the success response.
+    /// Send a request, routing it to the browser VM when possible, and keep
+    /// the browser route cache up to date.
     pub(crate) async fn send(&self, req: &ApiRequest) -> Result<reqwest::Response> {
+        let body_json = match &req.body {
+            Body::Json(v) => Some(v),
+            _ => None,
+        };
+        let lifecycle = routing::lifecycle(&req.method, &req.path, body_json);
+        let response = self.send_with_retries(req).await?;
+        let response = if lifecycle.sniff && is_json(&response) {
+            let status = response.status();
+            let headers = response.headers().clone();
+            let body = response.bytes().await.map_err(Error::Connection)?;
+            if let Ok(value) = serde_json::from_slice::<serde_json::Value>(&body) {
+                self.inner.routes.populate(&value);
+            }
+            rebuild_response(status, headers, body)
+        } else {
+            response
+        };
+        if let Some(session) = lifecycle.evict {
+            self.inner.routes.remove(&session);
+        }
+        Ok(response)
+    }
+
+    async fn send_with_retries(&self, req: &ApiRequest) -> Result<reqwest::Response> {
         let max_retries = self.options.max_retries.unwrap_or(DEFAULT_MAX_RETRIES);
         let timeout = self.options.timeout.unwrap_or(DEFAULT_TIMEOUT);
         let mut retry_count = 0;
+        let mut allow_direct = true;
         loop {
             let retries_left = max_retries - retry_count;
-            let rb = self.build_request(req, retry_count)?;
+            let direct = if allow_direct {
+                routing::direct_url(
+                    &self.inner.routing,
+                    &self.inner.routes,
+                    &req.path,
+                    &req.query.0,
+                )
+            } else {
+                None
+            };
+            let rb = self.build_request(req, retry_count, direct.as_ref())?;
             let outcome = tokio::time::timeout(timeout, rb.send()).await;
             let response = match outcome {
                 Err(_) => {
@@ -361,6 +431,15 @@ impl Kernel {
                 Ok(Ok(r)) => r,
             };
             let status = response.status();
+            if let Some(d) = &direct {
+                if matches!(status.as_u16(), 401 | 403) {
+                    // The VM rejected the session JWT. Drop the route (unless
+                    // a newer one replaced it) and use the control plane.
+                    self.inner.routes.remove_if_jwt(&d.session_id, &d.jwt);
+                    allow_direct = false;
+                    continue;
+                }
+            }
             if status.is_success() {
                 return Ok(response);
             }
@@ -441,6 +520,33 @@ impl Kernel {
             &headers,
         ))
     }
+}
+
+fn is_json(response: &reqwest::Response) -> bool {
+    response
+        .headers()
+        .get(CONTENT_TYPE)
+        .and_then(|v| v.to_str().ok())
+        .map(|ct| {
+            let mt = ct.split(';').next().unwrap_or("").trim();
+            mt.contains("application/json") || mt.ends_with("+json")
+        })
+        .unwrap_or(false)
+}
+
+fn rebuild_response(
+    status: reqwest::StatusCode,
+    headers: HeaderMap,
+    body: Bytes,
+) -> reqwest::Response {
+    let mut builder = http::Response::builder().status(status);
+    if let Some(h) = builder.headers_mut() {
+        *h = headers;
+    }
+    let response = builder
+        .body(body)
+        .unwrap_or_else(|_| http::Response::new(Bytes::new()));
+    reqwest::Response::from(response)
 }
 
 fn header_value(s: &str) -> HeaderValue {
