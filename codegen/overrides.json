@@ -1,0 +1,10 @@
+{
+  "type_aliases": {
+    "ErrorModel": "Error",
+    "HeartbeatEvent": "SSEHeartbeatEvent",
+    "AddRequest": "AddCustomWebMCPToolsRequest",
+    "Definition": "CustomWebMCPDefinition",
+    "Match": "CustomWebMCPMatch",
+    "FetchRequest": "SearchContentsRequest"
+  }
+}

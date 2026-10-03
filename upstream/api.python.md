@@ -1,0 +1,817 @@
+# Shared Types
+
+```python
+from kernel.types import (
+    AppAction,
+    BrowserExtension,
+    BrowserProfile,
+    BrowserViewport,
+    ErrorDetail,
+    ErrorEvent,
+    ErrorModel,
+    HeartbeatEvent,
+    LogEvent,
+)
+```
+
+# Deployments
+
+Types:
+
+```python
+from kernel.types import (
+    DeploymentStateEvent,
+    DeploymentCreateResponse,
+    DeploymentRetrieveResponse,
+    DeploymentListResponse,
+    DeploymentFollowResponse,
+)
+```
+
+Methods:
+
+- <code title="post /deployments">client.deployments.<a href="./src/kernel/resources/deployments.py">create</a>(\*\*<a href="src/kernel/types/deployment_create_params.py">params</a>) -> <a href="./src/kernel/types/deployment_create_response.py">DeploymentCreateResponse</a></code>
+- <code title="get /deployments/{id}">client.deployments.<a href="./src/kernel/resources/deployments.py">retrieve</a>(id) -> <a href="./src/kernel/types/deployment_retrieve_response.py">DeploymentRetrieveResponse</a></code>
+- <code title="get /deployments">client.deployments.<a href="./src/kernel/resources/deployments.py">list</a>(\*\*<a href="src/kernel/types/deployment_list_params.py">params</a>) -> <a href="./src/kernel/types/deployment_list_response.py">SyncOffsetPagination[DeploymentListResponse]</a></code>
+- <code title="delete /deployments/{id}">client.deployments.<a href="./src/kernel/resources/deployments.py">delete</a>(id) -> None</code>
+- <code title="get /deployments/{id}/events">client.deployments.<a href="./src/kernel/resources/deployments.py">follow</a>(id, \*\*<a href="src/kernel/types/deployment_follow_params.py">params</a>) -> <a href="./src/kernel/types/deployment_follow_response.py">DeploymentFollowResponse</a></code>
+
+# Apps
+
+Types:
+
+```python
+from kernel.types import AppListResponse
+```
+
+Methods:
+
+- <code title="get /apps">client.apps.<a href="./src/kernel/resources/apps.py">list</a>(\*\*<a href="src/kernel/types/app_list_params.py">params</a>) -> <a href="./src/kernel/types/app_list_response.py">SyncOffsetPagination[AppListResponse]</a></code>
+
+# Invocations
+
+Types:
+
+```python
+from kernel.types import (
+    InvocationStateEvent,
+    InvocationCreateResponse,
+    InvocationRetrieveResponse,
+    InvocationUpdateResponse,
+    InvocationListResponse,
+    InvocationFollowResponse,
+    InvocationListBrowsersResponse,
+)
+```
+
+Methods:
+
+- <code title="post /invocations">client.invocations.<a href="./src/kernel/resources/invocations.py">create</a>(\*\*<a href="src/kernel/types/invocation_create_params.py">params</a>) -> <a href="./src/kernel/types/invocation_create_response.py">InvocationCreateResponse</a></code>
+- <code title="get /invocations/{id}">client.invocations.<a href="./src/kernel/resources/invocations.py">retrieve</a>(id) -> <a href="./src/kernel/types/invocation_retrieve_response.py">InvocationRetrieveResponse</a></code>
+- <code title="patch /invocations/{id}">client.invocations.<a href="./src/kernel/resources/invocations.py">update</a>(id, \*\*<a href="src/kernel/types/invocation_update_params.py">params</a>) -> <a href="./src/kernel/types/invocation_update_response.py">InvocationUpdateResponse</a></code>
+- <code title="get /invocations">client.invocations.<a href="./src/kernel/resources/invocations.py">list</a>(\*\*<a href="src/kernel/types/invocation_list_params.py">params</a>) -> <a href="./src/kernel/types/invocation_list_response.py">SyncOffsetPagination[InvocationListResponse]</a></code>
+- <code title="delete /invocations/{id}/browsers">client.invocations.<a href="./src/kernel/resources/invocations.py">delete_browsers</a>(id) -> None</code>
+- <code title="get /invocations/{id}/events">client.invocations.<a href="./src/kernel/resources/invocations.py">follow</a>(id, \*\*<a href="src/kernel/types/invocation_follow_params.py">params</a>) -> <a href="./src/kernel/types/invocation_follow_response.py">InvocationFollowResponse</a></code>
+- <code title="get /invocations/{id}/browsers">client.invocations.<a href="./src/kernel/resources/invocations.py">list_browsers</a>(id) -> <a href="./src/kernel/types/invocation_list_browsers_response.py">InvocationListBrowsersResponse</a></code>
+
+# ConfigRegistry
+
+Types:
+
+```python
+from kernel.types import (
+    Analysis,
+    AnalysisSummary,
+    Browser,
+    ConfigRegistryResponse,
+    Evidence,
+    LookupRequest,
+    LookupResponse,
+    NoRecommendation,
+    Proxy,
+    Recommendation,
+    RecommendationResult,
+    RecommendationSummary,
+    ResolveRequest,
+    Target,
+)
+```
+
+Methods:
+
+- <code title="get /config-registry">client.config_registry.<a href="./src/kernel/resources/config_registry/config_registry.py">list</a>(\*\*<a href="src/kernel/types/config_registry_list_params.py">params</a>) -> <a href="./src/kernel/types/recommendation_summary.py">SyncOffsetPagination[RecommendationSummary]</a></code>
+- <code title="post /config-registry/lookup">client.config_registry.<a href="./src/kernel/resources/config_registry/config_registry.py">lookup</a>(\*\*<a href="src/kernel/types/config_registry_lookup_params.py">params</a>) -> <a href="./src/kernel/types/lookup_response.py">LookupResponse</a></code>
+- <code title="post /config-registry/resolve">client.config_registry.<a href="./src/kernel/resources/config_registry/config_registry.py">resolve</a>(\*\*<a href="src/kernel/types/config_registry_resolve_params.py">params</a>) -> <a href="./src/kernel/types/config_registry_response.py">ConfigRegistryResponse</a></code>
+
+## Analyses
+
+Methods:
+
+- <code title="get /config-registry/analyses/{id}">client.config_registry.analyses.<a href="./src/kernel/resources/config_registry/analyses.py">retrieve</a>(id) -> <a href="./src/kernel/types/config_registry_response.py">ConfigRegistryResponse</a></code>
+- <code title="get /config-registry/analyses">client.config_registry.analyses.<a href="./src/kernel/resources/config_registry/analyses.py">list</a>(\*\*<a href="src/kernel/types/config_registry/analysis_list_params.py">params</a>) -> <a href="./src/kernel/types/analysis_summary.py">SyncOffsetPagination[AnalysisSummary]</a></code>
+- <code title="post /config-registry/analyses/{id}/cancel">client.config_registry.analyses.<a href="./src/kernel/resources/config_registry/analyses.py">cancel</a>(id) -> <a href="./src/kernel/types/config_registry_response.py">ConfigRegistryResponse</a></code>
+
+# Browsers
+
+Types:
+
+```python
+from kernel.types import (
+    BrowserMemory,
+    BrowserMemoryRequest,
+    BrowserNetworkConfig,
+    BrowserPoolRef,
+    BrowserProxy,
+    BrowserProxyConfig,
+    BrowserProxyMode,
+    BrowserReplContent,
+    BrowserReplImageContent,
+    BrowserReplRequest,
+    BrowserReplResult,
+    BrowserReplTextContent,
+    BrowserUsage,
+    Profile,
+    Tags,
+    VaultReference,
+    BrowserCreateResponse,
+    BrowserRetrieveResponse,
+    BrowserUpdateResponse,
+    BrowserListResponse,
+    BrowserCurlResponse,
+)
+```
+
+Methods:
+
+- <code title="post /browsers">client.browsers.<a href="./src/kernel/resources/browsers/browsers.py">create</a>(\*\*<a href="src/kernel/types/browser_create_params.py">params</a>) -> <a href="./src/kernel/types/browser_create_response.py">BrowserCreateResponse</a></code>
+- <code title="get /browsers/{id_or_name}">client.browsers.<a href="./src/kernel/resources/browsers/browsers.py">retrieve</a>(id_or_name, \*\*<a href="src/kernel/types/browser_retrieve_params.py">params</a>) -> <a href="./src/kernel/types/browser_retrieve_response.py">BrowserRetrieveResponse</a></code>
+- <code title="patch /browsers/{id_or_name}">client.browsers.<a href="./src/kernel/resources/browsers/browsers.py">update</a>(id_or_name, \*\*<a href="src/kernel/types/browser_update_params.py">params</a>) -> <a href="./src/kernel/types/browser_update_response.py">BrowserUpdateResponse</a></code>
+- <code title="get /browsers">client.browsers.<a href="./src/kernel/resources/browsers/browsers.py">list</a>(\*\*<a href="src/kernel/types/browser_list_params.py">params</a>) -> <a href="./src/kernel/types/browser_list_response.py">SyncOffsetPagination[BrowserListResponse]</a></code>
+- <code title="post /browsers/{id_or_name}/curl">client.browsers.<a href="./src/kernel/resources/browsers/browsers.py">curl</a>(id_or_name, \*\*<a href="src/kernel/types/browser_curl_params.py">params</a>) -> <a href="./src/kernel/types/browser_curl_response.py">BrowserCurlResponse</a></code>
+- <code title="delete /browsers/{id_or_name}">client.browsers.<a href="./src/kernel/resources/browsers/browsers.py">delete_by_id</a>(id_or_name) -> None</code>
+- <code title="post /browsers/{id_or_name}/extensions">client.browsers.<a href="./src/kernel/resources/browsers/browsers.py">load_extensions</a>(id_or_name, \*\*<a href="src/kernel/types/browser_load_extensions_params.py">params</a>) -> None</code>
+- <code title="post /browsers/{id_or_name}/repl">client.browsers.<a href="./src/kernel/resources/browsers/browsers.py">repl</a>(id_or_name, \*\*<a href="src/kernel/types/browser_repl_params.py">params</a>) -> <a href="./src/kernel/types/browser_repl_result.py">BrowserReplResult</a></code>
+
+## Telemetry
+
+Types:
+
+```python
+from kernel.types.browsers import (
+    BrowserAPICallEvent,
+    BrowserCallStack,
+    BrowserCaptchaChallengeResultEvent,
+    BrowserCaptchaSolveResultEvent,
+    BrowserCaptchaSolveStartedEvent,
+    BrowserCdpCommandEvent,
+    BrowserCdpCommandMethod,
+    BrowserCdpConnectEvent,
+    BrowserCdpDisconnectEvent,
+    BrowserConsoleErrorEvent,
+    BrowserConsoleLogEvent,
+    BrowserEventContext,
+    BrowserEventSource,
+    BrowserHTTPHeaders,
+    BrowserInteractionClickEvent,
+    BrowserInteractionKeyEvent,
+    BrowserInteractionScrollSettledEvent,
+    BrowserLiveViewConnectEvent,
+    BrowserLiveViewDisconnectEvent,
+    BrowserMonitorDisconnectedEvent,
+    BrowserMonitorInitFailedEvent,
+    BrowserMonitorReconnectFailedEvent,
+    BrowserMonitorReconnectedEvent,
+    BrowserMonitorScreenshotEvent,
+    BrowserNetworkIdleEvent,
+    BrowserNetworkLoadingFailedEvent,
+    BrowserNetworkRequestEvent,
+    BrowserNetworkResponseEvent,
+    BrowserPageCrashedEvent,
+    BrowserPageDomContentLoadedEvent,
+    BrowserPageLayoutSettledEvent,
+    BrowserPageLayoutShiftEvent,
+    BrowserPageLcpEvent,
+    BrowserPageLoadEvent,
+    BrowserPageNavigationEvent,
+    BrowserPageNavigationSettledEvent,
+    BrowserPageTabOpenedEvent,
+    BrowserPlatformAPICallEvent,
+    BrowserProxyErrorEvent,
+    BrowserServiceCrashedEvent,
+    BrowserSystemOomKillEvent,
+    BrowserTelemetryCategoriesConfig,
+    BrowserTelemetryCategoryConfig,
+    BrowserTelemetryCdpControlConfig,
+    BrowserTelemetryConfig,
+    BrowserTelemetryControlConfig,
+    BrowserTelemetryEvent,
+    BrowserTelemetryExportConfig,
+    BrowserTelemetryOtlpExportConfig,
+    BrowserTelemetryStorageConfig,
+    TelemetryEventsResponse,
+    TelemetryStreamResponse,
+)
+```
+
+Methods:
+
+- <code title="get /browsers/{id_or_name}/telemetry/events">client.browsers.telemetry.<a href="./src/kernel/resources/browsers/telemetry.py">events</a>(id_or_name, \*\*<a href="src/kernel/types/browsers/telemetry_events_params.py">params</a>) -> <a href="./src/kernel/types/browsers/telemetry_events_response.py">SyncOffsetPagination[TelemetryEventsResponse]</a></code>
+- <code title="get /browsers/{id_or_name}/telemetry/stream">client.browsers.telemetry.<a href="./src/kernel/resources/browsers/telemetry.py">stream</a>(id_or_name, \*\*<a href="src/kernel/types/browsers/telemetry_stream_params.py">params</a>) -> <a href="./src/kernel/types/browsers/telemetry_stream_response.py">TelemetryStreamResponse</a></code>
+
+## Replays
+
+Types:
+
+```python
+from kernel.types.browsers import ReplayListResponse, ReplayStartResponse
+```
+
+Methods:
+
+- <code title="get /browsers/{id_or_name}/replays">client.browsers.replays.<a href="./src/kernel/resources/browsers/replays.py">list</a>(id_or_name) -> <a href="./src/kernel/types/browsers/replay_list_response.py">ReplayListResponse</a></code>
+- <code title="get /browsers/{id_or_name}/replays/{replay_id}">client.browsers.replays.<a href="./src/kernel/resources/browsers/replays.py">download</a>(replay_id, \*, id_or_name) -> BinaryAPIResponse</code>
+- <code title="post /browsers/{id_or_name}/replays">client.browsers.replays.<a href="./src/kernel/resources/browsers/replays.py">start</a>(id_or_name, \*\*<a href="src/kernel/types/browsers/replay_start_params.py">params</a>) -> <a href="./src/kernel/types/browsers/replay_start_response.py">ReplayStartResponse</a></code>
+- <code title="post /browsers/{id_or_name}/replays/{replay_id}/stop">client.browsers.replays.<a href="./src/kernel/resources/browsers/replays.py">stop</a>(replay_id, \*, id_or_name) -> None</code>
+
+## Fs
+
+Types:
+
+```python
+from kernel.types.browsers import FFileInfoResponse, FListFilesResponse
+```
+
+Methods:
+
+- <code title="put /browsers/{id_or_name}/fs/create_directory">client.browsers.fs.<a href="./src/kernel/resources/browsers/fs/fs.py">create_directory</a>(id_or_name, \*\*<a href="src/kernel/types/browsers/f_create_directory_params.py">params</a>) -> None</code>
+- <code title="put /browsers/{id_or_name}/fs/delete_directory">client.browsers.fs.<a href="./src/kernel/resources/browsers/fs/fs.py">delete_directory</a>(id_or_name, \*\*<a href="src/kernel/types/browsers/f_delete_directory_params.py">params</a>) -> None</code>
+- <code title="put /browsers/{id_or_name}/fs/delete_file">client.browsers.fs.<a href="./src/kernel/resources/browsers/fs/fs.py">delete_file</a>(id_or_name, \*\*<a href="src/kernel/types/browsers/f_delete_file_params.py">params</a>) -> None</code>
+- <code title="get /browsers/{id_or_name}/fs/download_dir_zip">client.browsers.fs.<a href="./src/kernel/resources/browsers/fs/fs.py">download_dir_zip</a>(id_or_name, \*\*<a href="src/kernel/types/browsers/f_download_dir_zip_params.py">params</a>) -> BinaryAPIResponse</code>
+- <code title="get /browsers/{id_or_name}/fs/file_info">client.browsers.fs.<a href="./src/kernel/resources/browsers/fs/fs.py">file_info</a>(id_or_name, \*\*<a href="src/kernel/types/browsers/f_file_info_params.py">params</a>) -> <a href="./src/kernel/types/browsers/f_file_info_response.py">FFileInfoResponse</a></code>
+- <code title="get /browsers/{id_or_name}/fs/list_files">client.browsers.fs.<a href="./src/kernel/resources/browsers/fs/fs.py">list_files</a>(id_or_name, \*\*<a href="src/kernel/types/browsers/f_list_files_params.py">params</a>) -> <a href="./src/kernel/types/browsers/f_list_files_response.py">FListFilesResponse</a></code>
+- <code title="put /browsers/{id_or_name}/fs/move">client.browsers.fs.<a href="./src/kernel/resources/browsers/fs/fs.py">move</a>(id_or_name, \*\*<a href="src/kernel/types/browsers/f_move_params.py">params</a>) -> None</code>
+- <code title="get /browsers/{id_or_name}/fs/read_file">client.browsers.fs.<a href="./src/kernel/resources/browsers/fs/fs.py">read_file</a>(id_or_name, \*\*<a href="src/kernel/types/browsers/f_read_file_params.py">params</a>) -> BinaryAPIResponse</code>
+- <code title="put /browsers/{id_or_name}/fs/set_file_permissions">client.browsers.fs.<a href="./src/kernel/resources/browsers/fs/fs.py">set_file_permissions</a>(id_or_name, \*\*<a href="src/kernel/types/browsers/f_set_file_permissions_params.py">params</a>) -> None</code>
+- <code title="post /browsers/{id_or_name}/fs/upload">client.browsers.fs.<a href="./src/kernel/resources/browsers/fs/fs.py">upload</a>(id_or_name, \*\*<a href="src/kernel/types/browsers/f_upload_params.py">params</a>) -> None</code>
+- <code title="post /browsers/{id_or_name}/fs/upload_zip">client.browsers.fs.<a href="./src/kernel/resources/browsers/fs/fs.py">upload_zip</a>(id_or_name, \*\*<a href="src/kernel/types/browsers/f_upload_zip_params.py">params</a>) -> None</code>
+- <code title="put /browsers/{id_or_name}/fs/write_file">client.browsers.fs.<a href="./src/kernel/resources/browsers/fs/fs.py">write_file</a>(id_or_name, contents, \*\*<a href="src/kernel/types/browsers/f_write_file_params.py">params</a>) -> None</code>
+
+### Watch
+
+Types:
+
+```python
+from kernel.types.browsers.fs import WatchEventsResponse, WatchStartResponse
+```
+
+Methods:
+
+- <code title="get /browsers/{id_or_name}/fs/watch/{watch_id}/events">client.browsers.fs.watch.<a href="./src/kernel/resources/browsers/fs/watch.py">events</a>(watch_id, \*, id_or_name) -> <a href="./src/kernel/types/browsers/fs/watch_events_response.py">WatchEventsResponse</a></code>
+- <code title="post /browsers/{id_or_name}/fs/watch">client.browsers.fs.watch.<a href="./src/kernel/resources/browsers/fs/watch.py">start</a>(id_or_name, \*\*<a href="src/kernel/types/browsers/fs/watch_start_params.py">params</a>) -> <a href="./src/kernel/types/browsers/fs/watch_start_response.py">WatchStartResponse</a></code>
+- <code title="delete /browsers/{id_or_name}/fs/watch/{watch_id}">client.browsers.fs.watch.<a href="./src/kernel/resources/browsers/fs/watch.py">stop</a>(watch_id, \*, id_or_name) -> None</code>
+
+## Process
+
+Types:
+
+```python
+from kernel.types.browsers import (
+    ProcessExecResponse,
+    ProcessKillResponse,
+    ProcessResizeResponse,
+    ProcessSpawnResponse,
+    ProcessStatusResponse,
+    ProcessStdinResponse,
+    ProcessStdoutStreamResponse,
+)
+```
+
+Methods:
+
+- <code title="post /browsers/{id_or_name}/process/exec">client.browsers.process.<a href="./src/kernel/resources/browsers/process.py">exec</a>(id_or_name, \*\*<a href="src/kernel/types/browsers/process_exec_params.py">params</a>) -> <a href="./src/kernel/types/browsers/process_exec_response.py">ProcessExecResponse</a></code>
+- <code title="post /browsers/{id_or_name}/process/{process_id}/kill">client.browsers.process.<a href="./src/kernel/resources/browsers/process.py">kill</a>(process_id, \*, id_or_name, \*\*<a href="src/kernel/types/browsers/process_kill_params.py">params</a>) -> <a href="./src/kernel/types/browsers/process_kill_response.py">ProcessKillResponse</a></code>
+- <code title="post /browsers/{id_or_name}/process/{process_id}/resize">client.browsers.process.<a href="./src/kernel/resources/browsers/process.py">resize</a>(process_id, \*, id_or_name, \*\*<a href="src/kernel/types/browsers/process_resize_params.py">params</a>) -> <a href="./src/kernel/types/browsers/process_resize_response.py">ProcessResizeResponse</a></code>
+- <code title="post /browsers/{id_or_name}/process/spawn">client.browsers.process.<a href="./src/kernel/resources/browsers/process.py">spawn</a>(id_or_name, \*\*<a href="src/kernel/types/browsers/process_spawn_params.py">params</a>) -> <a href="./src/kernel/types/browsers/process_spawn_response.py">ProcessSpawnResponse</a></code>
+- <code title="get /browsers/{id_or_name}/process/{process_id}/status">client.browsers.process.<a href="./src/kernel/resources/browsers/process.py">status</a>(process_id, \*, id_or_name) -> <a href="./src/kernel/types/browsers/process_status_response.py">ProcessStatusResponse</a></code>
+- <code title="post /browsers/{id_or_name}/process/{process_id}/stdin">client.browsers.process.<a href="./src/kernel/resources/browsers/process.py">stdin</a>(process_id, \*, id_or_name, \*\*<a href="src/kernel/types/browsers/process_stdin_params.py">params</a>) -> <a href="./src/kernel/types/browsers/process_stdin_response.py">ProcessStdinResponse</a></code>
+- <code title="get /browsers/{id_or_name}/process/{process_id}/stdout/stream">client.browsers.process.<a href="./src/kernel/resources/browsers/process.py">stdout_stream</a>(process_id, \*, id_or_name) -> <a href="./src/kernel/types/browsers/process_stdout_stream_response.py">ProcessStdoutStreamResponse</a></code>
+
+## Logs
+
+Methods:
+
+- <code title="get /browsers/{id_or_name}/logs/stream">client.browsers.logs.<a href="./src/kernel/resources/browsers/logs.py">stream</a>(id_or_name, \*\*<a href="src/kernel/types/browsers/log_stream_params.py">params</a>) -> <a href="./src/kernel/types/shared/log_event.py">LogEvent</a></code>
+
+## Computer
+
+Types:
+
+```python
+from kernel.types.browsers import (
+    ComputerGetMousePositionResponse,
+    ComputerReadClipboardResponse,
+    ComputerSetCursorVisibilityResponse,
+)
+```
+
+Methods:
+
+- <code title="post /browsers/{id_or_name}/computer/batch">client.browsers.computer.<a href="./src/kernel/resources/browsers/computer.py">batch</a>(id_or_name, \*\*<a href="src/kernel/types/browsers/computer_batch_params.py">params</a>) -> None</code>
+- <code title="post /browsers/{id_or_name}/computer/screenshot">client.browsers.computer.<a href="./src/kernel/resources/browsers/computer.py">capture_screenshot</a>(id_or_name, \*\*<a href="src/kernel/types/browsers/computer_capture_screenshot_params.py">params</a>) -> BinaryAPIResponse</code>
+- <code title="post /browsers/{id_or_name}/computer/click_mouse">client.browsers.computer.<a href="./src/kernel/resources/browsers/computer.py">click_mouse</a>(id_or_name, \*\*<a href="src/kernel/types/browsers/computer_click_mouse_params.py">params</a>) -> None</code>
+- <code title="post /browsers/{id_or_name}/computer/drag_mouse">client.browsers.computer.<a href="./src/kernel/resources/browsers/computer.py">drag_mouse</a>(id_or_name, \*\*<a href="src/kernel/types/browsers/computer_drag_mouse_params.py">params</a>) -> None</code>
+- <code title="post /browsers/{id_or_name}/computer/get_mouse_position">client.browsers.computer.<a href="./src/kernel/resources/browsers/computer.py">get_mouse_position</a>(id_or_name) -> <a href="./src/kernel/types/browsers/computer_get_mouse_position_response.py">ComputerGetMousePositionResponse</a></code>
+- <code title="post /browsers/{id_or_name}/computer/move_mouse">client.browsers.computer.<a href="./src/kernel/resources/browsers/computer.py">move_mouse</a>(id_or_name, \*\*<a href="src/kernel/types/browsers/computer_move_mouse_params.py">params</a>) -> None</code>
+- <code title="post /browsers/{id_or_name}/computer/press_key">client.browsers.computer.<a href="./src/kernel/resources/browsers/computer.py">press_key</a>(id_or_name, \*\*<a href="src/kernel/types/browsers/computer_press_key_params.py">params</a>) -> None</code>
+- <code title="post /browsers/{id_or_name}/computer/clipboard/read">client.browsers.computer.<a href="./src/kernel/resources/browsers/computer.py">read_clipboard</a>(id_or_name) -> <a href="./src/kernel/types/browsers/computer_read_clipboard_response.py">ComputerReadClipboardResponse</a></code>
+- <code title="post /browsers/{id_or_name}/computer/scroll">client.browsers.computer.<a href="./src/kernel/resources/browsers/computer.py">scroll</a>(id_or_name, \*\*<a href="src/kernel/types/browsers/computer_scroll_params.py">params</a>) -> None</code>
+- <code title="post /browsers/{id_or_name}/computer/cursor">client.browsers.computer.<a href="./src/kernel/resources/browsers/computer.py">set_cursor_visibility</a>(id_or_name, \*\*<a href="src/kernel/types/browsers/computer_set_cursor_visibility_params.py">params</a>) -> <a href="./src/kernel/types/browsers/computer_set_cursor_visibility_response.py">ComputerSetCursorVisibilityResponse</a></code>
+- <code title="post /browsers/{id_or_name}/computer/type">client.browsers.computer.<a href="./src/kernel/resources/browsers/computer.py">type_text</a>(id_or_name, \*\*<a href="src/kernel/types/browsers/computer_type_text_params.py">params</a>) -> None</code>
+- <code title="post /browsers/{id_or_name}/computer/clipboard/write">client.browsers.computer.<a href="./src/kernel/resources/browsers/computer.py">write_clipboard</a>(id_or_name, \*\*<a href="src/kernel/types/browsers/computer_write_clipboard_params.py">params</a>) -> None</code>
+
+## Playwright
+
+Types:
+
+```python
+from kernel.types.browsers import PlaywrightExecuteResponse
+```
+
+Methods:
+
+- <code title="post /browsers/{id_or_name}/playwright/execute">client.browsers.playwright.<a href="./src/kernel/resources/browsers/playwright.py">execute</a>(id_or_name, \*\*<a href="src/kernel/types/browsers/playwright_execute_params.py">params</a>) -> <a href="./src/kernel/types/browsers/playwright_execute_response.py">PlaywrightExecuteResponse</a></code>
+
+## Webmcp
+
+Types:
+
+```python
+from kernel.types.browsers import (
+    CustomToolSource,
+    InvocationFailure,
+    InvocationResult,
+    InvokeRequest,
+    Tool,
+    ToolAnnotations,
+    ToolFrame,
+    ToolMetadata,
+    ToolSource,
+    ToolsResponse,
+)
+```
+
+Methods:
+
+- <code title="post /browsers/{id_or_name}/webmcp/invoke">client.browsers.webmcp.<a href="./src/kernel/resources/browsers/webmcp/webmcp.py">invoke_tool</a>(id_or_name, \*\*<a href="src/kernel/types/browsers/webmcp_invoke_tool_params.py">params</a>) -> <a href="./src/kernel/types/browsers/invocation_result.py">InvocationResult</a></code>
+- <code title="get /browsers/{id_or_name}/webmcp/tools">client.browsers.webmcp.<a href="./src/kernel/resources/browsers/webmcp/webmcp.py">list_tools</a>(id_or_name, \*\*<a href="src/kernel/types/browsers/webmcp_list_tools_params.py">params</a>) -> <a href="./src/kernel/types/browsers/tools_response.py">ToolsResponse</a></code>
+
+### CustomTools
+
+Types:
+
+```python
+from kernel.types.browsers.webmcp import AddRequest, CustomToolsResponse, Definition, Match
+```
+
+Methods:
+
+- <code title="get /browsers/{id_or_name}/webmcp/custom-tools">client.browsers.webmcp.custom_tools.<a href="./src/kernel/resources/browsers/webmcp/custom_tools.py">list</a>(id_or_name) -> <a href="./src/kernel/types/browsers/webmcp/custom_tools_response.py">CustomToolsResponse</a></code>
+- <code title="post /browsers/{id_or_name}/webmcp/custom-tools">client.browsers.webmcp.custom_tools.<a href="./src/kernel/resources/browsers/webmcp/custom_tools.py">add</a>(id_or_name, \*\*<a href="src/kernel/types/browsers/webmcp/custom_tool_add_params.py">params</a>) -> <a href="./src/kernel/types/browsers/webmcp/custom_tools_response.py">CustomToolsResponse</a></code>
+- <code title="delete /browsers/{id_or_name}/webmcp/custom-tools/{id}">client.browsers.webmcp.custom_tools.<a href="./src/kernel/resources/browsers/webmcp/custom_tools.py">remove</a>(id, \*, id_or_name) -> None</code>
+
+# Profiles
+
+Methods:
+
+- <code title="post /profiles">client.profiles.<a href="./src/kernel/resources/profiles.py">create</a>(\*\*<a href="src/kernel/types/profile_create_params.py">params</a>) -> <a href="./src/kernel/types/profile.py">Profile</a></code>
+- <code title="get /profiles/{id_or_name}">client.profiles.<a href="./src/kernel/resources/profiles.py">retrieve</a>(id_or_name) -> <a href="./src/kernel/types/profile.py">Profile</a></code>
+- <code title="patch /profiles/{id_or_name}">client.profiles.<a href="./src/kernel/resources/profiles.py">update</a>(id_or_name, \*\*<a href="src/kernel/types/profile_update_params.py">params</a>) -> <a href="./src/kernel/types/profile.py">Profile</a></code>
+- <code title="get /profiles">client.profiles.<a href="./src/kernel/resources/profiles.py">list</a>(\*\*<a href="src/kernel/types/profile_list_params.py">params</a>) -> <a href="./src/kernel/types/profile.py">SyncOffsetPagination[Profile]</a></code>
+- <code title="delete /profiles/{id_or_name}">client.profiles.<a href="./src/kernel/resources/profiles.py">delete</a>(id_or_name) -> None</code>
+- <code title="get /profiles/{id_or_name}/download">client.profiles.<a href="./src/kernel/resources/profiles.py">download</a>(id_or_name, \*\*<a href="src/kernel/types/profile_download_params.py">params</a>) -> BinaryAPIResponse</code>
+
+# Auth
+
+## Context
+
+Types:
+
+```python
+from kernel.types.auth import AuthContext
+```
+
+Methods:
+
+- <code title="get /auth/context">client.auth.context.<a href="./src/kernel/resources/auth/context.py">retrieve</a>() -> <a href="./src/kernel/types/auth/auth_context.py">AuthContext</a></code>
+
+## Connections
+
+Types:
+
+```python
+from kernel.types.auth import (
+    LoginResponse,
+    ManagedAuth,
+    ManagedAuthBrowserConfig,
+    ManagedAuthCreateRequest,
+    ManagedAuthTimelineEvent,
+    ManagedAuthUpdateRequest,
+    SubmitFieldsRequest,
+    SubmitFieldsResponse,
+    ConnectionFollowResponse,
+)
+```
+
+Methods:
+
+- <code title="post /auth/connections">client.auth.connections.<a href="./src/kernel/resources/auth/connections.py">create</a>(\*\*<a href="src/kernel/types/auth/connection_create_params.py">params</a>) -> <a href="./src/kernel/types/auth/managed_auth.py">ManagedAuth</a></code>
+- <code title="get /auth/connections/{id}">client.auth.connections.<a href="./src/kernel/resources/auth/connections.py">retrieve</a>(id) -> <a href="./src/kernel/types/auth/managed_auth.py">ManagedAuth</a></code>
+- <code title="patch /auth/connections/{id}">client.auth.connections.<a href="./src/kernel/resources/auth/connections.py">update</a>(id, \*\*<a href="src/kernel/types/auth/connection_update_params.py">params</a>) -> <a href="./src/kernel/types/auth/managed_auth.py">ManagedAuth</a></code>
+- <code title="get /auth/connections">client.auth.connections.<a href="./src/kernel/resources/auth/connections.py">list</a>(\*\*<a href="src/kernel/types/auth/connection_list_params.py">params</a>) -> <a href="./src/kernel/types/auth/managed_auth.py">SyncOffsetPagination[ManagedAuth]</a></code>
+- <code title="delete /auth/connections/{id}">client.auth.connections.<a href="./src/kernel/resources/auth/connections.py">delete</a>(id) -> None</code>
+- <code title="get /auth/connections/{id}/events">client.auth.connections.<a href="./src/kernel/resources/auth/connections.py">follow</a>(id) -> <a href="./src/kernel/types/auth/connection_follow_response.py">ConnectionFollowResponse</a></code>
+- <code title="post /auth/connections/{id}/login">client.auth.connections.<a href="./src/kernel/resources/auth/connections.py">login</a>(id, \*\*<a href="src/kernel/types/auth/connection_login_params.py">params</a>) -> <a href="./src/kernel/types/auth/login_response.py">LoginResponse</a></code>
+- <code title="post /auth/connections/{id}/submit">client.auth.connections.<a href="./src/kernel/resources/auth/connections.py">submit</a>(id, \*\*<a href="src/kernel/types/auth/connection_submit_params.py">params</a>) -> <a href="./src/kernel/types/auth/submit_fields_response.py">SubmitFieldsResponse</a></code>
+- <code title="get /auth/connections/{id}/timeline">client.auth.connections.<a href="./src/kernel/resources/auth/connections.py">timeline</a>(id, \*\*<a href="src/kernel/types/auth/connection_timeline_params.py">params</a>) -> <a href="./src/kernel/types/auth/managed_auth_timeline_event.py">SyncOffsetPagination[ManagedAuthTimelineEvent]</a></code>
+
+# Telemetry
+
+## Destinations
+
+Types:
+
+```python
+from kernel.types.telemetry import OtlpDestination
+```
+
+Methods:
+
+- <code title="post /telemetry/destinations">client.telemetry.destinations.<a href="./src/kernel/resources/telemetry/destinations.py">create</a>(\*\*<a href="src/kernel/types/telemetry/destination_create_params.py">params</a>) -> <a href="./src/kernel/types/telemetry/otlp_destination.py">OtlpDestination</a></code>
+- <code title="get /telemetry/destinations/{id_or_name}">client.telemetry.destinations.<a href="./src/kernel/resources/telemetry/destinations.py">retrieve</a>(id_or_name) -> <a href="./src/kernel/types/telemetry/otlp_destination.py">OtlpDestination</a></code>
+- <code title="patch /telemetry/destinations/{id_or_name}">client.telemetry.destinations.<a href="./src/kernel/resources/telemetry/destinations.py">update</a>(id_or_name, \*\*<a href="src/kernel/types/telemetry/destination_update_params.py">params</a>) -> <a href="./src/kernel/types/telemetry/otlp_destination.py">OtlpDestination</a></code>
+- <code title="get /telemetry/destinations">client.telemetry.destinations.<a href="./src/kernel/resources/telemetry/destinations.py">list</a>(\*\*<a href="src/kernel/types/telemetry/destination_list_params.py">params</a>) -> <a href="./src/kernel/types/telemetry/otlp_destination.py">SyncOffsetPagination[OtlpDestination]</a></code>
+- <code title="delete /telemetry/destinations/{id_or_name}">client.telemetry.destinations.<a href="./src/kernel/resources/telemetry/destinations.py">delete</a>(id_or_name) -> None</code>
+
+# Proxies
+
+Types:
+
+```python
+from kernel.types import (
+    ProxyCreateResponse,
+    ProxyRetrieveResponse,
+    ProxyUpdateResponse,
+    ProxyListResponse,
+    ProxyCheckResponse,
+)
+```
+
+Methods:
+
+- <code title="post /proxies">client.proxies.<a href="./src/kernel/resources/proxies.py">create</a>(\*\*<a href="src/kernel/types/proxy_create_params.py">params</a>) -> <a href="./src/kernel/types/proxy_create_response.py">ProxyCreateResponse</a></code>
+- <code title="get /proxies/{id}">client.proxies.<a href="./src/kernel/resources/proxies.py">retrieve</a>(id) -> <a href="./src/kernel/types/proxy_retrieve_response.py">ProxyRetrieveResponse</a></code>
+- <code title="patch /proxies/{id}">client.proxies.<a href="./src/kernel/resources/proxies.py">update</a>(id, \*\*<a href="src/kernel/types/proxy_update_params.py">params</a>) -> <a href="./src/kernel/types/proxy_update_response.py">ProxyUpdateResponse</a></code>
+- <code title="get /proxies">client.proxies.<a href="./src/kernel/resources/proxies.py">list</a>(\*\*<a href="src/kernel/types/proxy_list_params.py">params</a>) -> <a href="./src/kernel/types/proxy_list_response.py">SyncOffsetPagination[ProxyListResponse]</a></code>
+- <code title="delete /proxies/{id}">client.proxies.<a href="./src/kernel/resources/proxies.py">delete</a>(id) -> None</code>
+- <code title="post /proxies/{id}/check">client.proxies.<a href="./src/kernel/resources/proxies.py">check</a>(id, \*\*<a href="src/kernel/types/proxy_check_params.py">params</a>) -> <a href="./src/kernel/types/proxy_check_response.py">ProxyCheckResponse</a></code>
+
+# Extensions
+
+Types:
+
+```python
+from kernel.types import ExtensionListResponse, ExtensionGetResponse, ExtensionUploadResponse
+```
+
+Methods:
+
+- <code title="get /extensions">client.extensions.<a href="./src/kernel/resources/extensions.py">list</a>(\*\*<a href="src/kernel/types/extension_list_params.py">params</a>) -> <a href="./src/kernel/types/extension_list_response.py">SyncOffsetPagination[ExtensionListResponse]</a></code>
+- <code title="delete /extensions/{id_or_name}">client.extensions.<a href="./src/kernel/resources/extensions.py">delete</a>(id_or_name) -> None</code>
+- <code title="get /extensions/{id_or_name}">client.extensions.<a href="./src/kernel/resources/extensions.py">download</a>(id_or_name) -> BinaryAPIResponse</code>
+- <code title="get /extensions/from_chrome_store">client.extensions.<a href="./src/kernel/resources/extensions.py">download_from_chrome_store</a>(\*\*<a href="src/kernel/types/extension_download_from_chrome_store_params.py">params</a>) -> BinaryAPIResponse</code>
+- <code title="get /extensions/{id_or_name}/metadata">client.extensions.<a href="./src/kernel/resources/extensions.py">get</a>(id_or_name) -> <a href="./src/kernel/types/extension_get_response.py">ExtensionGetResponse</a></code>
+- <code title="post /extensions">client.extensions.<a href="./src/kernel/resources/extensions.py">upload</a>(\*\*<a href="src/kernel/types/extension_upload_params.py">params</a>) -> <a href="./src/kernel/types/extension_upload_response.py">ExtensionUploadResponse</a></code>
+
+# BrowserPools
+
+Types:
+
+```python
+from kernel.types import BrowserPool, BrowserPoolAcquireResponse
+```
+
+Methods:
+
+- <code title="post /browser_pools">client.browser_pools.<a href="./src/kernel/resources/browser_pools.py">create</a>(\*\*<a href="src/kernel/types/browser_pool_create_params.py">params</a>) -> <a href="./src/kernel/types/browser_pool.py">BrowserPool</a></code>
+- <code title="get /browser_pools/{id_or_name}">client.browser_pools.<a href="./src/kernel/resources/browser_pools.py">retrieve</a>(id_or_name) -> <a href="./src/kernel/types/browser_pool.py">BrowserPool</a></code>
+- <code title="patch /browser_pools/{id_or_name}">client.browser_pools.<a href="./src/kernel/resources/browser_pools.py">update</a>(id_or_name, \*\*<a href="src/kernel/types/browser_pool_update_params.py">params</a>) -> <a href="./src/kernel/types/browser_pool.py">BrowserPool</a></code>
+- <code title="get /browser_pools">client.browser_pools.<a href="./src/kernel/resources/browser_pools.py">list</a>(\*\*<a href="src/kernel/types/browser_pool_list_params.py">params</a>) -> <a href="./src/kernel/types/browser_pool.py">SyncOffsetPagination[BrowserPool]</a></code>
+- <code title="delete /browser_pools/{id_or_name}">client.browser_pools.<a href="./src/kernel/resources/browser_pools.py">delete</a>(id_or_name, \*\*<a href="src/kernel/types/browser_pool_delete_params.py">params</a>) -> None</code>
+- <code title="post /browser_pools/{id_or_name}/acquire">client.browser_pools.<a href="./src/kernel/resources/browser_pools.py">acquire</a>(id_or_name, \*\*<a href="src/kernel/types/browser_pool_acquire_params.py">params</a>) -> <a href="./src/kernel/types/browser_pool_acquire_response.py">BrowserPoolAcquireResponse</a></code>
+- <code title="post /browser_pools/{id_or_name}/flush">client.browser_pools.<a href="./src/kernel/resources/browser_pools.py">flush</a>(id_or_name) -> None</code>
+- <code title="post /browser_pools/{id_or_name}/release">client.browser_pools.<a href="./src/kernel/resources/browser_pools.py">release</a>(id_or_name, \*\*<a href="src/kernel/types/browser_pool_release_params.py">params</a>) -> None</code>
+
+# VaultProviderConfigs
+
+Types:
+
+```python
+from kernel.types import VaultProviderConfig
+```
+
+Methods:
+
+- <code title="post /vault-provider-configs">client.vault_provider_configs.<a href="./src/kernel/resources/vault_provider_configs.py">create</a>(\*\*<a href="src/kernel/types/vault_provider_config_create_params.py">params</a>) -> <a href="./src/kernel/types/vault_provider_config.py">VaultProviderConfig</a></code>
+- <code title="get /vault-provider-configs/{id_or_name}">client.vault_provider_configs.<a href="./src/kernel/resources/vault_provider_configs.py">retrieve</a>(id_or_name) -> <a href="./src/kernel/types/vault_provider_config.py">VaultProviderConfig</a></code>
+- <code title="patch /vault-provider-configs/{id_or_name}">client.vault_provider_configs.<a href="./src/kernel/resources/vault_provider_configs.py">update</a>(id_or_name, \*\*<a href="src/kernel/types/vault_provider_config_update_params.py">params</a>) -> <a href="./src/kernel/types/vault_provider_config.py">VaultProviderConfig</a></code>
+- <code title="get /vault-provider-configs">client.vault_provider_configs.<a href="./src/kernel/resources/vault_provider_configs.py">list</a>(\*\*<a href="src/kernel/types/vault_provider_config_list_params.py">params</a>) -> <a href="./src/kernel/types/vault_provider_config.py">SyncOffsetPagination[VaultProviderConfig]</a></code>
+- <code title="delete /vault-provider-configs/{id_or_name}">client.vault_provider_configs.<a href="./src/kernel/resources/vault_provider_configs.py">delete</a>(id_or_name) -> None</code>
+
+# Vaults
+
+Types:
+
+```python
+from kernel.types import Vault
+```
+
+Methods:
+
+- <code title="get /vaults/{id_or_name}">client.vaults.<a href="./src/kernel/resources/vaults/vaults.py">retrieve</a>(id_or_name) -> <a href="./src/kernel/types/vault.py">Vault</a></code>
+- <code title="get /vaults">client.vaults.<a href="./src/kernel/resources/vaults/vaults.py">list</a>(\*\*<a href="src/kernel/types/vault_list_params.py">params</a>) -> <a href="./src/kernel/types/vault.py">SyncOffsetPagination[Vault]</a></code>
+- <code title="delete /vaults/{id_or_name}">client.vaults.<a href="./src/kernel/resources/vaults/vaults.py">delete</a>(id_or_name) -> None</code>
+- <code title="post /vaults">client.vaults.<a href="./src/kernel/resources/vaults/vaults.py">upsert</a>(\*\*<a href="src/kernel/types/vault_upsert_params.py">params</a>) -> <a href="./src/kernel/types/vault.py">Vault</a></code>
+
+## Items
+
+Types:
+
+```python
+from kernel.types.vaults import (
+    AgentcardCheckoutAuthorization,
+    AgentcardCheckoutPreparation,
+    AgentcardPreparedProcessor,
+    AuthorizeVaultItemOperationRequest,
+    CardVaultItemSpec,
+    CardVaultItemState,
+    CollectVaultItemOperationRequest,
+    CredentialAccountVaultItem,
+    CredentialAccountVaultItemRequest,
+    CredentialCollectionAction,
+    CredentialVaultFieldDefinition,
+    CredentialVaultFieldInput,
+    CredentialVaultFieldState,
+    CredentialVaultFieldType,
+    CredentialVaultFieldUpdate,
+    CredentialVaultItem,
+    CredentialVaultItemRequest,
+    CredentialVaultItemSpec,
+    CredentialVaultItemSpecInput,
+    CredentialVaultItemSpecUpdate,
+    CredentialVaultItemState,
+    CredentialVaultItemUpdateRequest,
+    FillVaultItemOperationRequest,
+    FillVaultItemOperationResult,
+    KernelCardState,
+    KernelCardVaultItemSpec,
+    KernelCredentialVaultItemSpec,
+    KernelCredentialVaultItemSpecInput,
+    KernelCredentialVaultItemState,
+    KernelWalletState,
+    KernelWalletVaultItemSpec,
+    ManagedAuthCredentialVaultField,
+    ManagedAuthCredentialVaultItemSpec,
+    ManagedAuthCredentialVaultItemSpecInput,
+    ManagedAuthCredentialVaultItemState,
+    OnePasswordCredentialAccountSpec,
+    OnePasswordCredentialAccountState,
+    OnePasswordCredentialVaultItemSpec,
+    OnePasswordCredentialVaultItemSpecInput,
+    OnePasswordCredentialVaultItemState,
+    OnePasswordFillVaultItemOperationRequest,
+    OnePasswordFillVaultItemOperationResult,
+    OnePasswordOAuthAction,
+    OnePasswordRecoverVaultItemOperationRequest,
+    OnePasswordRequestAccessVaultItemOperationRequest,
+    PrepareCheckoutVaultItemOperationRequest,
+    VaultCardAliases,
+    VaultCardFillField,
+    VaultCheckoutContext,
+    VaultFillField,
+    VaultFillFieldResult,
+    VaultItem,
+    VaultItemAction,
+    VaultItemEvent,
+    VaultItemOperationResponse,
+    VaultPaymentMethod,
+    VaultWebmcpBinding,
+    WalletVaultItemSpec,
+    WalletVaultItemState,
+    WebmcpInvokeVaultItemOperationRequest,
+    WebmcpInvokeVaultItemOperationResult,
+    ItemListResponse,
+    ItemEventsResponse,
+)
+```
+
+Methods:
+
+- <code title="get /vaults/{id_or_name}/items/{key}">client.vaults.items.<a href="./src/kernel/resources/vaults/items.py">retrieve</a>(key, \*, id_or_name, \*\*<a href="src/kernel/types/vaults/item_retrieve_params.py">params</a>) -> <a href="./src/kernel/types/vaults/vault_item.py">VaultItem</a></code>
+- <code title="patch /vaults/{id_or_name}/items/{key}">client.vaults.items.<a href="./src/kernel/resources/vaults/items.py">update</a>(key, \*, id_or_name, \*\*<a href="src/kernel/types/vaults/item_update_params.py">params</a>) -> <a href="./src/kernel/types/vaults/vault_item.py">VaultItem</a></code>
+- <code title="get /vaults/{id_or_name}/items">client.vaults.items.<a href="./src/kernel/resources/vaults/items.py">list</a>(id_or_name) -> <a href="./src/kernel/types/vaults/item_list_response.py">ItemListResponse</a></code>
+- <code title="delete /vaults/{id_or_name}/items/{key}">client.vaults.items.<a href="./src/kernel/resources/vaults/items.py">delete</a>(key, \*, id_or_name) -> None</code>
+- <code title="get /vaults/{id_or_name}/items/{key}/events">client.vaults.items.<a href="./src/kernel/resources/vaults/items.py">events</a>(key, \*, id_or_name, \*\*<a href="src/kernel/types/vaults/item_events_params.py">params</a>) -> <a href="./src/kernel/types/vaults/item_events_response.py">ItemEventsResponse</a></code>
+- <code title="post /vaults/{id_or_name}/items/{key}/operations">client.vaults.items.<a href="./src/kernel/resources/vaults/items.py">perform_operation</a>(key, \*, id_or_name, \*\*<a href="src/kernel/types/vaults/item_perform_operation_params.py">params</a>) -> <a href="./src/kernel/types/vaults/vault_item_operation_response.py">VaultItemOperationResponse</a></code>
+- <code title="put /vaults/{id_or_name}/items/{key}">client.vaults.items.<a href="./src/kernel/resources/vaults/items.py">upsert</a>(key, \*, id_or_name, \*\*<a href="src/kernel/types/vaults/item_upsert_params.py">params</a>) -> <a href="./src/kernel/types/vaults/vault_item.py">VaultItem</a></code>
+
+# Credentials
+
+Types:
+
+```python
+from kernel.types import (
+    CreateCredentialRequest,
+    Credential,
+    UpdateCredentialRequest,
+    CredentialTotpCodeResponse,
+)
+```
+
+Methods:
+
+- <code title="post /credentials">client.credentials.<a href="./src/kernel/resources/credentials.py">create</a>(\*\*<a href="src/kernel/types/credential_create_params.py">params</a>) -> <a href="./src/kernel/types/credential.py">Credential</a></code>
+- <code title="get /credentials/{id_or_name}">client.credentials.<a href="./src/kernel/resources/credentials.py">retrieve</a>(id_or_name) -> <a href="./src/kernel/types/credential.py">Credential</a></code>
+- <code title="patch /credentials/{id_or_name}">client.credentials.<a href="./src/kernel/resources/credentials.py">update</a>(id_or_name, \*\*<a href="src/kernel/types/credential_update_params.py">params</a>) -> <a href="./src/kernel/types/credential.py">Credential</a></code>
+- <code title="get /credentials">client.credentials.<a href="./src/kernel/resources/credentials.py">list</a>(\*\*<a href="src/kernel/types/credential_list_params.py">params</a>) -> <a href="./src/kernel/types/credential.py">SyncOffsetPagination[Credential]</a></code>
+- <code title="delete /credentials/{id_or_name}">client.credentials.<a href="./src/kernel/resources/credentials.py">delete</a>(id_or_name) -> None</code>
+- <code title="get /credentials/{id_or_name}/totp-code">client.credentials.<a href="./src/kernel/resources/credentials.py">totp_code</a>(id_or_name) -> <a href="./src/kernel/types/credential_totp_code_response.py">CredentialTotpCodeResponse</a></code>
+
+# Projects
+
+Types:
+
+```python
+from kernel.types import CreateProjectRequest, Project, UpdateProjectRequest
+```
+
+Methods:
+
+- <code title="post /org/projects">client.projects.<a href="./src/kernel/resources/projects/projects.py">create</a>(\*\*<a href="src/kernel/types/project_create_params.py">params</a>) -> <a href="./src/kernel/types/project.py">Project</a></code>
+- <code title="get /org/projects/{id_or_name}">client.projects.<a href="./src/kernel/resources/projects/projects.py">retrieve</a>(id_or_name) -> <a href="./src/kernel/types/project.py">Project</a></code>
+- <code title="patch /org/projects/{id_or_name}">client.projects.<a href="./src/kernel/resources/projects/projects.py">update</a>(id_or_name, \*\*<a href="src/kernel/types/project_update_params.py">params</a>) -> <a href="./src/kernel/types/project.py">Project</a></code>
+- <code title="get /org/projects">client.projects.<a href="./src/kernel/resources/projects/projects.py">list</a>(\*\*<a href="src/kernel/types/project_list_params.py">params</a>) -> <a href="./src/kernel/types/project.py">SyncOffsetPagination[Project]</a></code>
+- <code title="delete /org/projects/{id_or_name}">client.projects.<a href="./src/kernel/resources/projects/projects.py">delete</a>(id_or_name) -> None</code>
+
+## Limits
+
+Types:
+
+```python
+from kernel.types.projects import ProjectLimits, UpdateProjectLimitsRequest
+```
+
+Methods:
+
+- <code title="get /org/projects/{id_or_name}/limits">client.projects.limits.<a href="./src/kernel/resources/projects/limits.py">retrieve</a>(id_or_name) -> <a href="./src/kernel/types/projects/project_limits.py">ProjectLimits</a></code>
+- <code title="patch /org/projects/{id_or_name}/limits">client.projects.limits.<a href="./src/kernel/resources/projects/limits.py">update</a>(id_or_name, \*\*<a href="src/kernel/types/projects/limit_update_params.py">params</a>) -> <a href="./src/kernel/types/projects/project_limits.py">ProjectLimits</a></code>
+
+# Organization
+
+## Entitlements
+
+Types:
+
+```python
+from kernel.types.organization import OrgEntitlements
+```
+
+Methods:
+
+- <code title="get /org/entitlements">client.organization.entitlements.<a href="./src/kernel/resources/organization/entitlements.py">retrieve</a>() -> <a href="./src/kernel/types/organization/org_entitlements.py">OrgEntitlements</a></code>
+
+## Limits
+
+Types:
+
+```python
+from kernel.types.organization import OrgLimits, UpdateOrgLimitsRequest
+```
+
+Methods:
+
+- <code title="get /org/limits">client.organization.limits.<a href="./src/kernel/resources/organization/limits.py">retrieve</a>() -> <a href="./src/kernel/types/organization/org_limits.py">OrgLimits</a></code>
+- <code title="patch /org/limits">client.organization.limits.<a href="./src/kernel/resources/organization/limits.py">update</a>(\*\*<a href="src/kernel/types/organization/limit_update_params.py">params</a>) -> <a href="./src/kernel/types/organization/org_limits.py">OrgLimits</a></code>
+
+# AuditLogs
+
+Types:
+
+```python
+from kernel.types import AuditLogEntry
+```
+
+Methods:
+
+- <code title="get /audit-logs">client.audit_logs.<a href="./src/kernel/resources/audit_logs/audit_logs.py">list</a>(\*\*<a href="src/kernel/types/audit_log_list_params.py">params</a>) -> <a href="./src/kernel/types/audit_log_entry.py">SyncPageTokenPagination[AuditLogEntry]</a></code>
+- <code title="get /audit-logs/export/chunk">client.audit_logs.<a href="./src/kernel/resources/audit_logs/audit_logs.py">export_chunk</a>(\*\*<a href="src/kernel/types/audit_log_export_chunk_params.py">params</a>) -> BinaryAPIResponse</code>
+
+## ExportDestinations
+
+Types:
+
+```python
+from kernel.types.audit_logs import (
+    AuditLogExportDestination,
+    AuditLogExportDestinationTestResult,
+    CreateAuditLogExportDestinationRequest,
+    UpdateAuditLogExportDestinationRequest,
+)
+```
+
+Methods:
+
+- <code title="post /audit-logs/export/destinations">client.audit_logs.export_destinations.<a href="./src/kernel/resources/audit_logs/export_destinations.py">create</a>(\*\*<a href="src/kernel/types/audit_logs/export_destination_create_params.py">params</a>) -> <a href="./src/kernel/types/audit_logs/audit_log_export_destination.py">AuditLogExportDestination</a></code>
+- <code title="get /audit-logs/export/destinations/{id}">client.audit_logs.export_destinations.<a href="./src/kernel/resources/audit_logs/export_destinations.py">retrieve</a>(id) -> <a href="./src/kernel/types/audit_logs/audit_log_export_destination.py">AuditLogExportDestination</a></code>
+- <code title="patch /audit-logs/export/destinations/{id}">client.audit_logs.export_destinations.<a href="./src/kernel/resources/audit_logs/export_destinations.py">update</a>(id, \*\*<a href="src/kernel/types/audit_logs/export_destination_update_params.py">params</a>) -> <a href="./src/kernel/types/audit_logs/audit_log_export_destination.py">AuditLogExportDestination</a></code>
+- <code title="get /audit-logs/export/destinations">client.audit_logs.export_destinations.<a href="./src/kernel/resources/audit_logs/export_destinations.py">list</a>(\*\*<a href="src/kernel/types/audit_logs/export_destination_list_params.py">params</a>) -> <a href="./src/kernel/types/audit_logs/audit_log_export_destination.py">SyncOffsetPagination[AuditLogExportDestination]</a></code>
+- <code title="delete /audit-logs/export/destinations/{id}">client.audit_logs.export_destinations.<a href="./src/kernel/resources/audit_logs/export_destinations.py">delete</a>(id) -> None</code>
+- <code title="post /audit-logs/export/destinations/{id}/test">client.audit_logs.export_destinations.<a href="./src/kernel/resources/audit_logs/export_destinations.py">test</a>(id) -> <a href="./src/kernel/types/audit_logs/audit_log_export_destination_test_result.py">AuditLogExportDestinationTestResult</a></code>
+
+# APIKeys
+
+Types:
+
+```python
+from kernel.types import APIKey, CreatedAPIKey
+```
+
+Methods:
+
+- <code title="post /org/api_keys">client.api_keys.<a href="./src/kernel/resources/api_keys.py">create</a>(\*\*<a href="src/kernel/types/api_key_create_params.py">params</a>) -> <a href="./src/kernel/types/created_api_key.py">CreatedAPIKey</a></code>
+- <code title="get /org/api_keys/{id}">client.api_keys.<a href="./src/kernel/resources/api_keys.py">retrieve</a>(id, \*\*<a href="src/kernel/types/api_key_retrieve_params.py">params</a>) -> <a href="./src/kernel/types/api_key.py">APIKey</a></code>
+- <code title="patch /org/api_keys/{id}">client.api_keys.<a href="./src/kernel/resources/api_keys.py">update</a>(id, \*\*<a href="src/kernel/types/api_key_update_params.py">params</a>) -> <a href="./src/kernel/types/api_key.py">APIKey</a></code>
+- <code title="get /org/api_keys">client.api_keys.<a href="./src/kernel/resources/api_keys.py">list</a>(\*\*<a href="src/kernel/types/api_key_list_params.py">params</a>) -> <a href="./src/kernel/types/api_key.py">SyncOffsetPagination[APIKey]</a></code>
+- <code title="delete /org/api_keys/{id}">client.api_keys.<a href="./src/kernel/resources/api_keys.py">delete</a>(id) -> None</code>
+- <code title="post /org/api_keys/{id}/rotate">client.api_keys.<a href="./src/kernel/resources/api_keys.py">rotate</a>(id, \*\*<a href="src/kernel/types/api_key_rotate_params.py">params</a>) -> <a href="./src/kernel/types/created_api_key.py">CreatedAPIKey</a></code>
+
+# CredentialProviders
+
+Types:
+
+```python
+from kernel.types import (
+    CreateCredentialProviderRequest,
+    CredentialProvider,
+    CredentialProviderItem,
+    CredentialProviderTestResult,
+    UpdateCredentialProviderRequest,
+    CredentialProviderListItemsResponse,
+)
+```
+
+Methods:
+
+- <code title="post /org/credential_providers">client.credential_providers.<a href="./src/kernel/resources/credential_providers.py">create</a>(\*\*<a href="src/kernel/types/credential_provider_create_params.py">params</a>) -> <a href="./src/kernel/types/credential_provider.py">CredentialProvider</a></code>
+- <code title="get /org/credential_providers/{id}">client.credential_providers.<a href="./src/kernel/resources/credential_providers.py">retrieve</a>(id) -> <a href="./src/kernel/types/credential_provider.py">CredentialProvider</a></code>
+- <code title="patch /org/credential_providers/{id}">client.credential_providers.<a href="./src/kernel/resources/credential_providers.py">update</a>(id, \*\*<a href="src/kernel/types/credential_provider_update_params.py">params</a>) -> <a href="./src/kernel/types/credential_provider.py">CredentialProvider</a></code>
+- <code title="get /org/credential_providers">client.credential_providers.<a href="./src/kernel/resources/credential_providers.py">list</a>(\*\*<a href="src/kernel/types/credential_provider_list_params.py">params</a>) -> <a href="./src/kernel/types/credential_provider.py">SyncOffsetPagination[CredentialProvider]</a></code>
+- <code title="delete /org/credential_providers/{id}">client.credential_providers.<a href="./src/kernel/resources/credential_providers.py">delete</a>(id) -> None</code>
+- <code title="get /org/credential_providers/{id}/items">client.credential_providers.<a href="./src/kernel/resources/credential_providers.py">list_items</a>(id) -> <a href="./src/kernel/types/credential_provider_list_items_response.py">CredentialProviderListItemsResponse</a></code>
+- <code title="post /org/credential_providers/{id}/test">client.credential_providers.<a href="./src/kernel/resources/credential_providers.py">test</a>(id) -> <a href="./src/kernel/types/credential_provider_test_result.py">CredentialProviderTestResult</a></code>
+
+# Search
+
+Types:
+
+```python
+from kernel.types import Attempt, ProviderTarget, Request, Result, Search, Strategy, Usage, Warning
+```
+
+Methods:
+
+- <code title="post /search">client.search.<a href="./src/kernel/resources/search/search.py">create</a>(\*\*<a href="src/kernel/types/search_create_params.py">params</a>) -> <a href="./src/kernel/types/search/search.py">Search</a></code>
+- <code title="get /search/{id}">client.search.<a href="./src/kernel/resources/search/search.py">retrieve</a>(id) -> <a href="./src/kernel/types/search/search.py">Search</a></code>
+
+## Contents
+
+Types:
+
+```python
+from kernel.types.search import FetchRequest, Response
+```
+
+Methods:
+
+- <code title="post /search/{id}/contents">client.search.contents.<a href="./src/kernel/resources/search/contents.py">fetch</a>(id, \*\*<a href="src/kernel/types/search/content_fetch_params.py">params</a>) -> <a href="./src/kernel/types/search/response.py">Response</a></code>
+
+## Providers
+
+Types:
+
+```python
+from kernel.types.search import Provider, ProviderListResponse
+```
+
+Methods:
+
+- <code title="get /search/providers">client.search.providers.<a href="./src/kernel/resources/search/providers.py">list</a>(\*\*<a href="src/kernel/types/search/provider_list_params.py">params</a>) -> <a href="./src/kernel/types/search/provider_list_response.py">ProviderListResponse</a></code>

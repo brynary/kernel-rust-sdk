@@ -1,0 +1,56 @@
+name: Sync with upstream
+
+# Regenerate the SDK when the Kernel API spec or the Python SDK changes, and
+# open a pull request with the result.
+on:
+  schedule:
+    - cron: "17 */6 * * *"
+  workflow_dispatch:
+    inputs:
+      ref:
+        description: "kernel-python-sdk ref (default: latest release)"
+        required: false
+
+permissions:
+  contents: write
+  pull-requests: write
+
+jobs:
+  sync:
+    runs-on: ubuntu-latest
+    steps:
+      - uses: actions/checkout@v4
+      - uses: dtolnay/rust-toolchain@stable
+        with:
+          components: rustfmt
+      - uses: Swatinem/rust-cache@v2
+      - name: Sync
+        env:
+          GH_TOKEN: ${{ github.token }}
+        run: codegen/sync.sh "${{ inputs.ref }}"
+      - name: Test
+        run: cargo test
+      - name: Open pull request
+        env:
+          GH_TOKEN: ${{ github.token }}
+        run: |
+          if git diff --quiet; then
+            echo "no changes"
+            exit 0
+          fi
+          version=$(python3 -c 'import json; print(json.load(open("upstream/VERSION.json"))["python_sdk_version"])')
+          branch="sync/upstream-$version"
+          git config user.name "github-actions[bot]"
+          git config user.email "41898282+github-actions[bot]@users.noreply.github.com"
+          git checkout -B "$branch"
+          git add -A
+          git commit -m "feat: sync with upstream $version"
+          git push origin "$branch"
+          if ! gh pr view "$branch" >/dev/null 2>&1; then
+            gh pr create --title "Sync with upstream $version" --body "$(cat <<BODY
+          Regenerated from the latest Kernel OpenAPI spec and kernel-python-sdk api.md.
+
+          See \`codegen/report.json\` for endpoint coverage and \`upstream/VERSION.json\` for the exact inputs.
+          BODY
+          )"
+          fi
