@@ -4,4 +4,5 @@
 //! generator never writes to this module.
 
 pub mod audit_log_download;
+pub mod browser_fetch;
 pub mod config_registry_wait;

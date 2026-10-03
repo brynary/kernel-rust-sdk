@@ -51,6 +51,20 @@ async fn main() -> kernel::Result<()> {
             .await?;
         println!("screenshot: {} bytes", png.len());
 
+        let fetched = client
+            .browsers()
+            .fetch(
+                &browser.session_id,
+                kernel::helpers::browser_fetch::BrowserFetchRequest::get("https://example.com"),
+            )
+            .await?;
+        let status = fetched.status();
+        let page = fetched.text().await?;
+        println!(
+            "fetch through browser: {status}, has <title>: {}",
+            page.contains("<title>")
+        );
+
         let mut pages = client
             .browsers()
             .list(BrowserListParams {

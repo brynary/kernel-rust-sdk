@@ -153,6 +153,15 @@ let totals = client
     .download(AuditLogExportChunkParams::new(start, end), &mut file, AuditLogDownloadOptions::default())
     .await?;
 println!("{} rows", totals.rows);
+
+// Send an HTTP request out through the browser's network.
+use kernel::helpers::browser_fetch::BrowserFetchRequest;
+let page = client
+    .browsers()
+    .fetch("browser_id", BrowserFetchRequest::get("https://example.com"))
+    .await?
+    .text()
+    .await?;
 # Ok(()) }
 ```
 

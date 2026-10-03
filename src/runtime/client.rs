@@ -284,6 +284,10 @@ impl Kernel {
         &self.inner.base_url
     }
 
+    pub(crate) fn http(&self) -> &reqwest::Client {
+        &self.inner.http
+    }
+
     /// The cache of browser VM routes used for direct-to-VM requests.
     /// Browser responses fill it automatically.
     pub fn browser_route_cache(&self) -> &BrowserRouteCache {

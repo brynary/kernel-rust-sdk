@@ -154,3 +154,40 @@ async fn non_allowlisted_subresources_use_the_control_plane() {
         .await;
     client.browsers().replays().list("s1").await.unwrap();
 }
+
+#[tokio::test]
+async fn fetch_sends_requests_through_the_browser() {
+    use kernel::helpers::browser_fetch::BrowserFetchRequest;
+    let (api, vm, client) = setup(RoutingConfig::default()).await;
+    create_browser(&api, &vm, &client, "tok").await;
+    Mock::given(method("POST"))
+        .and(path("/browser/kernel/curl/raw"))
+        .and(query_param("url", "https://example.com/x?a=1"))
+        .and(query_param("jwt", "tok"))
+        .respond_with(|req: &Request| {
+            assert!(req.headers.get("authorization").is_none());
+            assert_eq!(req.body, b"payload");
+            ResponseTemplate::new(418).set_body_string("teapot")
+        })
+        .expect(1)
+        .mount(&vm)
+        .await;
+    let res = client
+        .browsers()
+        .fetch(
+            "s1",
+            BrowserFetchRequest::new(reqwest::Method::POST, "https://example.com/x?a=1")
+                .body("payload"),
+        )
+        .await
+        .unwrap();
+    assert_eq!(res.status(), 418);
+    assert_eq!(res.text().await.unwrap(), "teapot");
+
+    let err = client
+        .browsers()
+        .fetch("missing", BrowserFetchRequest::get("https://example.com"))
+        .await
+        .unwrap_err();
+    assert!(err.to_string().contains("route cache"));
+}
