@@ -17952,7 +17952,7 @@ impl Default for SearchExaOptions {
 /// Provider-native content retrieval. Available without requesting Kernel browser retrieval; may incur provider retrieval charges.
 #[derive(Debug, Clone, PartialEq, serde::Serialize, serde::Deserialize)]
 pub struct SearchExaOptionsContents {
-    /// Return query-relevant provider excerpts.
+    /// Return query-relevant provider excerpts. Defaults to true for Exa search requests; set false to disable.
     #[serde(default, skip_serializing_if = "Option::is_none")]
     pub highlights: Option<bool>,
     /// Return provider page text.
@@ -18031,7 +18031,7 @@ pub struct SearchPerplexityOptions {
     /// Provider-native multi-query form, applied only to Perplexity. Other fallback providers receive the top-level query. Each query may incur a separate provider charge.
     #[serde(default, skip_serializing_if = "Option::is_none")]
     pub query: Option<Vec<String>>,
-    /// Provider context size supported by the selected model.
+    /// Amount of page content Perplexity extracts per result. Defaults to medium unless max_tokens or max_tokens_per_page is set.
     #[serde(default, skip_serializing_if = "Option::is_none")]
     pub search_context_size: Option<SearchPerplexityOptionsSearchContextSize>,
     /// ISO 639-1 language codes, max 20.
@@ -18063,7 +18063,7 @@ impl Default for SearchPerplexityOptions {
 }
 
 crate::string_enum! {
-    /// Provider context size supported by the selected model.
+    /// Amount of page content Perplexity extracts per result. Defaults to medium unless max_tokens or max_tokens_per_page is set.
     SearchPerplexityOptionsSearchContextSize {
         Low = "low",
         Medium = "medium",

@@ -15880,7 +15880,8 @@
         "description": "Provider-native content retrieval. Available without requesting Kernel browser retrieval; may incur provider retrieval charges.",
         "properties": {
           "highlights": {
-            "description": "Return query-relevant provider excerpts.",
+            "default": true,
+            "description": "Return query-relevant provider excerpts. Defaults to true for Exa search requests; set false to disable.",
             "type": "boolean"
           },
           "text": {
@@ -16376,7 +16377,8 @@
             "type": "array"
           },
           "search_context_size": {
-            "description": "Provider context size supported by the selected model.",
+            "default": "medium",
+            "description": "Amount of page content Perplexity extracts per result. Defaults to medium unless max_tokens or max_tokens_per_page is set.",
             "enum": [
               "low",
               "medium",
