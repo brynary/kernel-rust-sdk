@@ -2,6 +2,7 @@
 // upstream/api.python.md. Do not edit by hand.
 
 pub mod fs;
+pub mod playwright;
 pub mod webmcp;
 
 /// Parameters for `browsers.telemetry.events`.
@@ -931,6 +932,11 @@ pub struct PlaywrightExecuteParams {
     /// Example: "await page.goto('<https://example.com'>); return await page.title();"
     #[serde(default)]
     pub code: String,
+    /// Name of a Playwright executor. Calls with the same name run in the same executor, one at a
+    /// time; the first call with a new name creates it. Calls on different executors run
+    /// concurrently. 'default' names the executor that runs calls without a name.
+    #[serde(default, skip_serializing_if = "Option::is_none")]
+    pub executor: Option<crate::types::PlaywrightExecutorName>,
     /// Maximum execution time in seconds. Default is 60.
     #[serde(default, skip_serializing_if = "Option::is_none")]
     pub timeout_sec: Option<i64>,
@@ -942,6 +948,7 @@ impl PlaywrightExecuteParams {
     pub fn new(code: impl Into<String>) -> Self {
         Self {
             code: code.into(),
+            executor: None,
             timeout_sec: None,
         }
     }
@@ -1153,6 +1160,12 @@ pub type BrowserTelemetryOtlpExportConfig = crate::types::BrowserTelemetryOtlpEx
 
 /// Alias for the `BrowserTelemetryStorageConfig` type.
 pub type BrowserTelemetryStorageConfig = crate::types::BrowserTelemetryStorageConfig;
+
+/// Alias for the `PlaywrightExecutorLimitError` type.
+pub type ExecutorLimitError = crate::types::PlaywrightExecutorLimitError;
+
+/// Alias for the `PlaywrightTab` type.
+pub type Tab = crate::types::PlaywrightTab;
 
 /// Alias for the `WebMcpCustomToolSource` type.
 pub type CustomToolSource = crate::types::WebMcpCustomToolSource;

@@ -1,6 +1,6 @@
 {
-  "endpoints": 172,
-  "types": 1028,
+  "endpoints": 174,
+  "types": 1038,
   "api_md_methods_missing_from_spec": [],
   "spec_operations_not_in_api_md": [
     "delete /projects/{id_or_name}",
@@ -73,6 +73,9 @@
     "browsers::BrowserTelemetryExportConfig": "BrowserTelemetryExportConfig",
     "browsers::BrowserTelemetryOtlpExportConfig": "BrowserTelemetryOtlpExportConfig",
     "browsers::BrowserTelemetryStorageConfig": "BrowserTelemetryStorageConfig",
+    "browsers::ExecutorLimitError": "PlaywrightExecutorLimitError",
+    "browsers::Tab": "PlaywrightTab",
+    "browsers::playwright::Executor": "PlaywrightExecutor",
     "browsers::CustomToolSource": "WebMcpCustomToolSource",
     "browsers::InvocationFailure": "WebMcpInvocationFailure",
     "browsers::InvokeRequest": "WebMcpInvokeRequest",
