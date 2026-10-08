@@ -1676,10 +1676,13 @@ crate::string_enum! {
 /// Network configuration for a browser session or browser pool.
 #[derive(Debug, Clone, PartialEq, serde::Serialize, serde::Deserialize)]
 pub struct BrowserNetworkConfig {
+    /// Egress allowlist for a browser session: the only destinations the browser may reach through Kernel-managed egress. Any other destination is refused with a 403 whose X-Kernel-Proxy-Error header is network_policy_denied, so pages cannot load or send data to unlisted hosts, including with fetch() and WebSockets. Omit the field for unfiltered egress; an empty list is invalid. The allowlist applies from the browser's first request, and start_url must be allowed by it. Entries are exact hostnames ("example.com"), one leading "*." wildcard that matches subdomains at any depth but not the domain itself ("*.example.com" matches api.example.com, not example.com), public IPv4 addresses ("8.8.8.8"), bracketed public IPv6 addresses ("\[2001:4860:4860::8888\]"), or public CIDR ranges in canonical form ("8.8.4.0/24", "2001:4860::/32"). IP and CIDR entries only match destinations written as an IP address, never hostnames that resolve into the range. Entries cannot include ports, paths, or schemes, and match every port on their host. Wildcards over a public suffix ("*.com", "*.github.io") and private or reserved IP ranges are rejected, as are entries that overlap private_hosts. Enforced at Kernel's egress proxy only: destinations in private_hosts, and processes in the browser VM that do not use the browser's proxy, are not filtered, and Kernel's own control traffic is always allowed. Can be replaced or removed while the session runs with PATCH /browsers/{id_or_name}. Requires proxy v3. Not supported on browser pools.
+    #[serde(default, skip_serializing_if = "Option::is_none")]
+    pub allowed_hosts: Option<Vec<String>>,
     /// Destinations the browser reaches directly through the session's own network instead of through Kernel-managed egress — for private hosts reachable over a VPN or tunnel the session has joined (e.g. a Tailscale tailnet). By default, private IP ranges already route directly: RFC1918 (10.0.0.0/8, 172.16.0.0/12, 192.168.0.0/16), CGNAT/Tailscale (100.64.0.0/10), and IPv6 ULA (fc00::/7). An explicitly supplied list replaces those defaults with exactly the entries given, and an empty list (\[\]) disables them so all traffic uses Kernel-managed egress; omit private_hosts to keep the defaults. Entries are hostname patterns ("*.example.ts.net", "preview.internal") or IP/CIDR literals ("100.64.0.0/10", "10.1.30.63"). IP and CIDR entries only match URLs written with a literal IP address; they never match hostnames that resolve into the range, so private DNS names need a hostname entry even when they resolve inside the default ranges. CIDRs must be in canonical masked form (host bits zero), and only the private ranges listed above are accepted; public, loopback, link-local, and unspecified ranges are rejected. Exact IPv6 addresses must be bracketed ("\[fd00::1\]"); IPv6 CIDR ranges are unbracketed ("fd00::/8"). Wildcards are limited to one leading "*." over a suffix with at least two labels that is not a public suffix (so "*.co.uk" or "*.ts.net" are rejected, while "*.example.ts.net" is accepted). Hostname and IP entries may carry a port; CIDR ranges may not. Hostname entries are not resolved during validation, so callers must ensure they identify private destinations. Not related to a proxy's bypass_hosts, which selects between upstream-proxy and Kernel-managed direct egress and cannot reach into a VPN.
     #[serde(default, skip_serializing_if = "Option::is_none")]
     pub private_hosts: Option<Vec<String>>,
-    /// Per-destination proxy routes for a browser session. After setup, a destination hostname is matched against every route's hosts, regardless of port; route order does not matter. An exact hostname beats a wildcard, and a longer wildcard suffix beats a shorter one (for a.b.example.com: "a.b.example.com" \> "*.b.example.com" \> "*.example.com"). A host pattern may appear in only one route. "*.example.com" matches subdomains only, not example.com. A matched request selects the route's proxy instead of the session's top-level proxy (including mode: direct); the route proxy's own bypass_hosts still apply. If the route proxy becomes unavailable, matched requests fail closed without falling back. Requests that match no route use the session's default egress from the top-level proxy field (or the browser default when proxy is omitted: stealth proxy or direct egress). Routes take effect once the session is created; start_url and other traffic during browser setup use the top-level proxy. Setting routes requires proxy v3. Not supported on browser pools.
+    /// Per-destination proxy routes for a browser session. A destination hostname is matched against every route's hosts, regardless of port; route order does not matter. An exact hostname beats a wildcard, and a longer wildcard suffix beats a shorter one (for a.b.example.com: "a.b.example.com" \> "*.b.example.com" \> "*.example.com"). A host pattern may appear in only one route. "*.example.com" matches subdomains only, not example.com. A matched request selects the route's proxy instead of the session's top-level proxy (including mode: direct); the route proxy's own bypass_hosts still apply. If the route proxy becomes unavailable, matched requests fail closed without falling back. Requests that match no route use the session's default egress from the top-level proxy field (or the browser default when proxy is omitted: stealth proxy or direct egress). Routes apply from the start of the session, including to start_url and other traffic during browser setup. Setting routes requires proxy v3. Not supported on browser pools.
     #[serde(default, skip_serializing_if = "Option::is_none")]
     pub proxy_routes: Option<Vec<BrowserProxyRoute>>,
 }
@@ -1689,6 +1692,7 @@ impl BrowserNetworkConfig {
     #[allow(clippy::too_many_arguments, clippy::new_without_default)]
     pub fn new() -> Self {
         Self {
+            allowed_hosts: None,
             private_hosts: None,
             proxy_routes: None,
         }
@@ -1852,6 +1856,7 @@ crate::string_enum! {
     /// Geographic region for hosting browser sessions or pools.
     Region {
         UsEast = "us-east",
+        UsWest = "us-west",
         EuWest = "eu-west",
         ApSoutheast = "ap-southeast",
     }
@@ -6850,6 +6855,30 @@ impl Default for BrowserNetworkResponseEventData {
     }
 }
 
+/// Network configuration changes for a running browser session. Other network settings can only be set at creation.
+#[derive(Debug, Clone, PartialEq, serde::Serialize, serde::Deserialize)]
+pub struct BrowserNetworkUpdate {
+    /// Replaces the session's egress allowlist, using the same entry rules as network.allowed_hosts on create. Omit to leave the allowlist unchanged, or set to null to remove it and return to unfiltered egress; an empty list is invalid. The new list applies without restarting the browser: new requests to destinations it no longer allows are refused within a few seconds, and open connections to them are closed within about 30 seconds, or up to 10 minutes during a Kernel deploy. Connections to destinations it still allows, such as WebSockets, stay open. A start_url in the same request must be allowed by the updated list, and is loaded only after the list takes effect. Requires a browser created with proxy v3, and not supported on pooled browsers. If the request fails, retry it: the new list may already apply to some requests.
+    #[serde(default, skip_serializing_if = "Option::is_none")]
+    pub allowed_hosts: Option<Vec<String>>,
+}
+
+impl BrowserNetworkUpdate {
+    /// Create a `BrowserNetworkUpdate` with the required fields set.
+    #[allow(clippy::too_many_arguments, clippy::new_without_default)]
+    pub fn new() -> Self {
+        Self {
+            allowed_hosts: None,
+        }
+    }
+}
+
+impl Default for BrowserNetworkUpdate {
+    fn default() -> Self {
+        Self::new()
+    }
+}
+
 /// A page's renderer process crashed (an "Aw, Snap!" failure) while the browser process itself stayed alive. Reported on the crashed page's session, with the session and target ids on `source.metadata`. Captured only while the `page` category is enabled.
 #[derive(Debug, Clone, PartialEq, serde::Serialize, serde::Deserialize)]
 pub struct BrowserPageCrashedEvent {
@@ -8320,7 +8349,7 @@ impl Default for BrowserProxyConfig {
     }
 }
 
-/// A branded proxy-layer failure observed by the browser. Emitted when the metro egress host-proxy serves a branded 5xx error page whose response carries the X-Kernel-Proxy-Error header. Low-volume and carries a typed code. Its value is per-session and per-URL attribution for sessions that already capture the network stream: proxy failures are only observable while the CDP network collector is running, so this is an opt-in refinement of the raw network events rather than a default-on alerting signal.
+/// A branded proxy-layer failure observed by the browser. Emitted when the metro egress host-proxy serves a branded error page whose response carries the X-Kernel-Proxy-Error header: a 502 for proxy-layer failures, or a 403 when the session's network policy blocks the destination. Low-volume and carries a typed code. Its value is per-session and per-URL attribution for sessions that already capture the network stream: proxy failures are only observable while the CDP network collector is running, so this is an opt-in refinement of the raw network events rather than a default-on alerting signal.
 #[derive(Debug, Clone, PartialEq, serde::Serialize, serde::Deserialize)]
 pub struct BrowserProxyErrorEvent {
     #[serde(default)]
@@ -8377,7 +8406,7 @@ pub struct BrowserProxyErrorEventData {
     /// URL relevant to this event — page URL for navigation and page events, request URL for network events.
     #[serde(default, skip_serializing_if = "Option::is_none")]
     pub url: Option<String>,
-    /// Proxy-layer error code: the X-Kernel-Proxy-Error response header value from a branded 5xx error page served by the metro egress host-proxy. Values mirror what the proxy emits: destination_blocked, destination_route_unavailable, provider_blacklisted, provider_unreachable, provider_rejected, origin_tls_timeout, origin_response_incomplete, proxy_unavailable, restricted_route_unavailable, upstream_timeout, upstream_dns_failure, upstream_connect_failed. A header value the browser image does not recognize is reported as unknown, with the header value in raw_code.
+    /// Proxy-layer error code: the X-Kernel-Proxy-Error response header value from a branded error page served by the metro egress host-proxy. Values mirror what the proxy emits: destination_blocked, destination_route_unavailable, network_policy_denied, provider_blacklisted, provider_unreachable, provider_rejected, origin_tls_timeout, origin_response_incomplete, proxy_unavailable, restricted_route_unavailable, upstream_timeout, upstream_dns_failure, upstream_connect_failed. A header value the browser image does not recognize is reported as unknown, with the header value in raw_code.
     #[serde(default)]
     pub code: BrowserProxyErrorEventDataCode,
     /// HTTP method of the failed request, when known.
@@ -8392,7 +8421,7 @@ pub struct BrowserProxyErrorEventData {
     /// CDP Network.ResourceType for the request, when known.
     #[serde(default, skip_serializing_if = "Option::is_none")]
     pub resource_type: Option<String>,
-    /// HTTP response status of the branded error page (502).
+    /// HTTP response status of the branded error page (502, or 403 for network_policy_denied).
     #[serde(default)]
     pub status: i64,
 }
@@ -8424,10 +8453,11 @@ impl BrowserProxyErrorEventData {
 }
 
 crate::string_enum! {
-    /// Proxy-layer error code: the X-Kernel-Proxy-Error response header value from a branded 5xx error page served by the metro egress host-proxy. Values mirror what the proxy emits: destination_blocked, destination_route_unavailable, provider_blacklisted, provider_unreachable, provider_rejected, origin_tls_timeout, origin_response_incomplete, proxy_unavailable, restricted_route_unavailable, upstream_timeout, upstream_dns_failure, upstream_connect_failed. A header value the browser image does not recognize is reported as unknown, with the header value in raw_code.
+    /// Proxy-layer error code: the X-Kernel-Proxy-Error response header value from a branded error page served by the metro egress host-proxy. Values mirror what the proxy emits: destination_blocked, destination_route_unavailable, network_policy_denied, provider_blacklisted, provider_unreachable, provider_rejected, origin_tls_timeout, origin_response_incomplete, proxy_unavailable, restricted_route_unavailable, upstream_timeout, upstream_dns_failure, upstream_connect_failed. A header value the browser image does not recognize is reported as unknown, with the header value in raw_code.
     BrowserProxyErrorEventDataCode {
         DestinationBlocked = "destination_blocked",
         DestinationRouteUnavailable = "destination_route_unavailable",
+        NetworkPolicyDenied = "network_policy_denied",
         ProviderBlacklisted = "provider_blacklisted",
         ProviderUnreachable = "provider_unreachable",
         ProviderRejected = "provider_rejected",
@@ -8675,7 +8705,7 @@ pub struct BrowserRequest {
     /// Optional human-readable name for the browser session, used to find it later in the dashboard. Must be unique among active sessions within the project. Can be changed later via PATCH /browsers/{id_or_name}.
     #[serde(default, skip_serializing_if = "Option::is_none")]
     pub name: Option<String>,
-    /// Network configuration for the browser session. Cannot be changed after creation.
+    /// Network configuration for the browser session. Only allowed_hosts can be changed after creation, with PATCH /browsers/{id_or_name}.
     #[serde(default, skip_serializing_if = "Option::is_none")]
     pub network: Option<BrowserNetworkConfig>,
     /// Profile selection for the browser session. Provide either id or name. If specified, the
@@ -9369,6 +9399,9 @@ pub struct BrowserUpdateRequest {
     /// Human-readable name for the browser session. Omit to leave unchanged, set to an empty string to clear the name. When set, must be unique among active sessions within the project.
     #[serde(default, skip_serializing_if = "Option::is_none")]
     pub name: Option<String>,
+    /// Network configuration changes to apply to the running browser session.
+    #[serde(default, skip_serializing_if = "Option::is_none")]
+    pub network: Option<BrowserNetworkUpdate>,
     /// Profile to load into the browser session. Only allowed if the session does not already have a profile loaded.
     #[serde(default, skip_serializing_if = "Option::is_none")]
     pub profile: Option<BrowserProfile>,
@@ -9401,6 +9434,7 @@ impl BrowserUpdateRequest {
         Self {
             disable_default_proxy: None,
             name: None,
+            network: None,
             profile: None,
             proxy: None,
             proxy_id: None,
@@ -9950,7 +9984,7 @@ impl LinkTotal {
     }
 }
 
-/// One live purchase with a Kernel-enrolled card. Authorization obtains an agentic network token number, expiry and one-time 3-digit code. They are stored encrypted for the fill operation, which types them only on merchant_url's origin; the merchant's own checkout submits the payment. The one-time code is valid until the item's expires_at; fill and submit checkout before then. Visa cards can be enrolled, but Visa purchases are not yet supported: authorize returns 400. Supported Mastercard purchases need no cardholder approval. Card updates are not supported; delete and create a new item instead.
+/// One live purchase with a Kernel-enrolled card. Authorization obtains an agentic network token number, expiry and one-time 3-digit code. They are stored encrypted for the fill operation, which types them only on merchant_url's origin; the merchant's own checkout submits the payment. The one-time code is valid until the item's expires_at; fill and submit checkout before then. Mastercard purchases need no cardholder approval. A Visa purchase returns a spend_approval action: the cardholder approves it with a Visa passkey, and Kernel registers a Visa intent for one transaction up to the amount before issuing the code. Card updates are not supported; delete and create a new item instead.
 #[derive(Debug, Clone, PartialEq, serde::Serialize, serde::Deserialize)]
 pub struct KernelCardVaultItemSpec {
     /// Integer amount in minor currency units (at most 50000), bound to the one-time code.
@@ -9959,6 +9993,9 @@ pub struct KernelCardVaultItemSpec {
     /// ISO 4217 code. Supported: aud, brl, cad, chf, czk, dkk, eur, gbp, hkd, inr, jpy, krw, mxn, nok, nzd, pln, sek, sgd, usd, zar.
     #[serde(default)]
     pub currency: String,
+    /// The merchant's ISO 3166-1 alpha-2 country code. Required for Visa cards, whose one-time code is issued for the merchant's country.
+    #[serde(default, skip_serializing_if = "Option::is_none")]
+    pub merchant_country: Option<String>,
     #[serde(default)]
     pub merchant_name: String,
     /// Merchant checkout URL. Fill is allowed only on this URL's origin.
@@ -9984,6 +10021,7 @@ impl KernelCardVaultItemSpec {
         Self {
             amount: amount.into(),
             currency: currency.into(),
+            merchant_country: None,
             merchant_name: merchant_name.into(),
             merchant_url: merchant_url.into(),
             provider: "kernel".to_owned(),
@@ -10086,7 +10124,7 @@ crate::string_enum! {
     }
 }
 
-/// A ready Kernel card retains its encrypted network token and one-time code for the fill operation until the item's expires_at. Fill and submit checkout before then. Visa cards can be enrolled, but Visa purchases are not yet supported and authorize returns 400; supported Mastercard purchases need no cardholder approval. masks.last4 is the enrolled card's last four digits; masks.token_last4 is the network token's last four digits shown to the merchant. Kernel cards do not expose aliases or support egress substitution. Kernel does not observe whether the merchant charged the card.
+/// A ready Kernel card retains its encrypted network token and one-time code for the fill operation until the item's expires_at. Fill and submit checkout before then. Visa purchases require a spend_approval action before the code is issued; Mastercard purchases need no hosted approval. masks.last4 is the enrolled card's last four digits; masks.token_last4 is the network token's last four digits shown to the merchant. Kernel cards do not expose aliases or support egress substitution. Kernel does not observe whether the merchant charged the card.
 #[derive(Debug, Clone, PartialEq, serde::Serialize, serde::Deserialize)]
 pub struct KernelCardState {
     /// Informational registrable domain. Fill is locked to merchant_url's exact origin.
@@ -10096,7 +10134,7 @@ pub struct KernelCardState {
     pub masks: Option<VaultItemMasks>,
     #[serde(default)]
     pub provider: String,
-    /// recovery_required means issuing the one-time code has an unresolved outcome. Kernel never issues another code for the item automatically, and the item cannot be deleted or replaced until the original attempt is reconciled with support. When status_reason says the provider refused retrieval before acceptance, no code was issued and a later read retries.
+    /// pending_authorization on a Visa purchase waits for the cardholder to approve it through the spend_approval action; an unused link expires after 30 minutes. recovery_required means approving the purchase or issuing the one-time code has an unresolved outcome. Kernel never approves again or issues another code for the item automatically, and the item cannot be deleted or replaced until the original attempt is reconciled with support. When status_reason says the provider refused retrieval before acceptance, no code was issued and a later read retries. declined means the card network refused to issue a code.
     #[serde(default)]
     pub status: KernelCardStateStatus,
     #[serde(default, skip_serializing_if = "Option::is_none")]
@@ -10118,7 +10156,7 @@ impl KernelCardState {
 }
 
 crate::string_enum! {
-    /// recovery_required means issuing the one-time code has an unresolved outcome. Kernel never issues another code for the item automatically, and the item cannot be deleted or replaced until the original attempt is reconciled with support. When status_reason says the provider refused retrieval before acceptance, no code was issued and a later read retries.
+    /// pending_authorization on a Visa purchase waits for the cardholder to approve it through the spend_approval action; an unused link expires after 30 minutes. recovery_required means approving the purchase or issuing the one-time code has an unresolved outcome. Kernel never approves again or issues another code for the item automatically, and the item cannot be deleted or replaced until the original attempt is reconciled with support. When status_reason says the provider refused retrieval before acceptance, no code was issued and a later read retries. declined means the card network refused to issue a code.
     KernelCardStateStatus {
         Requested = "requested",
         PendingAuthorization = "pending_authorization",
@@ -10732,7 +10770,7 @@ pub struct ProxyCreateRequest {
     /// Protocol to use for the proxy connection.
     #[serde(default, skip_serializing_if = "Option::is_none")]
     pub protocol: Option<ProxyCreateRequestProtocol>,
-    /// Proxy type to use. In terms of quality for avoiding bot-detection, from best to worst: `mobile` \> `residential` \> `isp` \> `datacenter`.
+    /// Proxy type to use. In terms of quality for avoiding bot-detection, from best to worst: `mobile` \> `residential` \> `isp`. `datacenter` is deprecated; use `isp` instead. Datacenter proxy creation remains supported for backward compatibility.
     #[serde(default)]
     pub r#type: ProxyCreateRequestType,
 }
@@ -10795,7 +10833,7 @@ impl From<CreateCustomProxyConfig> for ProxyCreateRequestConfig {
     }
 }
 
-/// Configuration for a datacenter proxy.
+/// Configuration for a deprecated datacenter proxy. Use an ISP proxy instead.
 #[derive(Debug, Clone, PartialEq, serde::Serialize, serde::Deserialize)]
 pub struct DatacenterProxyConfig {
     /// ISO 3166 country code. Defaults to US if not provided.
@@ -10967,7 +11005,7 @@ crate::string_enum! {
 }
 
 crate::string_enum! {
-    /// Proxy type to use. In terms of quality for avoiding bot-detection, from best to worst: `mobile` \> `residential` \> `isp` \> `datacenter`.
+    /// Proxy type to use. In terms of quality for avoiding bot-detection, from best to worst: `mobile` \> `residential` \> `isp`. `datacenter` is deprecated; use `isp` instead. Datacenter proxy creation remains supported for backward compatibility.
     ProxyCreateRequestType {
         Datacenter = "datacenter",
         Isp = "isp",
@@ -13621,6 +13659,11 @@ pub struct ExecutePlaywrightRequest {
     /// Example: "await page.goto('<https://example.com'>); return await page.title();"
     #[serde(default)]
     pub code: String,
+    /// Name of a Playwright executor. Calls with the same name run in the same executor, one at a
+    /// time; the first call with a new name creates it. Calls on different executors run
+    /// concurrently. 'default' names the executor that runs calls without a name.
+    #[serde(default, skip_serializing_if = "Option::is_none")]
+    pub executor: Option<PlaywrightExecutorName>,
     /// Maximum execution time in seconds. Default is 60.
     #[serde(default, skip_serializing_if = "Option::is_none")]
     pub timeout_sec: Option<i64>,
@@ -13632,10 +13675,16 @@ impl ExecutePlaywrightRequest {
     pub fn new(code: impl Into<String>) -> Self {
         Self {
             code: code.into(),
+            executor: None,
             timeout_sec: None,
         }
     }
 }
+
+/// Name of a Playwright executor. Calls with the same name run in the same executor, one at a
+/// time; the first call with a new name creates it. Calls on different executors run
+/// concurrently. 'default' names the executor that runs calls without a name.
+pub type PlaywrightExecutorName = String;
 
 /// Result of Playwright code execution
 #[derive(Debug, Clone, PartialEq, serde::Serialize, serde::Deserialize)]
@@ -13655,6 +13704,9 @@ pub struct ExecutePlaywrightResult {
     /// Whether the code executed successfully
     #[serde(default)]
     pub success: bool,
+    /// The tab 'page' was bound to for this call. Absent if the call failed before binding a tab.
+    #[serde(default, skip_serializing_if = "Option::is_none")]
+    pub tab: Option<PlaywrightTab>,
 }
 
 impl ExecutePlaywrightResult {
@@ -13667,6 +13719,31 @@ impl ExecutePlaywrightResult {
             stderr: None,
             stdout: None,
             success: success.into(),
+            tab: None,
+        }
+    }
+}
+
+/// The tab 'page' was bound to for this call. Absent if the call failed before binding a tab.
+#[derive(Debug, Clone, PartialEq, serde::Serialize, serde::Deserialize)]
+pub struct PlaywrightTab {
+    /// Whether this call opened the tab. For a named executor this happens on its first call and
+    /// after its previous tab was closed. For the default executor it happens only when the
+    /// browser had no open page.
+    #[serde(default)]
+    pub created: bool,
+    /// CDP page target ID of the tab
+    #[serde(default)]
+    pub target_id: String,
+}
+
+impl PlaywrightTab {
+    /// Create a `PlaywrightTab` with the required fields set.
+    #[allow(clippy::too_many_arguments, clippy::new_without_default)]
+    pub fn new(target_id: impl Into<String>, created: impl Into<bool>) -> Self {
+        Self {
+            created: created.into(),
+            target_id: target_id.into(),
         }
     }
 }
@@ -14302,7 +14379,7 @@ impl KernelManagedLinkAuthorizationInput {
 pub struct KernelWalletState {
     #[serde(default)]
     pub provider: String,
-    /// pending_authorization asks the cardholder to use the card_enrollment action. connected is ready for supported purchases. reconnect_required asks the cardholder to use a new card_enrollment action after an uncertain enrollment was safely removed. degraded means the enrollment outcome is unknown and the wallet must be deleted before adding another card.
+    /// pending_authorization asks the cardholder to use the card_enrollment action. connected means the card is stored; it can pay once payment_methods reports capabilities.single_use_card.eligible. reconnect_required asks the cardholder to use a new card_enrollment action after an uncertain enrollment was safely removed. degraded means the enrollment outcome is unknown and the wallet must be deleted before adding another card.
     #[serde(default)]
     pub status: KernelWalletStateStatus,
     #[serde(default, skip_serializing_if = "Option::is_none")]
@@ -14322,7 +14399,7 @@ impl KernelWalletState {
 }
 
 crate::string_enum! {
-    /// pending_authorization asks the cardholder to use the card_enrollment action. connected is ready for supported purchases. reconnect_required asks the cardholder to use a new card_enrollment action after an uncertain enrollment was safely removed. degraded means the enrollment outcome is unknown and the wallet must be deleted before adding another card.
+    /// pending_authorization asks the cardholder to use the card_enrollment action. connected means the card is stored; it can pay once payment_methods reports capabilities.single_use_card.eligible. reconnect_required asks the cardholder to use a new card_enrollment action after an uncertain enrollment was safely removed. degraded means the enrollment outcome is unknown and the wallet must be deleted before adding another card.
     KernelWalletStateStatus {
         PendingAuthorization = "pending_authorization",
         Connected = "connected",
@@ -14331,7 +14408,7 @@ crate::string_enum! {
     }
 }
 
-/// One card Kernel enrolls for Visa or Mastercard agentic network tokens using Kernel-managed credentials. Creation returns a card_enrollment action: the cardholder enters the card and their email on a Kernel-hosted page, then Kernel enrolls the securely stored card. The card number never reaches Kernel. The connected wallet's payment_methods expansion lists the enrolled card. Visa cards can be enrolled, but Visa purchases are not yet supported: authorize returns 400.
+/// One card stored with Kernel-managed credentials. Creation returns a card_enrollment action: the cardholder enters the card and their email on a Kernel-hosted page, and the wallet connects once the card is stored. Kernel then enrolls it for an agentic network token when the issuer supports it. The card number never reaches Kernel. The connected wallet's payment_methods expansion lists the card; capabilities.single_use_card.eligible is false, with a network_token_* reason, until the card has a network token, and authorize returns 400 for such a card. Visa purchases require the cardholder to complete a spend_approval action before Kernel issues a one-time code; Mastercard purchases need no hosted approval.
 #[derive(Debug, Clone, PartialEq, serde::Serialize, serde::Deserialize)]
 pub struct KernelWalletVaultItemSpec {
     #[serde(default)]
@@ -16068,8 +16145,6 @@ crate::string_enum! {
 /// Retrieve the status of a 1Password access request after presenting the approval link. On a confirmed failed status, ask the end-user before deleting and recreating the credential item for at most one new request. Do not retry an uncertain dispatched request. The response remains non-secret; approved references are retained only for fill.
 #[derive(Debug, Clone, PartialEq, serde::Serialize, serde::Deserialize)]
 pub struct OnePasswordPollAccessVaultItemOperationRequest {
-    #[serde(default)]
-    pub browser_id: String,
     #[serde(default, skip_serializing_if = "Option::is_none")]
     pub timeout_seconds: Option<i64>,
     #[serde(default)]
@@ -16079,12 +16154,17 @@ pub struct OnePasswordPollAccessVaultItemOperationRequest {
 impl OnePasswordPollAccessVaultItemOperationRequest {
     /// Create a `OnePasswordPollAccessVaultItemOperationRequest` with the required fields set.
     #[allow(clippy::too_many_arguments, clippy::new_without_default)]
-    pub fn new(browser_id: impl Into<String>) -> Self {
+    pub fn new() -> Self {
         Self {
-            browser_id: browser_id.into(),
             timeout_seconds: None,
             r#type: "1pw_access_request_status".to_owned(),
         }
+    }
+}
+
+impl Default for OnePasswordPollAccessVaultItemOperationRequest {
+    fn default() -> Self {
+        Self::new()
     }
 }
 
@@ -16111,12 +16191,9 @@ impl Default for OnePasswordRecoverVaultItemOperationRequest {
     }
 }
 
-/// Request access to login entries in the end-user's own, non-shared 1Password vault through the browser extension, auto-loaded into the browser. The end-user approves access in the 1Password app. Shared-vault items and passkeys are not supported. Per-entry reason and keywords overrides are only supported for a single login entry.
+/// Request access to login entries in the end-user's own, non-shared 1Password vault. No browser is needed; the end-user approves access in the 1Password app. Shared-vault items and passkeys are not supported. Per-entry reason and keywords overrides are only supported for a single login entry.
 #[derive(Debug, Clone, PartialEq, serde::Serialize, serde::Deserialize)]
 pub struct OnePasswordRequestAccessVaultItemOperationRequest {
-    /// Kernel browser session used to invoke the extension.
-    #[serde(default)]
-    pub browser_id: String,
     #[serde(default, skip_serializing_if = "Option::is_none")]
     pub goal: Option<String>,
     #[serde(default, skip_serializing_if = "Option::is_none")]
@@ -16130,14 +16207,19 @@ pub struct OnePasswordRequestAccessVaultItemOperationRequest {
 impl OnePasswordRequestAccessVaultItemOperationRequest {
     /// Create a `OnePasswordRequestAccessVaultItemOperationRequest` with the required fields set.
     #[allow(clippy::too_many_arguments, clippy::new_without_default)]
-    pub fn new(browser_id: impl Into<String>) -> Self {
+    pub fn new() -> Self {
         Self {
-            browser_id: browser_id.into(),
             goal: None,
             keywords: None,
             reason: None,
             r#type: "1pw_create_access_request".to_owned(),
         }
+    }
+}
+
+impl Default for OnePasswordRequestAccessVaultItemOperationRequest {
+    fn default() -> Self {
+        Self::new()
     }
 }
 
@@ -16494,6 +16576,89 @@ impl OrgLimits {
             max_vaults: None,
             min_health_check_interval_seconds: min_health_check_interval_seconds.into(),
             vaults_used: vaults_used.into(),
+        }
+    }
+}
+
+/// A Playwright executor on the browser
+#[derive(Debug, Clone, PartialEq, serde::Serialize, serde::Deserialize)]
+pub struct PlaywrightExecutor {
+    /// Whether a call is running on the executor
+    #[serde(default)]
+    pub busy: bool,
+    /// When the executor was created
+    #[serde(default)]
+    pub created_at: chrono::DateTime<chrono::Utc>,
+    /// When the most recent call on the executor started
+    #[serde(default)]
+    pub last_used_at: chrono::DateTime<chrono::Utc>,
+    /// Name of a Playwright executor. Calls with the same name run in the same executor, one at a
+    /// time; the first call with a new name creates it. Calls on different executors run
+    /// concurrently. 'default' names the executor that runs calls without a name.
+    pub name: PlaywrightExecutorName,
+    /// CDP page target ID of the executor's tab, once it has one. The default executor owns no tab.
+    #[serde(default, skip_serializing_if = "Option::is_none")]
+    pub target_id: Option<String>,
+    /// Current URL of the executor's tab, when it is open
+    #[serde(default, skip_serializing_if = "Option::is_none")]
+    pub url: Option<String>,
+}
+
+impl PlaywrightExecutor {
+    /// Create a `PlaywrightExecutor` with the required fields set.
+    #[allow(clippy::too_many_arguments, clippy::new_without_default)]
+    pub fn new(
+        name: impl Into<PlaywrightExecutorName>,
+        busy: impl Into<bool>,
+        created_at: impl Into<chrono::DateTime<chrono::Utc>>,
+        last_used_at: impl Into<chrono::DateTime<chrono::Utc>>,
+    ) -> Self {
+        Self {
+            busy: busy.into(),
+            created_at: created_at.into(),
+            last_used_at: last_used_at.into(),
+            name: name.into(),
+            target_id: None,
+            url: None,
+        }
+    }
+}
+
+/// Returned when a call would create a named executor beyond the per-browser limit
+#[derive(Debug, Clone, PartialEq, serde::Serialize, serde::Deserialize)]
+pub struct PlaywrightExecutorLimitError {
+    /// The default executor and the named executors that already exist
+    #[serde(default)]
+    pub executors: Vec<PlaywrightExecutor>,
+    /// Human-readable error description
+    #[serde(default)]
+    pub message: String,
+}
+
+impl PlaywrightExecutorLimitError {
+    /// Create a `PlaywrightExecutorLimitError` with the required fields set.
+    #[allow(clippy::too_many_arguments, clippy::new_without_default)]
+    pub fn new(message: impl Into<String>, executors: impl Into<Vec<PlaywrightExecutor>>) -> Self {
+        Self {
+            executors: executors.into(),
+            message: message.into(),
+        }
+    }
+}
+
+/// The default executor followed by the named executors
+#[derive(Debug, Clone, PartialEq, serde::Serialize, serde::Deserialize)]
+pub struct PlaywrightExecutorList {
+    #[serde(default)]
+    pub executors: Vec<PlaywrightExecutor>,
+}
+
+impl PlaywrightExecutorList {
+    /// Create a `PlaywrightExecutorList` with the required fields set.
+    #[allow(clippy::too_many_arguments, clippy::new_without_default)]
+    pub fn new(executors: impl Into<Vec<PlaywrightExecutor>>) -> Self {
+        Self {
+            executors: executors.into(),
         }
     }
 }
@@ -17045,7 +17210,7 @@ pub struct Proxy {
     /// Current health status of the proxy.
     #[serde(default, skip_serializing_if = "Option::is_none")]
     pub status: Option<ProxyStatus>,
-    /// Proxy type to use. In terms of quality for avoiding bot-detection, from best to worst: `mobile` \> `residential` \> `isp` \> `datacenter`.
+    /// Proxy type to use. In terms of quality for avoiding bot-detection, from best to worst: `mobile` \> `residential` \> `isp`. `datacenter` is deprecated; use `isp` instead. Existing datacenter proxies remain supported.
     #[serde(default)]
     pub r#type: ProxyType,
 }
@@ -17129,7 +17294,7 @@ crate::string_enum! {
 }
 
 crate::string_enum! {
-    /// Proxy type to use. In terms of quality for avoiding bot-detection, from best to worst: `mobile` \> `residential` \> `isp` \> `datacenter`.
+    /// Proxy type to use. In terms of quality for avoiding bot-detection, from best to worst: `mobile` \> `residential` \> `isp`. `datacenter` is deprecated; use `isp` instead. Existing datacenter proxies remain supported.
     ProxyType {
         Datacenter = "datacenter",
         Isp = "isp",
@@ -17142,7 +17307,7 @@ crate::string_enum! {
 /// Optional parameters for the proxy health check.
 #[derive(Debug, Clone, PartialEq, serde::Serialize, serde::Deserialize)]
 pub struct ProxyCheckRequest {
-    /// An optional URL to test reachability against. If provided, the proxy check will test connectivity to this URL instead of the default test URLs. Only HTTP and HTTPS schemes are allowed, and the URL must resolve to a public IP address. For ISP and datacenter proxies, the exit IP is stable, so a successful check reliably indicates that subsequent browser sessions will reach the target site with the same IP. For residential and mobile proxies, the exit node changes between requests, so a successful check validates proxy configuration but does not guarantee that a subsequent browser session will use the same exit IP or reach the same site — it is useful for verifying credentials and connectivity, not for predicting site-specific behavior. When provided, the check result does not update the proxy's health status, since a failure may indicate a problem with the target site rather than the proxy itself.
+    /// An optional URL to test reachability against. If provided, the proxy check will test connectivity to this URL instead of the default test URLs. Only HTTP and HTTPS schemes are allowed, and the URL must resolve to a public IP address. For ISP proxies, the exit IP is stable, so a successful check reliably indicates that subsequent browser sessions will reach the target site with the same IP. For residential and mobile proxies, the exit node changes between requests, so a successful check validates proxy configuration but does not guarantee that a subsequent browser session will use the same exit IP or reach the same site — it is useful for verifying credentials and connectivity, not for predicting site-specific behavior. When provided, the check result does not update the proxy's health status, since a failure may indicate a problem with the target site rather than the proxy itself.
     #[serde(default, skip_serializing_if = "Option::is_none")]
     pub url: Option<String>,
 }
@@ -17952,7 +18117,7 @@ impl Default for SearchExaOptions {
 /// Provider-native content retrieval. Available without requesting Kernel browser retrieval; may incur provider retrieval charges.
 #[derive(Debug, Clone, PartialEq, serde::Serialize, serde::Deserialize)]
 pub struct SearchExaOptionsContents {
-    /// Return query-relevant provider excerpts.
+    /// Return query-relevant provider excerpts. Defaults to true for Exa search requests; set false to disable.
     #[serde(default, skip_serializing_if = "Option::is_none")]
     pub highlights: Option<bool>,
     /// Return provider page text.
@@ -18031,7 +18196,7 @@ pub struct SearchPerplexityOptions {
     /// Provider-native multi-query form, applied only to Perplexity. Other fallback providers receive the top-level query. Each query may incur a separate provider charge.
     #[serde(default, skip_serializing_if = "Option::is_none")]
     pub query: Option<Vec<String>>,
-    /// Provider context size supported by the selected model.
+    /// Amount of page content Perplexity extracts per result. Defaults to medium unless max_tokens or max_tokens_per_page is set.
     #[serde(default, skip_serializing_if = "Option::is_none")]
     pub search_context_size: Option<SearchPerplexityOptionsSearchContextSize>,
     /// ISO 639-1 language codes, max 20.
@@ -18063,7 +18228,7 @@ impl Default for SearchPerplexityOptions {
 }
 
 crate::string_enum! {
-    /// Provider context size supported by the selected model.
+    /// Amount of page content Perplexity extracts per result. Defaults to medium unless max_tokens or max_tokens_per_page is set.
     SearchPerplexityOptionsSearchContextSize {
         Low = "low",
         Medium = "medium",
@@ -22198,7 +22363,7 @@ pub struct BrowserCreateParams {
     /// Optional human-readable name for the browser session, used to find it later in the dashboard. Must be unique among active sessions within the project. Can be changed later via PATCH /browsers/{id_or_name}.
     #[serde(default, skip_serializing_if = "Option::is_none")]
     pub name: Option<String>,
-    /// Network configuration for the browser session. Cannot be changed after creation.
+    /// Network configuration for the browser session. Only allowed_hosts can be changed after creation, with PATCH /browsers/{id_or_name}.
     #[serde(default, skip_serializing_if = "Option::is_none")]
     pub network: Option<BrowserNetworkConfig>,
     /// Profile selection for the browser session. Provide either id or name. If specified, the
@@ -22324,6 +22489,9 @@ pub struct BrowserUpdateParams {
     /// Human-readable name for the browser session. Omit to leave unchanged, set to an empty string to clear the name. When set, must be unique among active sessions within the project.
     #[serde(default, skip_serializing_if = "Option::is_none")]
     pub name: Option<String>,
+    /// Network configuration changes to apply to the running browser session.
+    #[serde(default, skip_serializing_if = "Option::is_none")]
+    pub network: Option<BrowserNetworkUpdate>,
     /// Profile to load into the browser session. Only allowed if the session does not already have a profile loaded.
     #[serde(default, skip_serializing_if = "Option::is_none")]
     pub profile: Option<BrowserProfile>,
@@ -22356,6 +22524,7 @@ impl BrowserUpdateParams {
         Self {
             disable_default_proxy: None,
             name: None,
+            network: None,
             profile: None,
             proxy: None,
             proxy_id: None,
@@ -22687,7 +22856,7 @@ pub struct ProxyCreateParams {
     /// Protocol to use for the proxy connection.
     #[serde(default, skip_serializing_if = "Option::is_none")]
     pub protocol: Option<ProxyCreateRequestProtocol>,
-    /// Proxy type to use. In terms of quality for avoiding bot-detection, from best to worst: `mobile` \> `residential` \> `isp` \> `datacenter`.
+    /// Proxy type to use. In terms of quality for avoiding bot-detection, from best to worst: `mobile` \> `residential` \> `isp`. `datacenter` is deprecated; use `isp` instead. Datacenter proxy creation remains supported for backward compatibility.
     #[serde(default)]
     pub r#type: ProxyCreateRequestType,
 }
@@ -22769,7 +22938,7 @@ pub type ProxyListResponse = Proxy;
 /// Parameters for `proxies.check`.
 #[derive(Debug, Clone, PartialEq, serde::Serialize, serde::Deserialize)]
 pub struct ProxyCheckParams {
-    /// An optional URL to test reachability against. If provided, the proxy check will test connectivity to this URL instead of the default test URLs. Only HTTP and HTTPS schemes are allowed, and the URL must resolve to a public IP address. For ISP and datacenter proxies, the exit IP is stable, so a successful check reliably indicates that subsequent browser sessions will reach the target site with the same IP. For residential and mobile proxies, the exit node changes between requests, so a successful check validates proxy configuration but does not guarantee that a subsequent browser session will use the same exit IP or reach the same site — it is useful for verifying credentials and connectivity, not for predicting site-specific behavior. When provided, the check result does not update the proxy's health status, since a failure may indicate a problem with the target site rather than the proxy itself.
+    /// An optional URL to test reachability against. If provided, the proxy check will test connectivity to this URL instead of the default test URLs. Only HTTP and HTTPS schemes are allowed, and the URL must resolve to a public IP address. For ISP proxies, the exit IP is stable, so a successful check reliably indicates that subsequent browser sessions will reach the target site with the same IP. For residential and mobile proxies, the exit node changes between requests, so a successful check validates proxy configuration but does not guarantee that a subsequent browser session will use the same exit IP or reach the same site — it is useful for verifying credentials and connectivity, not for predicting site-specific behavior. When provided, the check result does not update the proxy's health status, since a failure may indicate a problem with the target site rather than the proxy itself.
     #[serde(default, skip_serializing_if = "Option::is_none")]
     pub url: Option<String>,
 }
