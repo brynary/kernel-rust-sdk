@@ -52,6 +52,22 @@ impl<'a> Vaults<'a> {
         self.client.execute_unit(req).await
     }
 
+    /// Get a vault's public key for browser-encrypted credential values
+    ///
+    /// Returns the public key that custom credential collection web apps use to encrypt values in the browser. Use this only if you run your own credential collection web app and want values encrypted in the browser, sent to your backend still encrypted, and forwarded to Kernel's API still encrypted. In every other case, including server-side code that already holds the plaintext, use value. The page encrypts each value to this key, your backend forwards the ciphertext unchanged as encrypted_value when creating or updating a credential item in this vault, and Kernel decrypts it.
+    ///
+    /// `GET /vaults/{id_or_name}/encryption_key`
+    pub async fn retrieve_encryption_key(
+        &self,
+        id_or_name: &str,
+    ) -> Result<crate::types::VaultEncryptionKey> {
+        let req = ApiRequest::new(
+            Method::GET,
+            format!("/vaults/{}/encryption_key", path_segment(id_or_name)),
+        );
+        self.client.execute(req).await
+    }
+
     /// Create or retrieve a vault by immutable name
     ///
     /// Free organizations can store up to 3 non-deleted vaults across all projects. Paid plans and active trials have no vault cap. Retrieving an existing vault by name succeeds even at the limit.
@@ -202,8 +218,8 @@ pub mod items {
         /// writing return 400 (invalid request or targets), 403 (access or destination
         /// denied), 404 (resource not found), or 409 (item or browser not ready).
         /// Once writing starts, known partial failures and indeterminate field outcomes
-        /// return 200 with status `failed` or `unknown`, not an automatic-retry signal.
-        /// A transport error may leave the outcome unknown; do not automatically retry.
+        /// return 200 with status `failed` or `unknown`. Fill never submits the page, so
+        /// it is safe to retry after a failure, an `unknown` outcome, or a transport error.
         ///
         ///
         /// `POST /vaults/{id_or_name}/items/{key}/operations`

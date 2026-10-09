@@ -1097,6 +1097,13 @@ pub mod playwright {
     }
 
     impl<'a> Playwright<'a> {
+        /// Methods for `client.browsers.playwright.executors`.
+        pub fn executors(&self) -> executors::Executors<'a> {
+            executors::Executors {
+                client: self.client,
+            }
+        }
+
         /// Execute Playwright/TypeScript code against the browser
         ///
         /// Execute arbitrary Playwright code in a fresh execution context against the browser.
@@ -1105,6 +1112,37 @@ pub mod playwright {
         /// Use 'webmcp.listTools()' to discover browser-wide WebMCP tools and
         /// 'webmcp.invokeTool(toolRef, input?, { timeoutSec? })' to invoke an exact registration.
         /// It can `return` a value, and this value is returned in the response.
+        ///
+        /// Every call runs in an executor: a dedicated Node.js process with its own browser
+        /// connection. Calls on different executors run concurrently; calls on the same executor run
+        /// one at a time. A timeout, crash, or blocked event loop in one executor does not affect
+        /// other executors. After a timeout the executor keeps its process and drops its browser
+        /// connection, so code abandoned by the timeout cannot keep driving the browser. After a
+        /// crash or a blocked event loop, the next call on that executor starts a fresh process.
+        ///
+        /// Calls without 'executor' run in the executor named 'default', which always exists and is
+        /// the same as passing 'executor: "default"'. In the default executor, 'page' is bound to an
+        /// active tab reported by Chrome. In single-window sessions, this is the foreground tab. When
+        /// multiple browser windows are open, Chrome reports one active tab per window and the
+        /// selected window is unspecified. 'context' is the BrowserContext that owns the selected
+        /// page. Use 'browser.contexts()' to select a context or page explicitly.
+        ///
+        /// Pass any other name to run the call in a named executor. The first call with a new name
+        /// creates it. Each named executor owns a tab: its first call opens a new background tab in
+        /// the default browser context, and 'page' is bound to that tab on every later call while it
+        /// stays open. Opening it does not change the active tab of an existing window. If the tab is
+        /// closed, the next call opens a new one and reports 'tab.created: true'. Executor code can
+        /// still reach other tabs through 'context' and 'browser'; ownership only decides what 'page'
+        /// is bound to. Use named executors to drive several tabs of one browser in parallel.
+        ///
+        /// A browser can have at most 8 named executors; the default executor does not count. A call
+        /// that would create another returns 409 with the current executors; delete one with
+        /// DELETE /browsers/{id_or_name}/playwright/executors/{name}. Named executors are not removed
+        /// automatically while the browser runs; when it shuts down, they are removed and their tabs
+        /// closed.
+        ///
+        /// A named call to a browser whose image predates executors fails with 400 instead of running
+        /// on the active tab; calls without 'executor' keep working on every image.
         ///
         ///
         /// `POST /browsers/{id_or_name}/playwright/execute`
@@ -1120,6 +1158,73 @@ pub mod playwright {
             let fields = to_fields(&params)?;
             req = req.json(&fields)?;
             self.client.execute(req).await
+        }
+    }
+
+    pub mod executors {
+        #[allow(unused_imports)]
+        use crate::runtime::prelude::*;
+
+        /// Methods for `client.browsers.playwright.executors`.
+        #[derive(Debug, Clone, Copy)]
+        pub struct Executors<'a> {
+            pub(crate) client: &'a Kernel,
+        }
+
+        impl<'a> Executors<'a> {
+            /// List Playwright executors
+            ///
+            /// Lists the default executor first, then the named executors created by
+            /// POST /browsers/{id_or_name}/playwright/execute. Each entry reports whether a call is
+            /// running on it and, for named executors, the target ID and URL of the tab it owns.
+            /// Returns 404 for a browser whose image predates executors.
+            ///
+            ///
+            /// `GET /browsers/{id_or_name}/playwright/executors`
+            pub async fn list(
+                &self,
+                id_or_name: &str,
+            ) -> Result<crate::types::browsers::playwright::ExecutorList> {
+                let req = ApiRequest::new(
+                    Method::GET,
+                    format!(
+                        "/browsers/{}/playwright/executors",
+                        path_segment(id_or_name)
+                    ),
+                );
+                self.client.execute(req).await
+            }
+
+            /// Delete a Playwright executor
+            ///
+            /// Stops the executor's process. A call running on it fails with an error saying the
+            /// executor was deleted. By default the executor's tab is closed too. The name can be
+            /// reused; the next call with it creates a new executor and tab.
+            ///
+            /// The default executor is restarted instead of removed: its process is stopped, a call
+            /// running on it fails with an error saying the executor was restarted, and queued and later
+            /// calls run on a new process. It owns no tab, so 'close_tab' has no effect on it.
+            ///
+            ///
+            /// `DELETE /browsers/{id_or_name}/playwright/executors/{name}`
+            pub async fn delete(
+                &self,
+                id_or_name: &str,
+                name: &str,
+                params: crate::types::browsers::playwright::ExecutorDeleteParams,
+            ) -> Result<()> {
+                let mut req = ApiRequest::new(
+                    Method::DELETE,
+                    format!(
+                        "/browsers/{}/playwright/executors/{}",
+                        path_segment(id_or_name),
+                        path_segment(name)
+                    ),
+                );
+                let mut fields = to_fields(&params)?;
+                req = req.query_from(&mut fields, &["close_tab"], &[]);
+                self.client.execute_unit(req).await
+            }
         }
     }
 }
