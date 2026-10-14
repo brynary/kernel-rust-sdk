@@ -127,6 +127,10 @@ pub type CardVaultItemState = crate::types::CardVaultItemState;
 /// Alias for the `CollectVaultItemOperationRequest` type.
 pub type CollectVaultItemOperationRequest = crate::types::CollectVaultItemOperationRequest;
 
+/// Alias for the `ConfirmTransactionVaultItemOperationRequest` type.
+pub type ConfirmTransactionVaultItemOperationRequest =
+    crate::types::ConfirmTransactionVaultItemOperationRequest;
+
 /// Alias for the `CredentialAccountVaultItem` type.
 pub type CredentialAccountVaultItem = crate::types::CredentialAccountVaultItem;
 
@@ -250,6 +254,10 @@ pub type OnePasswordRequestAccessVaultItemOperationRequest =
 /// Alias for the `PrepareCheckoutVaultItemOperationRequest` type.
 pub type PrepareCheckoutVaultItemOperationRequest =
     crate::types::PrepareCheckoutVaultItemOperationRequest;
+
+/// Alias for the `RestartVerificationVaultItemOperationRequest` type.
+pub type RestartVerificationVaultItemOperationRequest =
+    crate::types::RestartVerificationVaultItemOperationRequest;
 
 /// Alias for the `VaultCardAliases` type.
 pub type VaultCardAliases = crate::types::VaultCardAliases;
