@@ -120,6 +120,7 @@ from kernel.types import (
     BrowserMemory,
     BrowserMemoryRequest,
     BrowserNetworkConfig,
+    BrowserNetworkUpdate,
     BrowserPoolRef,
     BrowserProxy,
     BrowserProxyConfig,
@@ -130,6 +131,7 @@ from kernel.types import (
     BrowserReplResult,
     BrowserReplTextContent,
     BrowserUsage,
+    BrowserVideoMemory,
     Profile,
     Tags,
     VaultReference,
@@ -334,12 +336,25 @@ Methods:
 Types:
 
 ```python
-from kernel.types.browsers import PlaywrightExecuteResponse
+from kernel.types.browsers import ExecutorLimitError, Tab, PlaywrightExecuteResponse
 ```
 
 Methods:
 
-- <code title="post /browsers/{id_or_name}/playwright/execute">client.browsers.playwright.<a href="./src/kernel/resources/browsers/playwright.py">execute</a>(id_or_name, \*\*<a href="src/kernel/types/browsers/playwright_execute_params.py">params</a>) -> <a href="./src/kernel/types/browsers/playwright_execute_response.py">PlaywrightExecuteResponse</a></code>
+- <code title="post /browsers/{id_or_name}/playwright/execute">client.browsers.playwright.<a href="./src/kernel/resources/browsers/playwright/playwright.py">execute</a>(id_or_name, \*\*<a href="src/kernel/types/browsers/playwright_execute_params.py">params</a>) -> <a href="./src/kernel/types/browsers/playwright_execute_response.py">PlaywrightExecuteResponse</a></code>
+
+### Executors
+
+Types:
+
+```python
+from kernel.types.browsers.playwright import Executor, ExecutorList
+```
+
+Methods:
+
+- <code title="get /browsers/{id_or_name}/playwright/executors">client.browsers.playwright.executors.<a href="./src/kernel/resources/browsers/playwright/executors.py">list</a>(id_or_name) -> <a href="./src/kernel/types/browsers/playwright/executor_list.py">ExecutorList</a></code>
+- <code title="delete /browsers/{id_or_name}/playwright/executors/{name}">client.browsers.playwright.executors.<a href="./src/kernel/resources/browsers/playwright/executors.py">delete</a>(name, \*, id_or_name, \*\*<a href="src/kernel/types/browsers/playwright/executor_delete_params.py">params</a>) -> None</code>
 
 ## Webmcp
 
@@ -532,7 +547,7 @@ Methods:
 Types:
 
 ```python
-from kernel.types import Vault
+from kernel.types import Vault, VaultEncryptionKey
 ```
 
 Methods:
@@ -540,6 +555,7 @@ Methods:
 - <code title="get /vaults/{id_or_name}">client.vaults.<a href="./src/kernel/resources/vaults/vaults.py">retrieve</a>(id_or_name) -> <a href="./src/kernel/types/vault.py">Vault</a></code>
 - <code title="get /vaults">client.vaults.<a href="./src/kernel/resources/vaults/vaults.py">list</a>(\*\*<a href="src/kernel/types/vault_list_params.py">params</a>) -> <a href="./src/kernel/types/vault.py">SyncOffsetPagination[Vault]</a></code>
 - <code title="delete /vaults/{id_or_name}">client.vaults.<a href="./src/kernel/resources/vaults/vaults.py">delete</a>(id_or_name) -> None</code>
+- <code title="get /vaults/{id_or_name}/encryption_key">client.vaults.<a href="./src/kernel/resources/vaults/vaults.py">retrieve_encryption_key</a>(id_or_name) -> <a href="./src/kernel/types/vault_encryption_key.py">VaultEncryptionKey</a></code>
 - <code title="post /vaults">client.vaults.<a href="./src/kernel/resources/vaults/vaults.py">upsert</a>(\*\*<a href="src/kernel/types/vault_upsert_params.py">params</a>) -> <a href="./src/kernel/types/vault.py">Vault</a></code>
 
 ## Items
@@ -555,6 +571,7 @@ from kernel.types.vaults import (
     CardVaultItemSpec,
     CardVaultItemState,
     CollectVaultItemOperationRequest,
+    ConfirmTransactionVaultItemOperationRequest,
     CredentialAccountVaultItem,
     CredentialAccountVaultItemRequest,
     CredentialCollectionAction,
@@ -594,6 +611,7 @@ from kernel.types.vaults import (
     OnePasswordRecoverVaultItemOperationRequest,
     OnePasswordRequestAccessVaultItemOperationRequest,
     PrepareCheckoutVaultItemOperationRequest,
+    RestartVerificationVaultItemOperationRequest,
     VaultCardAliases,
     VaultCardFillField,
     VaultCheckoutContext,
