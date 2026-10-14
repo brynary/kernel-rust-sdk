@@ -52,6 +52,22 @@ impl<'a> Vaults<'a> {
         self.client.execute_unit(req).await
     }
 
+    /// Get a vault's public key for browser-encrypted credential values
+    ///
+    /// Returns the public key that custom credential collection web apps use to encrypt values in the browser. Use this only if you run your own credential collection web app and want values encrypted in the browser, sent to your backend still encrypted, and forwarded to Kernel's API still encrypted. In every other case, including server-side code that already holds the plaintext, use value. The page encrypts each value to this key, your backend forwards the ciphertext unchanged as encrypted_value when creating or updating a credential item in this vault, and Kernel decrypts it.
+    ///
+    /// `GET /vaults/{id_or_name}/encryption_key`
+    pub async fn retrieve_encryption_key(
+        &self,
+        id_or_name: &str,
+    ) -> Result<crate::types::VaultEncryptionKey> {
+        let req = ApiRequest::new(
+            Method::GET,
+            format!("/vaults/{}/encryption_key", path_segment(id_or_name)),
+        );
+        self.client.execute(req).await
+    }
+
     /// Create or retrieve a vault by immutable name
     ///
     /// Free organizations can store up to 3 non-deleted vaults across all projects. Paid plans and active trials have no vault cap. Retrieving an existing vault by name succeeds even at the limit.
@@ -105,7 +121,7 @@ pub mod items {
 
         /// Update a card specification or credential values
         ///
-        /// Credential updates require type credential and the current version, and change only values or description; omitted values are preserved, nonempty strings replace, and null or empty strings clear supported fields. Clearing required text/email/password values returns pending_collection; browser forms still require nonempty required inputs. Card updates may omit type for compatibility with legacy requests. Requested cards accept a replacement specification. Pending issuance requests may update provider-supported fields on their existing request, subject to atomic provider approval checks; omitted optional fields remain unchanged and explicit empty lists clear them. Wallet/provider binding and unsupported fields cannot change after authorization starts. An uncertain update enters recovery_required and must not be retried. Checkout cards may be edited between authorizations.
+        /// Credential updates require type credential and the current version, and change only values or description; omitted values are preserved, nonempty strings replace, and null or empty strings clear supported fields. Clearing required text/email/password values returns pending_collection; browser forms still require nonempty required inputs. Card updates may omit type for compatibility with legacy requests. Requested cards accept a replacement specification. Pending issuance requests may update provider-supported fields on their existing request, subject to atomic provider approval checks; omitted optional fields remain unchanged and explicit empty lists clear them. Wallet/provider binding and unsupported fields cannot change after authorization starts. An uncertain update enters recovery_required and must not be retried. Checkout cards may be edited between authorizations. A Link card authorized with browser_id and page_url cannot be changed; delete it and create a new card with the updated details.
         ///
         /// `PATCH /vaults/{id_or_name}/items/{key}`
         pub async fn update(
@@ -188,7 +204,8 @@ pub mod items {
         /// `available_operations`, following its natural-language description.
         /// Availability is rechecked at execution time; unavailable operations return 409.
         /// Authorization and preparation may call an external provider and return updated state.
-        /// Link cards advertise authorize without checkout context. Eligible unused
+        /// Link cards advertise authorize; pass browser_id and page_url from the final
+        /// checkout page so Kernel can inspect the checkout. Eligible unused
         /// AgentCard cards advertise prepare_checkout, which requires checkout context
         /// and obtains device approval before native Square Pay. Keep the returned
         /// approval page open, poll until ready_to_submit, then submit before
@@ -202,8 +219,8 @@ pub mod items {
         /// writing return 400 (invalid request or targets), 403 (access or destination
         /// denied), 404 (resource not found), or 409 (item or browser not ready).
         /// Once writing starts, known partial failures and indeterminate field outcomes
-        /// return 200 with status `failed` or `unknown`, not an automatic-retry signal.
-        /// A transport error may leave the outcome unknown; do not automatically retry.
+        /// return 200 with status `failed` or `unknown`. Fill never submits the page, so
+        /// it is safe to retry after a failure, an `unknown` outcome, or a transport error.
         ///
         ///
         /// `POST /vaults/{id_or_name}/items/{key}/operations`

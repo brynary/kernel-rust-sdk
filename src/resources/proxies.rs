@@ -80,7 +80,7 @@ impl<'a> Proxies<'a> {
 
     /// Check proxy health
     ///
-    /// Run a health check on the proxy to verify it's working. Optionally specify a URL to test reachability against a specific target. For ISP and datacenter proxies, this reliably tests whether the target site is reachable from the proxy's stable exit IP. For residential and mobile proxies, the exit node varies between requests, so this validates proxy configuration and connectivity rather than guaranteeing site-specific reachability.
+    /// Run a health check on the proxy to verify it's working. Optionally specify a URL to test reachability against a specific target. For ISP proxies, this reliably tests whether the target site is reachable from the proxy's stable exit IP. For residential and mobile proxies, the exit node varies between requests, so this validates proxy configuration and connectivity rather than guaranteeing site-specific reachability.
     ///
     /// `POST /proxies/{id}/check`
     pub async fn check(
