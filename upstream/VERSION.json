@@ -1,5 +1,5 @@
 {
-  "python_sdk_version": "0.119.0",
-  "python_sdk_commit": "c194b9412ea3e38c65a59f60c54f83878c6a39f2",
-  "spec_sha256": "d4b90cc7ae125591feac4003b5c1d9895958a6afd65eabca4e9fb2167dcf4923"
+  "python_sdk_version": "0.127.0",
+  "python_sdk_commit": "cb3efe399e6eefa583f7c24dae8c782407673824",
+  "spec_sha256": "42998212c9daf609a766de5555d8718043809244513591fe73e9dc64cbafaa57"
 }
