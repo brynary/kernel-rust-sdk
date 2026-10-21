@@ -433,7 +433,7 @@ crate::string_enum! {
     }
 }
 
-/// AgentCard wallet. Omit provider_config to use Kernel-managed credentials, or select a customer-owned configuration. Mode (sandbox vs live) is determined by the selected credential; there is no per-item test flag. Without user_id, creation returns a hosted enrollment action and Kernel polls until the user connects. user_id may only reference a user already enrolled by a wallet in this organization under the same configuration.
+/// AgentCard wallet. Omit provider_config to use Kernel-managed credentials, or select a customer-owned configuration. Mode (sandbox vs live) is determined by the selected credential; there is no per-item test flag. Without user_id, creation returns a hosted enrollment action and Kernel polls until the user connects. With a customer-owned provider_config, user_id imports an existing connection after verifying access with the selected credentials in their sandbox or live mode; no hosted enrollment is needed, even if the connected user has no stored cards. With Kernel-managed credentials, user_id may only reference a user already enrolled by a wallet in this organization under the same configuration. The user and configuration bindings cannot be changed after creation. Import validation is read-only and runs before creation: a failed validation leaves no wallet or reserved key, so the user_id can be corrected and retried. Concurrent imports of the same key may both validate, but create at most one wallet and connected event.
 #[derive(Debug, Clone, PartialEq, serde::Serialize, serde::Deserialize)]
 pub struct AgentCardWalletVaultItemSpec {
     #[serde(default)]
@@ -510,6 +510,9 @@ pub struct ApiKey {
     /// Label for the API key. API keys are not addressable by name; use the ID or key identifier for stable references.
     #[serde(default)]
     pub name: String,
+    /// Permissions granted to a scoped API key. Absent for an ordinary key, which keeps unrestricted access within its organization or project.
+    #[serde(default, skip_serializing_if = "Option::is_none")]
+    pub policy: Option<ApiKeyPolicy>,
     /// Project identifier for project-scoped API keys. Null means org-wide.
     #[serde(default)]
     pub project_id: Option<String>,
@@ -536,6 +539,7 @@ impl ApiKey {
             id: id.into(),
             masked_key: masked_key.into(),
             name: name.into(),
+            policy: None,
             project_id: None,
             project_name: None,
         }
@@ -563,6 +567,44 @@ impl ApiKeyCreator {
             email: email.into(),
             id: id.into(),
             name: None,
+        }
+    }
+}
+
+#[derive(Debug, Clone, PartialEq, serde::Serialize, serde::Deserialize)]
+pub struct ApiKeyPolicy {
+    /// Allow statements. Every action and resource not listed is denied.
+    #[serde(default)]
+    pub statements: Vec<ApiKeyPolicyStatement>,
+}
+
+impl ApiKeyPolicy {
+    /// Create a `ApiKeyPolicy` with the required fields set.
+    #[allow(clippy::too_many_arguments, clippy::new_without_default)]
+    pub fn new(statements: impl Into<Vec<ApiKeyPolicyStatement>>) -> Self {
+        Self {
+            statements: statements.into(),
+        }
+    }
+}
+
+#[derive(Debug, Clone, PartialEq, serde::Serialize, serde::Deserialize)]
+pub struct ApiKeyPolicyStatement {
+    /// Permitted action, such as browsers:use or vaults:read.
+    #[serde(default)]
+    pub action: String,
+    /// Resource the action applies to, in the format projects/{project_id}/{kind}/{id}. Wildcards are supported.
+    #[serde(default)]
+    pub resource: String,
+}
+
+impl ApiKeyPolicyStatement {
+    /// Create a `ApiKeyPolicyStatement` with the required fields set.
+    #[allow(clippy::too_many_arguments, clippy::new_without_default)]
+    pub fn new(action: impl Into<String>, resource: impl Into<String>) -> Self {
+        Self {
+            action: action.into(),
+            resource: resource.into(),
         }
     }
 }
@@ -1095,9 +1137,15 @@ crate::string_enum! {
     }
 }
 
-/// Authorize a Link or Kernel card using its existing purchase specification. Use only after explicit user approval and when the item advertises authorize. Do not automatically retry provider failures or indeterminate outcomes. Checkout context is not accepted.
+/// Authorize a Link or Kernel card using its existing purchase specification. Use only after explicit user approval and when the item advertises authorize; follow the advertised operation's description. For a Link card, pass browser_id and page_url together while the browser is on the final checkout page: Kernel inspects that checkout, chooses how the credential is delivered, and limits fill to that checkout's origin in any browser with this vault attached. Omitting both issues a virtual card that fills any page on the merchant origin. Once approval has been requested, browser_id and page_url are ignored and authorize only re-checks the request. Browser and checkout inspection errors occur before any provider request and can be retried once the browser is on the checkout page. Kernel cards do not accept browser_id or page_url.
 #[derive(Debug, Clone, PartialEq, serde::Serialize, serde::Deserialize)]
 pub struct AuthorizeVaultItemOperationRequest {
+    /// Browser session ID, not a reusable browser name. The browser must have this vault attached.
+    #[serde(default, skip_serializing_if = "Option::is_none")]
+    pub browser_id: Option<String>,
+    /// Exact current top-level URL of the final checkout page open in browser_id.
+    #[serde(default, skip_serializing_if = "Option::is_none")]
+    pub page_url: Option<String>,
     #[serde(default)]
     pub r#type: String,
 }
@@ -1107,6 +1155,8 @@ impl AuthorizeVaultItemOperationRequest {
     #[allow(clippy::too_many_arguments, clippy::new_without_default)]
     pub fn new() -> Self {
         Self {
+            browser_id: None,
+            page_url: None,
             r#type: "authorize".to_owned(),
         }
     }
@@ -1162,6 +1212,8 @@ impl AvailableVaultItemOperation {
 crate::string_enum! {
     VaultItemOperationType {
         Authorize = "authorize",
+        RestartVerification = "restart_verification",
+        ConfirmTransaction = "confirm_transaction",
         Collect = "collect",
         PrepareCheckout = "prepare_checkout",
         Fill = "fill",
@@ -1542,6 +1594,9 @@ pub struct Browser {
     /// Whether the browser session is running in kiosk mode.
     #[serde(default, skip_serializing_if = "Option::is_none")]
     pub kiosk_mode: Option<bool>,
+    /// Effective browser timezone and locale with per-field provenance.
+    #[serde(default, skip_serializing_if = "Option::is_none")]
+    pub location: Option<BrowserLocation>,
     /// Memory allocated to the browser session.
     #[serde(default)]
     pub memory: BrowserMemory,
@@ -1596,6 +1651,9 @@ pub struct Browser {
     /// Vaults linked when the browser session was created.
     #[serde(default, skip_serializing_if = "Option::is_none")]
     pub vaults: Option<Vec<VaultReference>>,
+    /// Video memory (VRAM) of the GPU browser session. Only present when gpu is true.
+    #[serde(default, skip_serializing_if = "Option::is_none")]
+    pub video_memory: Option<BrowserVideoMemory>,
     /// Initial browser window size in pixels with optional refresh rate.
     /// If omitted, image defaults apply (1920x1080@25).
     /// For GPU images, the default is 1920x1080@60.
@@ -1638,6 +1696,7 @@ impl Browser {
             gpu: None,
             headless: headless.into(),
             kiosk_mode: None,
+            location: None,
             memory: memory.into(),
             name: None,
             network: None,
@@ -1656,9 +1715,52 @@ impl Browser {
             usage: None,
             usage_status: None,
             vaults: None,
+            video_memory: None,
             viewport: None,
             webdriver_ws_url: webdriver_ws_url.into(),
         }
+    }
+}
+
+#[derive(Debug, Clone, PartialEq, serde::Serialize, serde::Deserialize)]
+pub struct BrowserLocation {
+    /// Effective canonical BCP 47 formatting locale selected for the browser session.
+    #[serde(default)]
+    pub locale: String,
+    /// Where one effective browser location field came from. `override` is set explicitly on the session; `default` comes from the browser's region.
+    #[serde(default)]
+    pub locale_source: BrowserLocationSource,
+    /// Effective IANA timezone selected for the browser session.
+    #[serde(default)]
+    pub timezone: String,
+    /// Where one effective browser location field came from. `override` is set explicitly on the session; `default` comes from the browser's region.
+    #[serde(default)]
+    pub timezone_source: BrowserLocationSource,
+}
+
+impl BrowserLocation {
+    /// Create a `BrowserLocation` with the required fields set.
+    #[allow(clippy::too_many_arguments, clippy::new_without_default)]
+    pub fn new(
+        timezone: impl Into<String>,
+        locale: impl Into<String>,
+        timezone_source: impl Into<BrowserLocationSource>,
+        locale_source: impl Into<BrowserLocationSource>,
+    ) -> Self {
+        Self {
+            locale: locale.into(),
+            locale_source: locale_source.into(),
+            timezone: timezone.into(),
+            timezone_source: timezone_source.into(),
+        }
+    }
+}
+
+crate::string_enum! {
+    /// Where one effective browser location field came from. `override` is set explicitly on the session; `default` comes from the browser's region.
+    BrowserLocationSource {
+        Override = "override",
+        Default = "default",
     }
 }
 
@@ -1667,8 +1769,10 @@ crate::string_enum! {
     BrowserMemory {
         V1GiB = "1GiB",
         V2GiB = "2GiB",
+        V4GiB = "4GiB",
         V6GiB = "6GiB",
         V8GiB = "8GiB",
+        V12GiB = "12GiB",
         V16GiB = "16GiB",
     }
 }
@@ -1676,10 +1780,16 @@ crate::string_enum! {
 /// Network configuration for a browser session or browser pool.
 #[derive(Debug, Clone, PartialEq, serde::Serialize, serde::Deserialize)]
 pub struct BrowserNetworkConfig {
+    /// Egress allowlist for a browser session: the only destinations the browser may reach through Kernel-managed egress. Any other destination is refused with a 403 whose X-Kernel-Proxy-Error header is network_policy_denied, so pages cannot load or send data to unlisted hosts, including with fetch() and WebSockets. Omit the field for unfiltered egress; an empty list is invalid. The allowlist applies from the browser's first request, and start_url must be allowed by it. Entries are exact hostnames ("example.com"), one leading "*." wildcard that matches subdomains at any depth but not the domain itself ("*.example.com" matches api.example.com, not example.com), public IPv4 addresses ("8.8.8.8"), bracketed public IPv6 addresses ("\[2001:4860:4860::8888\]"), or public CIDR ranges in canonical form ("8.8.4.0/24", "2001:4860::/32"). IP and CIDR entries only match destinations written as an IP address, never hostnames that resolve into the range. Entries cannot include ports, paths, or schemes, and match every port on their host. Wildcards over a public suffix ("*.com", "*.github.io") and private or reserved IP ranges are rejected, as are entries that overlap private_hosts. Enforced at Kernel's egress proxy only: destinations in private_hosts, and processes in the browser VM that do not use the browser's proxy, are not filtered, and Kernel's own control traffic is always allowed. Can be replaced or removed while the session runs with PATCH /browsers/{id_or_name}, but not added to a browser created without one. Supported on browser pools and their leased browsers. Per-lease changes are reset to the pool's allowlist on release. If a lessee removes the allowlist and the pool still requires one, the browser is replaced on release rather than given an allowlist again. Requires proxy v3.
+    #[serde(default, skip_serializing_if = "Option::is_none")]
+    pub allowed_hosts: Option<Vec<String>>,
+    /// Concurrency metadata for a browser's saved allowlist configuration. Browser pools omit it. This remains present after removal so an uncertain removal can be retried. It does not prove proxy or VM application completed. Do not include it in creation or pool updates.
+    #[serde(default, skip_serializing_if = "Option::is_none")]
+    pub allowlist_state: Option<BrowserAllowlistState>,
     /// Destinations the browser reaches directly through the session's own network instead of through Kernel-managed egress — for private hosts reachable over a VPN or tunnel the session has joined (e.g. a Tailscale tailnet). By default, private IP ranges already route directly: RFC1918 (10.0.0.0/8, 172.16.0.0/12, 192.168.0.0/16), CGNAT/Tailscale (100.64.0.0/10), and IPv6 ULA (fc00::/7). An explicitly supplied list replaces those defaults with exactly the entries given, and an empty list (\[\]) disables them so all traffic uses Kernel-managed egress; omit private_hosts to keep the defaults. Entries are hostname patterns ("*.example.ts.net", "preview.internal") or IP/CIDR literals ("100.64.0.0/10", "10.1.30.63"). IP and CIDR entries only match URLs written with a literal IP address; they never match hostnames that resolve into the range, so private DNS names need a hostname entry even when they resolve inside the default ranges. CIDRs must be in canonical masked form (host bits zero), and only the private ranges listed above are accepted; public, loopback, link-local, and unspecified ranges are rejected. Exact IPv6 addresses must be bracketed ("\[fd00::1\]"); IPv6 CIDR ranges are unbracketed ("fd00::/8"). Wildcards are limited to one leading "*." over a suffix with at least two labels that is not a public suffix (so "*.co.uk" or "*.ts.net" are rejected, while "*.example.ts.net" is accepted). Hostname and IP entries may carry a port; CIDR ranges may not. Hostname entries are not resolved during validation, so callers must ensure they identify private destinations. Not related to a proxy's bypass_hosts, which selects between upstream-proxy and Kernel-managed direct egress and cannot reach into a VPN.
     #[serde(default, skip_serializing_if = "Option::is_none")]
     pub private_hosts: Option<Vec<String>>,
-    /// Per-destination proxy routes for a browser session. After setup, a destination hostname is matched against every route's hosts, regardless of port; route order does not matter. An exact hostname beats a wildcard, and a longer wildcard suffix beats a shorter one (for a.b.example.com: "a.b.example.com" \> "*.b.example.com" \> "*.example.com"). A host pattern may appear in only one route. "*.example.com" matches subdomains only, not example.com. A matched request selects the route's proxy instead of the session's top-level proxy (including mode: direct); the route proxy's own bypass_hosts still apply. If the route proxy becomes unavailable, matched requests fail closed without falling back. Requests that match no route use the session's default egress from the top-level proxy field (or the browser default when proxy is omitted: stealth proxy or direct egress). Routes take effect once the session is created; start_url and other traffic during browser setup use the top-level proxy. Setting routes requires proxy v3. Not supported on browser pools.
+    /// Per-destination proxy routes for a browser session. A destination hostname is matched against every route's hosts, regardless of port; route order does not matter. An exact hostname beats a wildcard, and a longer wildcard suffix beats a shorter one (for a.b.example.com: "a.b.example.com" \> "*.b.example.com" \> "*.example.com"). A host pattern may appear in only one route. "*.example.com" matches subdomains only, not example.com. A matched request selects the route's proxy instead of the session's top-level proxy (including mode: direct); the route proxy's own bypass_hosts still apply. If the route proxy becomes unavailable, matched requests fail closed without falling back. Requests that match no route use the session's default egress from the top-level proxy field (or the browser default when proxy is omitted: stealth proxy or direct egress). Routes apply from the start of the session, including to start_url and other traffic during browser setup. Setting routes requires proxy v3. Browser pools also support these routes.
     #[serde(default, skip_serializing_if = "Option::is_none")]
     pub proxy_routes: Option<Vec<BrowserProxyRoute>>,
 }
@@ -1689,6 +1799,8 @@ impl BrowserNetworkConfig {
     #[allow(clippy::too_many_arguments, clippy::new_without_default)]
     pub fn new() -> Self {
         Self {
+            allowed_hosts: None,
+            allowlist_state: None,
             private_hosts: None,
             proxy_routes: None,
         }
@@ -1698,6 +1810,31 @@ impl BrowserNetworkConfig {
 impl Default for BrowserNetworkConfig {
     fn default() -> Self {
         Self::new()
+    }
+}
+
+#[derive(Debug, Clone, PartialEq, serde::Serialize, serde::Deserialize)]
+pub struct BrowserAllowlistState {
+    /// Revision against which that mutation was accepted; reuse it when retrying the mutation.
+    #[serde(default, skip_serializing_if = "Option::is_none")]
+    pub base_revision: Option<String>,
+    /// ID of the last conditional allowlist update saved on this browser.
+    #[serde(default, skip_serializing_if = "Option::is_none")]
+    pub mutation_id: Option<String>,
+    /// Opaque revision to pass as network.expected_allowlist_revision on an update.
+    #[serde(default)]
+    pub revision: String,
+}
+
+impl BrowserAllowlistState {
+    /// Create a `BrowserAllowlistState` with the required fields set.
+    #[allow(clippy::too_many_arguments, clippy::new_without_default)]
+    pub fn new(revision: impl Into<String>) -> Self {
+        Self {
+            base_revision: None,
+            mutation_id: None,
+            revision: revision.into(),
+        }
     }
 }
 
@@ -1852,6 +1989,7 @@ crate::string_enum! {
     /// Geographic region for hosting browser sessions or pools.
     Region {
         UsEast = "us-east",
+        UsWest = "us-west",
         EuWest = "eu-west",
         ApSoutheast = "ap-southeast",
     }
@@ -2194,6 +2332,14 @@ impl Default for VaultReference {
     }
 }
 
+crate::string_enum! {
+    /// Video memory (VRAM) of a GPU browser session. 2GiB sessions have 4 vCPU and 6GiB memory. 4GiB sessions have 8 vCPU and 12GiB memory.
+    BrowserVideoMemory {
+        N2GiB = "2GiB",
+        N4GiB = "4GiB",
+    }
+}
+
 /// Initial browser window size in pixels with optional refresh rate.
 /// If omitted, image defaults apply (1920x1080@25).
 /// For GPU images, the default is 1920x1080@60.
@@ -2210,7 +2356,7 @@ pub struct BrowserViewport {
     /// Browser window height in pixels. Any positive integer is accepted.
     #[serde(default)]
     pub height: i64,
-    /// Display refresh rate in Hz. Any positive integer is accepted; if omitted, automatically determined from width and height.
+    /// Display refresh rate in Hz. Any positive integer is accepted; if omitted, GPU browsers default to 60 and other browsers derive it from width and height.
     #[serde(default, skip_serializing_if = "Option::is_none")]
     pub refresh_rate: Option<i64>,
     /// Browser window width in pixels. Any positive integer is accepted.
@@ -2406,12 +2552,12 @@ impl BrowserCallStackCallFrame {
 /// Opaque identifier shared by events for one visible challenge. An image-grid captcha may create multiple task_id values for one challenge_id. The same value may continue across a page reload when the challenge episode continues. It does not indicate task ordering or challenge completion.
 pub type BrowserCaptchaChallengeId = String;
 
-/// A visible captcha challenge reached a terminal outcome.
+/// A captcha challenge reached an observed or inferred terminal outcome.
 #[derive(Debug, Clone, PartialEq, serde::Serialize, serde::Deserialize)]
 pub struct BrowserCaptchaChallengeResultEvent {
     #[serde(default)]
     pub category: String,
-    /// Per-challenge payload. This event is emitted once per challenge and determines its overall outcome; captcha_solve_started and captcha_solve_result describe individual tasks and may occur multiple times within the challenge.
+    /// An observed challenge emits one outcome across any number of solver tasks. For eligible providers without a widget observer, each successful token task emits an inferred solved result instead; multiple such results may belong to one challenge. Failed tasks and image_challenge rounds produce no inferred result. Exactly one of challenge_id or task_id is present: challenge_id on an observed result, task_id on an inferred one. A challenge whose tasks all fail produces task events only, so consumers fall back to captcha_solve_result for it.
     pub data: BrowserCaptchaChallengeResultEventData,
     /// Provenance metadata identifying which producer emitted the event.
     pub source: BrowserEventSource,
@@ -2444,20 +2590,30 @@ impl BrowserCaptchaChallengeResultEvent {
     }
 }
 
-/// Per-challenge payload. This event is emitted once per challenge and determines its overall outcome; captcha_solve_started and captcha_solve_result describe individual tasks and may occur multiple times within the challenge.
+/// An observed challenge emits one outcome across any number of solver tasks. For eligible providers without a widget observer, each successful token task emits an inferred solved result instead; multiple such results may belong to one challenge. Failed tasks and image_challenge rounds produce no inferred result. Exactly one of challenge_id or task_id is present: challenge_id on an observed result, task_id on an inferred one. A challenge whose tasks all fail produces task events only, so consumers fall back to captcha_solve_result for it.
 #[derive(Debug, Clone, PartialEq, serde::Serialize, serde::Deserialize)]
 pub struct BrowserCaptchaChallengeResultEventData {
-    /// Captcha kind. Enterprise reCAPTCHA variants are grouped into their version bucket (recaptcha_v2 or recaptcha_v3), press-and-hold challenges use press_and_hold, and unlisted kinds use other.
+    /// Captcha product the challenge belongs to, not the service that solved it. Enterprise reCAPTCHA variants are grouped into their version bucket (recaptcha_v2 or recaptcha_v3), FunCaptcha uses arkose, press-and-hold challenges served by HUMAN (formerly PerimeterX) use human, and unlisted products, including text captchas a site draws itself, use other.
+    #[serde(default, skip_serializing_if = "Option::is_none")]
+    pub captcha_provider: Option<BrowserCaptchaProvider>,
+    /// Deprecated: use captcha_provider.
     #[serde(default)]
     pub captcha_type: BrowserCaptchaType,
     /// Opaque identifier shared by events for one visible challenge. An image-grid captcha may create multiple task_id values for one challenge_id. The same value may continue across a page reload when the challenge episode continues. It does not indicate task ordering or challenge completion.
-    pub challenge_id: BrowserCaptchaChallengeId,
-    /// Wall-clock duration from the challenge appearing to its terminal outcome, covering every solver attempt in between.
+    #[serde(default, skip_serializing_if = "Option::is_none")]
+    pub challenge_id: Option<BrowserCaptchaChallengeId>,
+    /// Wall-clock duration from the challenge appearing to its terminal outcome, covering every solver attempt in between. For an inferred result, the duration of its solver task.
     #[serde(default)]
     pub duration_ms: f64,
-    /// Terminal outcome of the visible challenge. solved: the page observed the challenge clear after a solver attempt. failure: a terminal solver failure occurred, or all attempts ended while the challenge remained. timeout: the challenge-level wait budget expired while the challenge remained. abandoned: observation ended without an attributable terminal challenge outcome. This includes a dismissed widget or page unload without a solved signal or terminal solver outcome, and a token appearing while multiple same-provider challenges are open, because the producer cannot attribute that token to this visible challenge. A captcha_solve_result with the same challenge_id may therefore report success while the challenge result reports abandoned. A solved challenge does not prove the site accepted the token or that the guarded action succeeded.
+    /// True when the relay derived this result from a successful token task without observing the page. An inferred result has task_id instead of challenge_id. Absent on page-observed results.
+    #[serde(default, skip_serializing_if = "Option::is_none")]
+    pub inferred: Option<bool>,
+    /// Terminal outcome of a challenge. solved: the page observed the challenge clear after a solver attempt, or an inferred result reports a token for the whole widget without page observation. failure: a terminal solver failure occurred, or all attempts ended while the challenge remained. timeout: the challenge-level wait budget expired while the challenge remained. abandoned: observation ended without an attributable terminal challenge outcome. This includes a dismissed widget or page unload without a solved signal or terminal solver outcome, and a token appearing while multiple same-provider challenges are open, because the producer cannot attribute that token to this visible challenge. A captcha_solve_result with the same challenge_id may therefore report success while the challenge result reports abandoned. A solved challenge does not prove the site accepted the token or that the guarded action succeeded.
     #[serde(default)]
     pub status: BrowserCaptchaChallengeResultEventDataStatus,
+    /// The task_id of the solver task an inferred result was derived from. Join on it to pair the result with that task's captcha_solve_started and captcha_solve_result. Present only when inferred is true.
+    #[serde(default, skip_serializing_if = "Option::is_none")]
+    pub task_id: Option<String>,
     /// Host of the page where the challenge appeared.
     #[serde(default, skip_serializing_if = "Option::is_none")]
     pub website_host: Option<String>,
@@ -2472,14 +2628,16 @@ impl BrowserCaptchaChallengeResultEventData {
     pub fn new(
         captcha_type: impl Into<BrowserCaptchaType>,
         status: impl Into<BrowserCaptchaChallengeResultEventDataStatus>,
-        challenge_id: impl Into<BrowserCaptchaChallengeId>,
         duration_ms: impl Into<f64>,
     ) -> Self {
         Self {
+            captcha_provider: None,
             captcha_type: captcha_type.into(),
-            challenge_id: challenge_id.into(),
+            challenge_id: None,
             duration_ms: duration_ms.into(),
+            inferred: None,
             status: status.into(),
+            task_id: None,
             website_host: None,
             website_path: None,
         }
@@ -2487,7 +2645,22 @@ impl BrowserCaptchaChallengeResultEventData {
 }
 
 crate::string_enum! {
-    /// Captcha kind. Enterprise reCAPTCHA variants are grouped into their version bucket (recaptcha_v2 or recaptcha_v3), press-and-hold challenges use press_and_hold, and unlisted kinds use other.
+    /// Captcha product the challenge belongs to, not the service that solved it. Enterprise reCAPTCHA variants are grouped into their version bucket (recaptcha_v2 or recaptcha_v3), FunCaptcha uses arkose, press-and-hold challenges served by HUMAN (formerly PerimeterX) use human, and unlisted products, including text captchas a site draws itself, use other.
+    BrowserCaptchaProvider {
+        Hcaptcha = "hcaptcha",
+        RecaptchaV2 = "recaptcha_v2",
+        RecaptchaV3 = "recaptcha_v3",
+        Turnstile = "turnstile",
+        Geetest = "geetest",
+        Arkose = "arkose",
+        Human = "human",
+        Binance = "binance",
+        Other = "other",
+    }
+}
+
+crate::string_enum! {
+    /// Captcha kind. Enterprise reCAPTCHA variants are grouped into their version bucket (recaptcha_v2 or recaptcha_v3), press-and-hold challenges use press_and_hold, and unlisted kinds use other. Its values are frozen: image rounds submitted as a plain ComplexImageTask report other, and press-and-hold reports press_and_hold. Use captcha_provider and task_kind instead.
     BrowserCaptchaType {
         Hcaptcha = "hcaptcha",
         RecaptchaV2 = "recaptcha_v2",
@@ -2500,7 +2673,7 @@ crate::string_enum! {
 }
 
 crate::string_enum! {
-    /// Terminal outcome of the visible challenge. solved: the page observed the challenge clear after a solver attempt. failure: a terminal solver failure occurred, or all attempts ended while the challenge remained. timeout: the challenge-level wait budget expired while the challenge remained. abandoned: observation ended without an attributable terminal challenge outcome. This includes a dismissed widget or page unload without a solved signal or terminal solver outcome, and a token appearing while multiple same-provider challenges are open, because the producer cannot attribute that token to this visible challenge. A captcha_solve_result with the same challenge_id may therefore report success while the challenge result reports abandoned. A solved challenge does not prove the site accepted the token or that the guarded action succeeded.
+    /// Terminal outcome of a challenge. solved: the page observed the challenge clear after a solver attempt, or an inferred result reports a token for the whole widget without page observation. failure: a terminal solver failure occurred, or all attempts ended while the challenge remained. timeout: the challenge-level wait budget expired while the challenge remained. abandoned: observation ended without an attributable terminal challenge outcome. This includes a dismissed widget or page unload without a solved signal or terminal solver outcome, and a token appearing while multiple same-provider challenges are open, because the producer cannot attribute that token to this visible challenge. A captcha_solve_result with the same challenge_id may therefore report success while the challenge result reports abandoned. A solved challenge does not prove the site accepted the token or that the guarded action succeeded.
     BrowserCaptchaChallengeResultEventDataStatus {
         Solved = "solved",
         Failure = "failure",
@@ -2545,7 +2718,10 @@ impl BrowserCaptchaSolveResultEvent {
 
 #[derive(Debug, Clone, PartialEq, serde::Serialize, serde::Deserialize)]
 pub struct BrowserCaptchaSolveResultEventData {
-    /// Captcha kind. Enterprise reCAPTCHA variants are grouped into their version bucket (recaptcha_v2 or recaptcha_v3), press-and-hold challenges use press_and_hold, and unlisted kinds use other.
+    /// Captcha product the challenge belongs to, not the service that solved it. Enterprise reCAPTCHA variants are grouped into their version bucket (recaptcha_v2 or recaptcha_v3), FunCaptcha uses arkose, press-and-hold challenges served by HUMAN (formerly PerimeterX) use human, and unlisted products, including text captchas a site draws itself, use other.
+    #[serde(default, skip_serializing_if = "Option::is_none")]
+    pub captcha_provider: Option<BrowserCaptchaProvider>,
+    /// Deprecated: use captcha_provider and task_kind.
     #[serde(default)]
     pub captcha_type: BrowserCaptchaType,
     /// Opaque identifier shared by events for one visible challenge. An image-grid captcha may create multiple task_id values for one challenge_id. The same value may continue across a page reload when the challenge episode continues. It does not indicate task ordering or challenge completion.
@@ -2557,12 +2733,18 @@ pub struct BrowserCaptchaSolveResultEventData {
     /// Solver-specific error code on failure (e.g. ERROR_CAPTCHA_UNSOLVABLE). Absent on success.
     #[serde(default, skip_serializing_if = "Option::is_none")]
     pub error_code: Option<String>,
+    /// Captured hCaptcha recognition media, when known.
+    #[serde(default, skip_serializing_if = "Option::is_none")]
+    pub media: Option<BrowserCaptchaSolveResultEventDataMedia>,
     /// Terminal outcome. success: solver returned a usable solution. failure: solver returned an error (see error_code). timeout: solver did not return within the caller's wait budget. abandoned: caller cancelled or the page navigated away mid-solve.
     #[serde(default)]
     pub status: BrowserCaptchaSolveResultEventDataStatus,
     /// Opaque identifier shared with the matching captcha_solve_started.
     #[serde(default, skip_serializing_if = "Option::is_none")]
     pub task_id: Option<String>,
+    /// What the solver task produces. Absent when the producer cannot tell.
+    #[serde(default, skip_serializing_if = "Option::is_none")]
+    pub task_kind: Option<BrowserCaptchaTaskKind>,
     /// Host of the page where the captcha was solved.
     #[serde(default, skip_serializing_if = "Option::is_none")]
     pub website_host: Option<String>,
@@ -2580,15 +2762,26 @@ impl BrowserCaptchaSolveResultEventData {
         duration_ms: impl Into<f64>,
     ) -> Self {
         Self {
+            captcha_provider: None,
             captcha_type: captcha_type.into(),
             challenge_id: None,
             duration_ms: duration_ms.into(),
             error_code: None,
+            media: None,
             status: status.into(),
             task_id: None,
+            task_kind: None,
             website_host: None,
             website_path: None,
         }
+    }
+}
+
+crate::string_enum! {
+    /// Captured hCaptcha recognition media, when known.
+    BrowserCaptchaSolveResultEventDataMedia {
+        Image = "image",
+        Video = "video",
     }
 }
 
@@ -2599,6 +2792,15 @@ crate::string_enum! {
         Failure = "failure",
         Timeout = "timeout",
         Abandoned = "abandoned",
+    }
+}
+
+crate::string_enum! {
+    /// What a solver task produces. token: a single answer for the whole challenge, such as a widget's response token or a text captcha's text, so a successful task is the challenge's final answer. image_challenge: the answer to one image round (grid selection, point click, drag), after which the challenge may serve another round. press_and_hold: one press-and-hold attempt.
+    BrowserCaptchaTaskKind {
+        Token = "token",
+        ImageChallenge = "image_challenge",
+        PressAndHold = "press_and_hold",
     }
 }
 
@@ -2643,15 +2845,24 @@ impl BrowserCaptchaSolveStartedEvent {
 /// Per-task payload. A visible challenge may create multiple tasks. When present, task_id correlates this event with a captcha_solve_result, while challenge_id groups tasks from the same challenge. Events may arrive out of order or be absent, so their arrival does not indicate current solve state.
 #[derive(Debug, Clone, PartialEq, serde::Serialize, serde::Deserialize)]
 pub struct BrowserCaptchaSolveStartedEventData {
-    /// Captcha kind. Enterprise reCAPTCHA variants are grouped into their version bucket (recaptcha_v2 or recaptcha_v3), press-and-hold challenges use press_and_hold, and unlisted kinds use other.
+    /// Captcha product the challenge belongs to, not the service that solved it. Enterprise reCAPTCHA variants are grouped into their version bucket (recaptcha_v2 or recaptcha_v3), FunCaptcha uses arkose, press-and-hold challenges served by HUMAN (formerly PerimeterX) use human, and unlisted products, including text captchas a site draws itself, use other.
+    #[serde(default, skip_serializing_if = "Option::is_none")]
+    pub captcha_provider: Option<BrowserCaptchaProvider>,
+    /// Deprecated: use captcha_provider and task_kind.
     #[serde(default)]
     pub captcha_type: BrowserCaptchaType,
     /// Opaque identifier shared by events for one visible challenge. An image-grid captcha may create multiple task_id values for one challenge_id. The same value may continue across a page reload when the challenge episode continues. It does not indicate task ordering or challenge completion.
     #[serde(default, skip_serializing_if = "Option::is_none")]
     pub challenge_id: Option<BrowserCaptchaChallengeId>,
+    /// Captured hCaptcha recognition media, when known.
+    #[serde(default, skip_serializing_if = "Option::is_none")]
+    pub media: Option<BrowserCaptchaSolveStartedEventDataMedia>,
     /// Opaque identifier shared with the matching captcha_solve_result.
     #[serde(default, skip_serializing_if = "Option::is_none")]
     pub task_id: Option<String>,
+    /// What the solver task produces. Absent when the producer cannot tell.
+    #[serde(default, skip_serializing_if = "Option::is_none")]
+    pub task_kind: Option<BrowserCaptchaTaskKind>,
     /// Host of the page where the captcha is being solved. May be empty for solver tasks that carry no page URL.
     #[serde(default, skip_serializing_if = "Option::is_none")]
     pub website_host: Option<String>,
@@ -2665,12 +2876,23 @@ impl BrowserCaptchaSolveStartedEventData {
     #[allow(clippy::too_many_arguments, clippy::new_without_default)]
     pub fn new(captcha_type: impl Into<BrowserCaptchaType>) -> Self {
         Self {
+            captcha_provider: None,
             captcha_type: captcha_type.into(),
             challenge_id: None,
+            media: None,
             task_id: None,
+            task_kind: None,
             website_host: None,
             website_path: None,
         }
+    }
+}
+
+crate::string_enum! {
+    /// Captured hCaptcha recognition media, when known.
+    BrowserCaptchaSolveStartedEventDataMedia {
+        Image = "image",
+        Video = "video",
     }
 }
 
@@ -6203,9 +6425,67 @@ impl BrowserLiveViewDisconnectEventData {
     }
 }
 
+#[derive(Debug, Clone, PartialEq, serde::Serialize, serde::Deserialize)]
+pub struct BrowserLocationRequest {
+    /// Session-only supported canonical BCP 47 locale override. Omit to use the default for the browser's region.
+    #[serde(default, skip_serializing_if = "Option::is_none")]
+    pub locale: Option<String>,
+    /// Session-only IANA timezone override. Omit to use the default for the browser's region.
+    #[serde(default, skip_serializing_if = "Option::is_none")]
+    pub timezone: Option<String>,
+}
+
+impl BrowserLocationRequest {
+    /// Create a `BrowserLocationRequest` with the required fields set.
+    #[allow(clippy::too_many_arguments, clippy::new_without_default)]
+    pub fn new() -> Self {
+        Self {
+            locale: None,
+            timezone: None,
+        }
+    }
+}
+
+impl Default for BrowserLocationRequest {
+    fn default() -> Self {
+        Self::new()
+    }
+}
+
+/// Omit a field to leave it unchanged, set a string override, or set null to clear the override and use the default for the browser's region.
+#[derive(Debug, Clone, PartialEq, serde::Serialize, serde::Deserialize)]
+pub struct BrowserLocationUpdateRequest {
+    /// Session-only supported canonical BCP 47 locale override. Null clears the override and uses the browser region's default.
+    #[serde(default, skip_serializing_if = "Option::is_none")]
+    pub locale: Option<String>,
+    /// Session-only IANA timezone override. Null clears the override and uses the browser region's default.
+    #[serde(default, skip_serializing_if = "Option::is_none")]
+    pub timezone: Option<String>,
+}
+
+impl BrowserLocationUpdateRequest {
+    /// Create a `BrowserLocationUpdateRequest` with the required fields set.
+    #[allow(clippy::too_many_arguments, clippy::new_without_default)]
+    pub fn new() -> Self {
+        Self {
+            locale: None,
+            timezone: None,
+        }
+    }
+}
+
+impl Default for BrowserLocationUpdateRequest {
+    fn default() -> Self {
+        Self::new()
+    }
+}
+
 crate::string_enum! {
-    /// Memory requested for a headful, non-GPU browser session.
+    /// Memory requested for a non-GPU browser. Headless browsers support 1GiB (default), 2GiB, or 4GiB; headful browsers support 8GiB (default) or 16GiB.
     BrowserMemoryRequest {
+        V1GiB = "1GiB",
+        V2GiB = "2GiB",
+        V4GiB = "4GiB",
         V8GiB = "8GiB",
         V16GiB = "16GiB",
     }
@@ -6845,6 +7125,38 @@ impl BrowserNetworkResponseEventData {
 }
 
 impl Default for BrowserNetworkResponseEventData {
+    fn default() -> Self {
+        Self::new()
+    }
+}
+
+/// Network configuration changes for a running browser session. Other network settings can only be set at creation.
+#[derive(Debug, Clone, PartialEq, serde::Serialize, serde::Deserialize)]
+pub struct BrowserNetworkUpdate {
+    /// Replaces the session's egress allowlist, using the same entry rules as network.allowed_hosts on create. Only an allowlist the browser was created with can be changed: a browser created without one can't be given one, and an allowlist removed with null can't be added back. Omit to leave the allowlist unchanged, or set to null to remove it and return to unfiltered egress; an empty list is invalid. The new list applies without restarting the browser: new requests to destinations it no longer allows are refused within a few seconds, and open connections to them are closed within about 30 seconds, or up to 10 minutes during a Kernel deploy. Connections to destinations it still allows, such as WebSockets, stay open. A start_url in the same request must be allowed by the updated list, and is loaded only after the list takes effect. Requires a browser created with proxy v3. Supported on leased pooled browsers; the pool's allowlist is restored before reuse, or the browser is destroyed if it cannot be safely restored. If the request fails, retry it: the new list may already apply to some requests.
+    #[serde(default, skip_serializing_if = "Option::is_none")]
+    pub allowed_hosts: Option<Vec<String>>,
+    /// The network.allowlist_state.revision from the browser's last saved snapshot. Supply together with mutation_id to opt into conditional allowlist updates. The revision is checked atomically with the configuration write. A stale request returns 409 stale_network without changing the allowlist. A GET alone does not fence an earlier unfinished PATCH.
+    #[serde(default, skip_serializing_if = "Option::is_none")]
+    pub expected_allowlist_revision: Option<String>,
+    /// A unique ID for this allowlist update, supplied together with expected_allowlist_revision. Reuse both values and the identical allowed_hosts payload when retrying an uncertain update. If it is still the current mutation, the retry finishes proxy and VM application without creating another revision. A superseded mutation returns 409 stale_network. These fields guard only network.allowed_hosts, not other browser update fields.
+    #[serde(default, skip_serializing_if = "Option::is_none")]
+    pub mutation_id: Option<String>,
+}
+
+impl BrowserNetworkUpdate {
+    /// Create a `BrowserNetworkUpdate` with the required fields set.
+    #[allow(clippy::too_many_arguments, clippy::new_without_default)]
+    pub fn new() -> Self {
+        Self {
+            allowed_hosts: None,
+            expected_allowlist_revision: None,
+            mutation_id: None,
+        }
+    }
+}
+
+impl Default for BrowserNetworkUpdate {
     fn default() -> Self {
         Self::new()
     }
@@ -8050,13 +8362,13 @@ pub struct BrowserPoolCreateRequest {
     /// If true, launches the browser in kiosk mode to hide address bar and tabs in live view. Defaults to false.
     #[serde(default, skip_serializing_if = "Option::is_none")]
     pub kiosk_mode: Option<bool>,
-    /// Memory requested for headful browsers in this pool.
+    /// Memory for browsers in this pool. Headless: 1GiB (default), 2GiB, or 4GiB. Headful: 8GiB (default) or 16GiB.
     #[serde(default, skip_serializing_if = "Option::is_none")]
     pub memory: Option<BrowserMemoryRequest>,
     /// Optional name for the browser pool. Must be unique within the project.
     #[serde(default, skip_serializing_if = "Option::is_none")]
     pub name: Option<String>,
-    /// Network configuration applied to browsers in this pool.
+    /// Network configuration applied to browsers in this pool. Egress allowlists and proxy routes require proxy-v3; the pool will not provision browsers through Envoy if proxy-v3 is unavailable.
     #[serde(default, skip_serializing_if = "Option::is_none")]
     pub network: Option<BrowserNetworkConfig>,
     /// Profile selection for browsers in the pool.
@@ -8174,9 +8486,12 @@ pub struct BrowserPoolUpdateRequest {
     /// If provided, replaces the custom Chrome enterprise policy overrides applied to all browsers in this pool. Empty object clears any previously-set policy. Keys are Chrome enterprise policy names; values must match their expected types. Blocked: kernel-managed policies (extensions, proxy, CDP/automation). See <https://chromeenterprise.google/policies/> The serialized JSON payload is capped at 5 MiB.
     #[serde(default, skip_serializing_if = "Option::is_none")]
     pub chrome_policy: Option<std::collections::HashMap<String, serde_json::Value>>,
-    /// Whether to discard all idle browsers and rebuild them immediately with the new configuration. Defaults to false. Only browsers that are idle when the update runs are rebuilt. A browser that is in use during the update keeps its original configuration, and if it is later released with `reuse: true` it returns to the pool with that stale configuration until it is discarded (by this flag on a later update, or by flushing the pool).
+    /// Whether to discard all idle browsers and rebuild them immediately with the new configuration. Defaults to false. Only browsers that are idle when the update runs are rebuilt. A browser that is in use during the update keeps its original configuration, except that its allowlist is reset to the current pool baseline on release or the browser is replaced. For other configuration fields, if it is later released with `reuse: true` it returns to the pool with that stale configuration until it is discarded (by this flag on a later update, or by flushing the pool).
     #[serde(default, skip_serializing_if = "Option::is_none")]
     pub discard_all_idle: Option<bool>,
+    /// Optional optimistic concurrency precondition. Send the network configuration from the last pool response, or {} when it has no network configuration. The entire update is rejected with 409 stale_network if the saved network differs, checked atomically with the write. Omit for unconditional updates. Explicit empty lists differ from omitted lists; route targets must match the saved references (resolved IDs, not equivalent proxy names).
+    #[serde(default, skip_serializing_if = "Option::is_none")]
+    pub expected_network: Option<BrowserNetworkConfig>,
     /// If provided, replaces the extension list. Empty array clears all previously-selected
     /// extensions. Omit this field to leave extensions unchanged.
     #[serde(default, skip_serializing_if = "Option::is_none")]
@@ -8192,14 +8507,14 @@ pub struct BrowserPoolUpdateRequest {
     /// If provided, replaces whether browsers launch in kiosk mode.
     #[serde(default, skip_serializing_if = "Option::is_none")]
     pub kiosk_mode: Option<bool>,
-    /// Memory requested for newly-warmed headful browsers in this pool. Existing browsers retain their original allocation. Use discard_all_idle to replace idle browsers.
+    /// Memory requested for newly-warmed browsers in this pool: 1GiB, 2GiB, or 4GiB for headless, 8GiB or 16GiB for headful. Existing browsers retain their original allocation. Use discard_all_idle to replace idle browsers.
     #[serde(default, skip_serializing_if = "Option::is_none")]
     pub memory: Option<BrowserPoolUpdateRequestMemory>,
     /// If provided, replaces the pool name. Empty string is a no-op; the pool name cannot
     /// be cleared or reset to empty once assigned.
     #[serde(default, skip_serializing_if = "Option::is_none")]
     pub name: Option<String>,
-    /// If provided, replaces the pool's network configuration. Omit to leave the existing configuration unchanged; an empty object ({}) removes it, while network: {private_hosts: \[\]} sets an explicit empty list. Only applied to browsers created in the pool after the update; browsers already in the pool keep their configuration until discarded (see discard_all_idle).
+    /// If provided, replaces the pool's network configuration. Omit to leave the existing configuration unchanged; an empty object ({}) removes it, while network: {private_hosts: \[\]} or network: {proxy_routes: \[\]} sets an explicit empty list; allowed_hosts must be non-empty when supplied. Egress allowlists and proxy routes require proxy-v3; the pool will not provision browsers through Envoy if proxy-v3 is unavailable. Changing allowed_hosts automatically replaces idle browsers. Leased browsers retain their allowlist until release, when it is reset to the current pool baseline or the browser is replaced if it cannot safely receive that baseline. Stale browsers cannot be acquired. Other network fields only apply to browsers created after the update; existing browsers keep those fields until discarded (see discard_all_idle).
     #[serde(default, skip_serializing_if = "Option::is_none")]
     pub network: Option<BrowserNetworkConfig>,
     /// If provided, replaces the previously-selected profile. To clear the profile reference,
@@ -8249,6 +8564,7 @@ impl BrowserPoolUpdateRequest {
         Self {
             chrome_policy: None,
             discard_all_idle: None,
+            expected_network: None,
             extensions: None,
             fill_rate_per_minute: None,
             headless: None,
@@ -8276,8 +8592,11 @@ impl Default for BrowserPoolUpdateRequest {
 }
 
 crate::string_enum! {
-    /// Memory requested for newly-warmed headful browsers in this pool. Existing browsers retain their original allocation. Use discard_all_idle to replace idle browsers.
+    /// Memory requested for newly-warmed browsers in this pool: 1GiB, 2GiB, or 4GiB for headless, 8GiB or 16GiB for headful. Existing browsers retain their original allocation. Use discard_all_idle to replace idle browsers.
     BrowserPoolUpdateRequestMemory {
+        V1GiB = "1GiB",
+        V2GiB = "2GiB",
+        V4GiB = "4GiB",
         V8GiB = "8GiB",
         V16GiB = "16GiB",
     }
@@ -8320,7 +8639,7 @@ impl Default for BrowserProxyConfig {
     }
 }
 
-/// A branded proxy-layer failure observed by the browser. Emitted when the metro egress host-proxy serves a branded 5xx error page whose response carries the X-Kernel-Proxy-Error header. Low-volume and carries a typed code. Its value is per-session and per-URL attribution for sessions that already capture the network stream: proxy failures are only observable while the CDP network collector is running, so this is an opt-in refinement of the raw network events rather than a default-on alerting signal.
+/// A branded proxy-layer failure observed by the browser. Emitted when the metro egress host-proxy serves a branded error page whose response carries the X-Kernel-Proxy-Error header: a 502 for proxy-layer failures, or a 403 when the session's network policy blocks the destination. Low-volume and carries a typed code. Its value is per-session and per-URL attribution for sessions that already capture the network stream: proxy failures are only observable while the CDP network collector is running, so this is an opt-in refinement of the raw network events rather than a default-on alerting signal.
 #[derive(Debug, Clone, PartialEq, serde::Serialize, serde::Deserialize)]
 pub struct BrowserProxyErrorEvent {
     #[serde(default)]
@@ -8377,7 +8696,7 @@ pub struct BrowserProxyErrorEventData {
     /// URL relevant to this event — page URL for navigation and page events, request URL for network events.
     #[serde(default, skip_serializing_if = "Option::is_none")]
     pub url: Option<String>,
-    /// Proxy-layer error code: the X-Kernel-Proxy-Error response header value from a branded 5xx error page served by the metro egress host-proxy. Values mirror what the proxy emits: destination_blocked, destination_route_unavailable, provider_blacklisted, provider_unreachable, provider_rejected, origin_tls_timeout, origin_response_incomplete, proxy_unavailable, restricted_route_unavailable, upstream_timeout, upstream_dns_failure, upstream_connect_failed. A header value the browser image does not recognize is reported as unknown, with the header value in raw_code.
+    /// Proxy-layer error code: the X-Kernel-Proxy-Error response header value from a branded error page served by the metro egress host-proxy. Values mirror what the proxy emits: destination_blocked, destination_route_unavailable, network_policy_denied, provider_blacklisted, provider_unreachable, provider_rejected, origin_tls_timeout, origin_response_incomplete, proxy_unavailable, restricted_route_unavailable, upstream_timeout, upstream_dns_failure, upstream_connect_failed. A header value the browser image does not recognize is reported as unknown, with the header value in raw_code.
     #[serde(default)]
     pub code: BrowserProxyErrorEventDataCode,
     /// HTTP method of the failed request, when known.
@@ -8392,7 +8711,7 @@ pub struct BrowserProxyErrorEventData {
     /// CDP Network.ResourceType for the request, when known.
     #[serde(default, skip_serializing_if = "Option::is_none")]
     pub resource_type: Option<String>,
-    /// HTTP response status of the branded error page (502).
+    /// HTTP response status of the branded error page (502, or 403 for network_policy_denied).
     #[serde(default)]
     pub status: i64,
 }
@@ -8424,10 +8743,11 @@ impl BrowserProxyErrorEventData {
 }
 
 crate::string_enum! {
-    /// Proxy-layer error code: the X-Kernel-Proxy-Error response header value from a branded 5xx error page served by the metro egress host-proxy. Values mirror what the proxy emits: destination_blocked, destination_route_unavailable, provider_blacklisted, provider_unreachable, provider_rejected, origin_tls_timeout, origin_response_incomplete, proxy_unavailable, restricted_route_unavailable, upstream_timeout, upstream_dns_failure, upstream_connect_failed. A header value the browser image does not recognize is reported as unknown, with the header value in raw_code.
+    /// Proxy-layer error code: the X-Kernel-Proxy-Error response header value from a branded error page served by the metro egress host-proxy. Values mirror what the proxy emits: destination_blocked, destination_route_unavailable, network_policy_denied, provider_blacklisted, provider_unreachable, provider_rejected, origin_tls_timeout, origin_response_incomplete, proxy_unavailable, restricted_route_unavailable, upstream_timeout, upstream_dns_failure, upstream_connect_failed. A header value the browser image does not recognize is reported as unknown, with the header value in raw_code.
     BrowserProxyErrorEventDataCode {
         DestinationBlocked = "destination_blocked",
         DestinationRouteUnavailable = "destination_route_unavailable",
+        NetworkPolicyDenied = "network_policy_denied",
         ProviderBlacklisted = "provider_blacklisted",
         ProviderUnreachable = "provider_unreachable",
         ProviderRejected = "provider_rejected",
@@ -8669,13 +8989,16 @@ pub struct BrowserRequest {
     /// If true, launches the browser in kiosk mode to hide address bar and tabs in live view.
     #[serde(default, skip_serializing_if = "Option::is_none")]
     pub kiosk_mode: Option<bool>,
-    /// Memory for a headful, non-GPU browser session. Defaults to 8GiB.
+    /// Optional session-only timezone and locale overrides. Each omitted field uses the default for the browser's region. start_url opens once the location applies.
+    #[serde(default, skip_serializing_if = "Option::is_none")]
+    pub location: Option<BrowserLocationRequest>,
+    /// Memory for a non-GPU browser. Headless: 1GiB (default), 2GiB, or 4GiB. Headful: 8GiB (default) or 16GiB.
     #[serde(default, skip_serializing_if = "Option::is_none")]
     pub memory: Option<BrowserMemoryRequest>,
     /// Optional human-readable name for the browser session, used to find it later in the dashboard. Must be unique among active sessions within the project. Can be changed later via PATCH /browsers/{id_or_name}.
     #[serde(default, skip_serializing_if = "Option::is_none")]
     pub name: Option<String>,
-    /// Network configuration for the browser session. Cannot be changed after creation.
+    /// Network configuration for the browser session. Only allowed_hosts can be changed after creation, with PATCH /browsers/{id_or_name}.
     #[serde(default, skip_serializing_if = "Option::is_none")]
     pub network: Option<BrowserNetworkConfig>,
     /// Profile selection for the browser session. Provide either id or name. If specified, the
@@ -8714,6 +9037,9 @@ pub struct BrowserRequest {
     /// Project-scoped vaults to link to the browser session. Links are immutable after creation.
     #[serde(default, skip_serializing_if = "Option::is_none")]
     pub vaults: Option<Vec<VaultReference>>,
+    /// Video memory (VRAM) for a GPU browser session. Requires gpu=true. Defaults to 2GiB, which comes with 4 vCPU and 6GiB memory. 4GiB comes with 8 vCPU and 12GiB memory.
+    #[serde(default, skip_serializing_if = "Option::is_none")]
+    pub video_memory: Option<BrowserVideoMemory>,
     /// Initial browser window size in pixels with optional refresh rate.
     /// If omitted, image defaults apply (1920x1080@25).
     /// For GPU images, the default is 1920x1080@60.
@@ -8740,6 +9066,7 @@ impl BrowserRequest {
             headless: None,
             invocation_id: None,
             kiosk_mode: None,
+            location: None,
             memory: None,
             name: None,
             network: None,
@@ -8753,6 +9080,7 @@ impl BrowserRequest {
             telemetry: None,
             timeout_seconds: None,
             vaults: None,
+            video_memory: None,
             viewport: None,
         }
     }
@@ -9366,9 +9694,16 @@ pub struct BrowserUpdateRequest {
     /// If true, stealth browsers connect directly instead of using the default stealth proxy. Deprecated in favor of proxy.mode.
     #[serde(default, skip_serializing_if = "Option::is_none")]
     pub disable_default_proxy: Option<bool>,
+    /// Session-only timezone and locale overrides. Omit the object or a field to leave it unchanged; set a string to override; set null to clear that field and use the browser region's default.
+    /// A browser that cannot change location refuses the request before anything changes. The location applies after the request's other changes, and start_url opens once it has applied. If applying it fails, the other changes and the saved override remain and start_url does not open; retry the request to apply both.
+    #[serde(default, skip_serializing_if = "Option::is_none")]
+    pub location: Option<BrowserLocationUpdateRequest>,
     /// Human-readable name for the browser session. Omit to leave unchanged, set to an empty string to clear the name. When set, must be unique among active sessions within the project.
     #[serde(default, skip_serializing_if = "Option::is_none")]
     pub name: Option<String>,
+    /// Network configuration changes to apply to the running browser session.
+    #[serde(default, skip_serializing_if = "Option::is_none")]
+    pub network: Option<BrowserNetworkUpdate>,
     /// Profile to load into the browser session. Only allowed if the session does not already have a profile loaded.
     #[serde(default, skip_serializing_if = "Option::is_none")]
     pub profile: Option<BrowserProfile>,
@@ -9400,7 +9735,9 @@ impl BrowserUpdateRequest {
     pub fn new() -> Self {
         Self {
             disable_default_proxy: None,
+            location: None,
             name: None,
+            network: None,
             profile: None,
             proxy: None,
             proxy_id: None,
@@ -9424,7 +9761,7 @@ pub struct BrowserViewportUpdate {
     /// Browser window height in pixels. Any positive integer is accepted.
     #[serde(default)]
     pub height: i64,
-    /// Display refresh rate in Hz. Any positive integer is accepted; if omitted, automatically determined from width and height.
+    /// Display refresh rate in Hz. Any positive integer is accepted; if omitted, GPU browsers default to 60 and other browsers derive it from width and height.
     #[serde(default, skip_serializing_if = "Option::is_none")]
     pub refresh_rate: Option<i64>,
     /// Browser window width in pixels. Any positive integer is accepted.
@@ -9452,6 +9789,9 @@ impl BrowserViewportUpdate {
 
 #[derive(Debug, Clone, PartialEq, serde::Serialize, serde::Deserialize)]
 pub struct CardEnrollmentAction {
+    /// Secret bearer capability for embedded card capture with @onkernel/vault-react. Present only for Kernel wallets; never for AgentCard. Treat it like the enrollment URL and do not log or persist it in browser storage.
+    #[serde(default, skip_serializing_if = "Option::is_none")]
+    pub capture_token: Option<String>,
     #[serde(default)]
     pub name: String,
     #[serde(default)]
@@ -9463,6 +9803,7 @@ impl CardEnrollmentAction {
     #[allow(clippy::too_many_arguments, clippy::new_without_default)]
     pub fn new(url: impl Into<String>) -> Self {
         Self {
+            capture_token: None,
             name: "card_enrollment".to_owned(),
             url: url.into(),
         }
@@ -9821,18 +10162,16 @@ impl From<KernelCardVaultItemSpec> for CardVaultItemSpec {
     }
 }
 
-/// Live payment card. Test-mode card creation is not supported.
+/// Live Link card request. Test-mode card creation is not supported. The spec can be changed with PATCH until the card is authorized at a checkout. Authorize it with the browser at final checkout: Kernel inspects the checkout through WebMCP and internally chooses a merchant-bound Link Pay Token when supported or a virtual card otherwise. Callers never receive or choose how the credential is delivered.
 #[derive(Debug, Clone, PartialEq, serde::Serialize, serde::Deserialize)]
 pub struct LinkCardVaultItemSpec {
-    /// Integer amount in minor currency units. Link permits at most 50000 per spend request.
+    /// Integer amount in minor currency units, at most 50000.
     #[serde(default)]
     pub amount: i64,
     #[serde(default)]
     pub context: String,
     #[serde(default)]
     pub currency: String,
-    #[serde(default, skip_serializing_if = "Option::is_none")]
-    pub expires_at: Option<i64>,
     #[serde(default, skip_serializing_if = "Option::is_none")]
     pub line_items: Option<Vec<LinkLineItem>>,
     #[serde(default)]
@@ -9848,7 +10187,7 @@ pub struct LinkCardVaultItemSpec {
     pub provider: String,
     #[serde(default, skip_serializing_if = "Option::is_none")]
     pub totals: Option<Vec<LinkTotal>>,
-    /// Wallet item key used to mint this card.
+    /// Connected Link wallet item key.
     #[serde(default)]
     pub wallet: String,
 }
@@ -9869,7 +10208,6 @@ impl LinkCardVaultItemSpec {
             amount: amount.into(),
             context: context.into(),
             currency: currency.into(),
-            expires_at: None,
             line_items: None,
             merchant_name: merchant_name.into(),
             merchant_url: merchant_url.into(),
@@ -9950,15 +10288,24 @@ impl LinkTotal {
     }
 }
 
-/// One live purchase with a Kernel-enrolled card. Authorization obtains an agentic network token number, expiry and one-time 3-digit code. They are stored encrypted for the fill operation, which types them only on merchant_url's origin; the merchant's own checkout submits the payment. The one-time code is valid until the item's expires_at; fill and submit checkout before then. Visa cards can be enrolled, but Visa purchases are not yet supported: authorize returns 400. Supported Mastercard purchases need no cardholder approval. Card updates are not supported; delete and create a new item instead.
+/// One live purchase with a Kernel-enrolled card. Authorization obtains an agentic network token number, expiry and one-time 3-digit code. They are stored encrypted for the fill operation, which types them only on merchant_url's origin; the merchant's own checkout submits the payment. The one-time code is valid until the item's expires_at; fill and submit checkout before then. Mastercard purchases need no cardholder approval. A Visa purchase returns a spend_approval action: the cardholder approves it with a Visa passkey, and Kernel registers a Visa intent for one transaction up to the amount before issuing the code. For supported cards whose network cannot be enrolled for agentic tokens, authorize prepares checkout details without issuing a one-time code. The card can be filled into one checkout before its expires_at, one hour after authorization. Fill types those details on merchant_url's origin. The amount, merchant_url and merchant_country are recorded but do not restrict payment requests sent by the browser. Card updates are not supported; delete and create a new item instead.
 #[derive(Debug, Clone, PartialEq, serde::Serialize, serde::Deserialize)]
 pub struct KernelCardVaultItemSpec {
-    /// Integer amount in minor currency units (at most 50000), bound to the one-time code.
+    /// Integer amount in minor currency units (at most 1000000), bound to the one-time code.
     #[serde(default)]
     pub amount: i64,
     /// ISO 4217 code. Supported: aud, brl, cad, chf, czk, dkk, eur, gbp, hkd, inr, jpy, krw, mxn, nok, nzd, pln, sek, sgd, usd, zar.
     #[serde(default)]
     pub currency: String,
+    /// Actual merchant category when known. Omit rather than invent a category.
+    #[serde(default, skip_serializing_if = "Option::is_none")]
+    pub merchant_category: Option<String>,
+    /// Actual merchant MCC when known. Omit rather than invent a code. 0000 is not accepted.
+    #[serde(default, skip_serializing_if = "Option::is_none")]
+    pub merchant_category_code: Option<String>,
+    /// The merchant's ISO 3166-1 alpha-2 country code. Required for Visa cards, whose one-time code is issued for the merchant's country.
+    #[serde(default, skip_serializing_if = "Option::is_none")]
+    pub merchant_country: Option<String>,
     #[serde(default)]
     pub merchant_name: String,
     /// Merchant checkout URL. Fill is allowed only on this URL's origin.
@@ -9984,6 +10331,9 @@ impl KernelCardVaultItemSpec {
         Self {
             amount: amount.into(),
             currency: currency.into(),
+            merchant_category: None,
+            merchant_category_code: None,
+            merchant_country: None,
             merchant_name: merchant_name.into(),
             merchant_url: merchant_url.into(),
             provider: "kernel".to_owned(),
@@ -10052,7 +10402,7 @@ pub struct LinkCardState {
     pub masks: Option<VaultItemMasks>,
     #[serde(default)]
     pub provider: String,
-    /// recovery_required means an original provider operation has an unresolved outcome. Do not retry, delete, or replace it. Known references may be observed safely, but unknown creation without an ID and uncertain card-material retrieval require manual reconciliation with the provider or support. There is no reset or caller-asserted reconciliation operation.
+    /// recovery_required means an original provider operation has an unresolved outcome and the card cannot be used. Reads keep observing a known provider request and may clear the recovery. To continue, delete this card and create a new one; deleting cancels the original request when its ID is known and keeps the recovery evidence. The user may see an approval request for the original card and should approve only the new one.
     #[serde(default)]
     pub status: LinkCardStateStatus,
     #[serde(default, skip_serializing_if = "Option::is_none")]
@@ -10074,7 +10424,7 @@ impl LinkCardState {
 }
 
 crate::string_enum! {
-    /// recovery_required means an original provider operation has an unresolved outcome. Do not retry, delete, or replace it. Known references may be observed safely, but unknown creation without an ID and uncertain card-material retrieval require manual reconciliation with the provider or support. There is no reset or caller-asserted reconciliation operation.
+    /// recovery_required means an original provider operation has an unresolved outcome and the card cannot be used. Reads keep observing a known provider request and may clear the recovery. To continue, delete this card and create a new one; deleting cancels the original request when its ID is known and keeps the recovery evidence. The user may see an approval request for the original card and should approve only the new one.
     LinkCardStateStatus {
         Requested = "requested",
         PendingAuthorization = "pending_authorization",
@@ -10086,7 +10436,7 @@ crate::string_enum! {
     }
 }
 
-/// A ready Kernel card retains its encrypted network token and one-time code for the fill operation until the item's expires_at. Fill and submit checkout before then. Visa cards can be enrolled, but Visa purchases are not yet supported and authorize returns 400; supported Mastercard purchases need no cardholder approval. masks.last4 is the enrolled card's last four digits; masks.token_last4 is the network token's last four digits shown to the merchant. Kernel cards do not expose aliases or support egress substitution. Kernel does not observe whether the merchant charged the card.
+/// A ready Kernel card supports authorize, fill, then submit checkout. Card details are delivered for a few minutes after fill; submit promptly. Repeated fill is safe and never submits checkout. Visa purchases require a spend_approval action before details are issued; Mastercard purchases need no hosted approval. masks.last4 is the enrolled card's last four digits; masks.token_last4, when present, is the token's last four digits shown to the merchant. Kernel does not observe whether the merchant charged the card.
 #[derive(Debug, Clone, PartialEq, serde::Serialize, serde::Deserialize)]
 pub struct KernelCardState {
     /// Informational registrable domain. Fill is locked to merchant_url's exact origin.
@@ -10096,7 +10446,7 @@ pub struct KernelCardState {
     pub masks: Option<VaultItemMasks>,
     #[serde(default)]
     pub provider: String,
-    /// recovery_required means issuing the one-time code has an unresolved outcome. Kernel never issues another code for the item automatically, and the item cannot be deleted or replaced until the original attempt is reconciled with support. When status_reason says the provider refused retrieval before acceptance, no code was issued and a later read retries.
+    /// pending_authorization on a Visa purchase waits for the cardholder to approve it through the spend_approval action; an unused link expires after 30 minutes. recovery_required means verification, approving the purchase or issuing the one-time code has an unresolved outcome. A server-classified initial attestation failure before intent dispatch may advertise restart_verification to prepare a fresh local verification link; this does not approve spending or replay any provider request. Unclassified legacy recovery and uncertain intent creation cannot restart. Kernel never approves again or issues another code for the item automatically. To continue, delete this card and create a new purchase; the cardholder approves the new purchase separately. Recovery while reporting a merchant transaction cannot be deleted and must be reconciled with support. When status_reason says the provider refused retrieval before acceptance, no code was issued and a later read retries. declined means the card network refused to issue a code.
     #[serde(default)]
     pub status: KernelCardStateStatus,
     #[serde(default, skip_serializing_if = "Option::is_none")]
@@ -10118,7 +10468,7 @@ impl KernelCardState {
 }
 
 crate::string_enum! {
-    /// recovery_required means issuing the one-time code has an unresolved outcome. Kernel never issues another code for the item automatically, and the item cannot be deleted or replaced until the original attempt is reconciled with support. When status_reason says the provider refused retrieval before acceptance, no code was issued and a later read retries.
+    /// pending_authorization on a Visa purchase waits for the cardholder to approve it through the spend_approval action; an unused link expires after 30 minutes. recovery_required means verification, approving the purchase or issuing the one-time code has an unresolved outcome. A server-classified initial attestation failure before intent dispatch may advertise restart_verification to prepare a fresh local verification link; this does not approve spending or replay any provider request. Unclassified legacy recovery and uncertain intent creation cannot restart. Kernel never approves again or issues another code for the item automatically. To continue, delete this card and create a new purchase; the cardholder approves the new purchase separately. Recovery while reporting a merchant transaction cannot be deleted and must be reconciled with support. When status_reason says the provider refused retrieval before acceptance, no code was issued and a later read retries. declined means the card network refused to issue a code.
     KernelCardStateStatus {
         Requested = "requested",
         PendingAuthorization = "pending_authorization",
@@ -10183,7 +10533,7 @@ impl ClipboardContent {
 
 /// Return the credential item with its collection action. Supported for ready
 /// and pending_collection credential items. Always render the same form from
-/// every form-supported field; totp fields have no form input and are omitted.
+/// every form-supported field; totp and passkey fields have no form input and are omitted.
 /// No caller-selected field subsets or form overrides are accepted.
 /// Reuse an active Kernel-hosted session or renew an expired session atomically.
 /// Customer-hosted forms use their own backend and ordinary item GET/PATCH. Opening
@@ -10732,7 +11082,7 @@ pub struct ProxyCreateRequest {
     /// Protocol to use for the proxy connection.
     #[serde(default, skip_serializing_if = "Option::is_none")]
     pub protocol: Option<ProxyCreateRequestProtocol>,
-    /// Proxy type to use. In terms of quality for avoiding bot-detection, from best to worst: `mobile` \> `residential` \> `isp` \> `datacenter`.
+    /// Proxy type to use. In terms of quality for avoiding bot-detection, from best to worst: `mobile` \> `residential` \> `isp`. `datacenter` is deprecated; use `isp` instead. Datacenter proxy creation remains supported for backward compatibility.
     #[serde(default)]
     pub r#type: ProxyCreateRequestType,
 }
@@ -10795,7 +11145,7 @@ impl From<CreateCustomProxyConfig> for ProxyCreateRequestConfig {
     }
 }
 
-/// Configuration for a datacenter proxy.
+/// Configuration for a deprecated datacenter proxy. Use an ISP proxy instead.
 #[derive(Debug, Clone, PartialEq, serde::Serialize, serde::Deserialize)]
 pub struct DatacenterProxyConfig {
     /// ISO 3166 country code. Defaults to US if not provided.
@@ -10820,7 +11170,7 @@ impl Default for DatacenterProxyConfig {
 /// Configuration for an ISP proxy.
 #[derive(Debug, Clone, PartialEq, serde::Serialize, serde::Deserialize)]
 pub struct IspProxyConfig {
-    /// ISO 3166 country code. Supported countries are US, GB, FR, DE, and SG. Defaults to US if not provided.
+    /// ISO 3166 country code. Supported countries are US, GB, FR, DE, SG, and KR. Defaults to US if not provided.
     #[serde(default, skip_serializing_if = "Option::is_none")]
     pub country: Option<String>,
 }
@@ -10967,7 +11317,7 @@ crate::string_enum! {
 }
 
 crate::string_enum! {
-    /// Proxy type to use. In terms of quality for avoiding bot-detection, from best to worst: `mobile` \> `residential` \> `isp` \> `datacenter`.
+    /// Proxy type to use. In terms of quality for avoiding bot-detection, from best to worst: `mobile` \> `residential` \> `isp`. `datacenter` is deprecated; use `isp` instead. Datacenter proxy creation remains supported for backward compatibility.
     ProxyCreateRequestType {
         Datacenter = "datacenter",
         Isp = "isp",
@@ -11135,14 +11485,84 @@ crate::string_enum! {
     }
 }
 
+/// Report a real merchant transaction outcome for an issued Kernel Visa credential. Never infer success from filling checkout or receiving a credential. Supply the observed status, transaction type, actual amount, currency and timestamp. Unknown outcomes require manual reconciliation, not retry. Each purchase accepts one report.
+#[derive(Debug, Clone, PartialEq, serde::Serialize, serde::Deserialize)]
+pub struct ConfirmTransactionVaultItemOperationRequest {
+    /// Actual transaction amount in minor units, no greater than the approved limit.
+    #[serde(default)]
+    pub amount: i64,
+    /// Must match the approved purchase currency.
+    #[serde(default)]
+    pub currency: String,
+    /// Time the merchant outcome was observed.
+    #[serde(default)]
+    pub occurred_at: chrono::DateTime<chrono::Utc>,
+    #[serde(default)]
+    pub status: ConfirmTransactionVaultItemOperationRequestStatus,
+    #[serde(default)]
+    pub transaction_type: ConfirmTransactionVaultItemOperationRequestTransactionType,
+    #[serde(default)]
+    pub r#type: String,
+}
+
+impl ConfirmTransactionVaultItemOperationRequest {
+    /// Create a `ConfirmTransactionVaultItemOperationRequest` with the required fields set.
+    #[allow(clippy::too_many_arguments, clippy::new_without_default)]
+    pub fn new(
+        status: impl Into<ConfirmTransactionVaultItemOperationRequestStatus>,
+        transaction_type: impl Into<ConfirmTransactionVaultItemOperationRequestTransactionType>,
+        amount: impl Into<i64>,
+        currency: impl Into<String>,
+        occurred_at: impl Into<chrono::DateTime<chrono::Utc>>,
+    ) -> Self {
+        Self {
+            amount: amount.into(),
+            currency: currency.into(),
+            occurred_at: occurred_at.into(),
+            status: status.into(),
+            transaction_type: transaction_type.into(),
+            r#type: "confirm_transaction".to_owned(),
+        }
+    }
+}
+
+crate::string_enum! {
+    ConfirmTransactionVaultItemOperationRequestStatus {
+        Approved = "APPROVED",
+        Declined = "DECLINED",
+        Pending = "PENDING",
+        Error = "ERROR",
+        Cancelled = "CANCELLED",
+    }
+}
+
+crate::string_enum! {
+    ConfirmTransactionVaultItemOperationRequestTransactionType {
+        Purchase = "PURCHASE",
+        Authorization = "AUTHORIZATION",
+        Capture = "CAPTURE",
+        Refund = "REFUND",
+        Reversal = "REVERSAL",
+        Verification = "VERIFICATION",
+        Chargeback = "CHARGEBACK",
+        Fraud = "FRAUD",
+    }
+}
+
 #[derive(Debug, Clone, PartialEq, serde::Serialize, serde::Deserialize)]
 pub struct CreateApiKeyRequest {
-    /// Number of days until expiry, up to 3650. Use null for never.
+    /// Number of days until expiry, up to 3650. Use null for never. Cannot be combined with expires_at.
     #[serde(default, skip_serializing_if = "Option::is_none")]
     pub days_to_expire: Option<i64>,
+    /// Exact expiry time. Must be in the future and no later than the issuing credential's own expiry. Cannot be combined with days_to_expire.
+    #[serde(default, skip_serializing_if = "Option::is_none")]
+    pub expires_at: Option<chrono::DateTime<chrono::Utc>>,
     /// Label for the API key (1-255 characters). API keys are not addressable by name.
     #[serde(default)]
     pub name: String,
+    /// Issue a scoped key that may only perform the listed actions on the listed resources.
+    #[serde(default, skip_serializing_if = "Option::is_none")]
+    pub policy: Option<ApiKeyPolicy>,
     /// Unique project identifier
     #[serde(default, skip_serializing_if = "Option::is_none")]
     pub project_id: Option<String>,
@@ -11154,7 +11574,9 @@ impl CreateApiKeyRequest {
     pub fn new(name: impl Into<String>) -> Self {
         Self {
             days_to_expire: None,
+            expires_at: None,
             name: name.into(),
+            policy: None,
             project_id: None,
         }
     }
@@ -11346,6 +11768,9 @@ pub struct CreatedApiKey {
     /// Label for the API key. API keys are not addressable by name; use the ID or key identifier for stable references.
     #[serde(default)]
     pub name: String,
+    /// Permissions granted to a scoped API key. Absent for an ordinary key, which keeps unrestricted access within its organization or project.
+    #[serde(default, skip_serializing_if = "Option::is_none")]
+    pub policy: Option<ApiKeyPolicy>,
     /// Project identifier for project-scoped API keys. Null means org-wide.
     #[serde(default)]
     pub project_id: Option<String>,
@@ -11376,6 +11801,7 @@ impl CreatedApiKey {
             id: id.into(),
             masked_key: masked_key.into(),
             name: name.into(),
+            policy: None,
             project_id: None,
             project_name: None,
             key: key.into(),
@@ -11631,14 +12057,14 @@ impl CredentialAccountVaultItemRequest {
 }
 
 /// One schema-derived form for the item, available in ready or pending_collection
-/// state. Render every form-supported field as editable; omit totp fields and
-/// preserve their stored seeds. Prefill non-sensitive values,
+/// state. Render every form-supported field as editable; omit totp and passkey
+/// fields and preserve their stored values. Prefill non-sensitive values,
 /// and allow existing sensitive values to be preserved or replaced without ever
 /// revealing them. No field subsets or per-request form configuration exist.
 /// Validate required fields against the resulting values, including preserved
 /// secrets. Submit changed values only, using the version used to render the form.
-/// Scoped hosted submission rejects totp edits; seed writes require the ordinary
-/// authenticated item API. Customer forms likewise omit totp from their payloads.
+/// Scoped hosted submission rejects totp and passkey edits; those writes require the ordinary
+/// authenticated item API. Customer forms likewise omit them from their payloads.
 /// Save edits atomically. A successful hosted submission increments the version,
 /// marks ready, and consumes the session; an empty edit may complete collection
 /// while preserving values. A customer form uses PATCH for changed values and
@@ -11865,6 +12291,9 @@ impl Default for CredentialReference {
     }
 }
 
+/// Alternative to value for custom credential collection web apps. Use this only if you run your own credential collection web app and want values encrypted in the browser, sent to your backend still encrypted, and forwarded to Kernel's API still encrypted. In every other case, including server-side code that already holds the plaintext, use value. The field's value encrypted client-side as a compact JWE with alg ECDH-ES and enc A256GCM to the key from GET /vaults/{id_or_name}/encryption_key, with that key's kid in the protected header. Compression is not supported. The decrypted value follows the same rules as value, including that an empty string clears the field on update. A kid that is not this vault's key returns 400 encryption_key_mismatch; fetch the key again and re-encrypt. Other malformed or undecryptable values return 400 invalid_request. The whole request body is limited to 128 KiB.
+pub type CredentialVaultEncryptedValue = String;
+
 #[derive(Debug, Clone, PartialEq, serde::Serialize, serde::Deserialize)]
 pub struct CredentialVaultFieldDefinition {
     /// Optional human-readable display label. It is returned as non-secret metadata and never affects value keys, updates, or browser fills. Use single-line, trimmed display text without control or formatting characters. The server enforces a 128-byte UTF-8 limit.
@@ -11879,13 +12308,18 @@ pub struct CredentialVaultFieldDefinition {
     /// Whether the value is omitted from every item response. Reserve true for secrets such as passwords, API tokens, and TOTP seeds. Ordinary usernames and email addresses should be false so the form can display and prefill them.
     #[serde(default)]
     pub sensitive: bool,
-    /// Text, email, and password have form inputs; totp does not and is omitted from
-    /// both Kernel-hosted and customer React forms. Password and totp must be sensitive.
+    /// Text, email, and password have form inputs; totp and passkey do not and are omitted from
+    /// both Kernel-hosted and customer React forms. Password, totp, and passkey must be sensitive.
     /// A totp value is an RFC 4648 Base32 generator seed (case-insensitive, optional
     /// trailing padding), not an otpauth URI or current code. Reject invalid or empty
     /// decoded seeds. Browser fill generates an RFC 6238 code at execution time using
     /// HMAC-SHA1, 6 digits, and a 30-second period. Preserve leading zeros; never fill
     /// the seed. Custom algorithms, digits, periods, and form enrollment are unsupported.
+    /// A passkey value is a JSON-encoded FIDO Credential Exchange Format passkey object
+    /// with unpadded base64url `credentialId`, `userHandle` (at most 64 bytes), and `key`
+    /// (a PKCS#8 ECDSA P-256 private key), a lowercase `rpId` domain, and optional
+    /// `username` and `userDisplayName`. Other CXF members are ignored. Passkeys are never
+    /// filled into pages.
     #[serde(default)]
     pub r#type: CredentialVaultFieldType,
 }
@@ -11910,23 +12344,30 @@ impl CredentialVaultFieldDefinition {
 }
 
 crate::string_enum! {
-    /// Text, email, and password have form inputs; totp does not and is omitted from
-    /// both Kernel-hosted and customer React forms. Password and totp must be sensitive.
+    /// Text, email, and password have form inputs; totp and passkey do not and are omitted from
+    /// both Kernel-hosted and customer React forms. Password, totp, and passkey must be sensitive.
     /// A totp value is an RFC 4648 Base32 generator seed (case-insensitive, optional
     /// trailing padding), not an otpauth URI or current code. Reject invalid or empty
     /// decoded seeds. Browser fill generates an RFC 6238 code at execution time using
     /// HMAC-SHA1, 6 digits, and a 30-second period. Preserve leading zeros; never fill
     /// the seed. Custom algorithms, digits, periods, and form enrollment are unsupported.
+    /// A passkey value is a JSON-encoded FIDO Credential Exchange Format passkey object
+    /// with unpadded base64url `credentialId`, `userHandle` (at most 64 bytes), and `key`
+    /// (a PKCS#8 ECDSA P-256 private key), a lowercase `rpId` domain, and optional
+    /// `username` and `userDisplayName`. Other CXF members are ignored. Passkeys are never
+    /// filled into pages.
     CredentialVaultFieldType {
         Text = "text",
         Email = "email",
         Password = "password",
         Totp = "totp",
+        Passkey = "passkey",
     }
 }
 
+/// A field definition without a value. Field updates add fields with this shape and set their values in `fields`.
 #[derive(Debug, Clone, PartialEq, serde::Serialize, serde::Deserialize)]
-pub struct CredentialVaultFieldInput {
+pub struct CredentialVaultFieldDefinitionInput {
     /// Optional human-readable display label. It is returned as non-secret metadata and never affects value keys, updates, or browser fills. Use single-line, trimmed display text without control or formatting characters. The server enforces a 128-byte UTF-8 limit.
     #[serde(default, skip_serializing_if = "Option::is_none")]
     pub label: Option<String>,
@@ -11935,19 +12376,70 @@ pub struct CredentialVaultFieldInput {
     pub name: String,
     #[serde(default, skip_serializing_if = "Option::is_none")]
     pub required: Option<bool>,
-    /// Set false explicitly for ordinary usernames, email addresses, and other non-secret identifiers. Reserve true for secrets such as passwords, API tokens, and TOTP seeds. Password and totp fields must be true. Omission defaults to true for safety; do not rely on that default for every field. False permits API reads and form prefilling.
+    /// Set false explicitly for ordinary usernames, email addresses, and other non-secret identifiers. Reserve true for secrets such as passwords, API tokens, and TOTP seeds. Password, totp, and passkey fields must be true. Omission defaults to true for safety; do not rely on that default for every field. False permits API reads and form prefilling.
     #[serde(default, skip_serializing_if = "Option::is_none")]
     pub sensitive: Option<bool>,
-    /// Text, email, and password have form inputs; totp does not and is omitted from
-    /// both Kernel-hosted and customer React forms. Password and totp must be sensitive.
+    /// Text, email, and password have form inputs; totp and passkey do not and are omitted from
+    /// both Kernel-hosted and customer React forms. Password, totp, and passkey must be sensitive.
     /// A totp value is an RFC 4648 Base32 generator seed (case-insensitive, optional
     /// trailing padding), not an otpauth URI or current code. Reject invalid or empty
     /// decoded seeds. Browser fill generates an RFC 6238 code at execution time using
     /// HMAC-SHA1, 6 digits, and a 30-second period. Preserve leading zeros; never fill
     /// the seed. Custom algorithms, digits, periods, and form enrollment are unsupported.
+    /// A passkey value is a JSON-encoded FIDO Credential Exchange Format passkey object
+    /// with unpadded base64url `credentialId`, `userHandle` (at most 64 bytes), and `key`
+    /// (a PKCS#8 ECDSA P-256 private key), a lowercase `rpId` domain, and optional
+    /// `username` and `userDisplayName`. Other CXF members are ignored. Passkeys are never
+    /// filled into pages.
     #[serde(default)]
     pub r#type: CredentialVaultFieldType,
-    /// Optional initial value satisfying the declared type, at most 16 KiB in UTF-8 bytes. Omit to leave unset; null and empty strings are rejected on creation. Sensitive values are encrypted and never copied into the returned spec.
+}
+
+impl CredentialVaultFieldDefinitionInput {
+    /// Create a `CredentialVaultFieldDefinitionInput` with the required fields set.
+    #[allow(clippy::too_many_arguments, clippy::new_without_default)]
+    pub fn new(name: impl Into<String>, type_: impl Into<CredentialVaultFieldType>) -> Self {
+        Self {
+            label: None,
+            name: name.into(),
+            required: None,
+            sensitive: None,
+            r#type: type_.into(),
+        }
+    }
+}
+
+#[derive(Debug, Clone, PartialEq, serde::Serialize, serde::Deserialize)]
+pub struct CredentialVaultFieldInput {
+    /// Alternative to value for custom credential collection web apps. Use this only if you run your own credential collection web app and want values encrypted in the browser, sent to your backend still encrypted, and forwarded to Kernel's API still encrypted. In every other case, including server-side code that already holds the plaintext, use value. The field's value encrypted client-side as a compact JWE with alg ECDH-ES and enc A256GCM to the key from GET /vaults/{id_or_name}/encryption_key, with that key's kid in the protected header. Compression is not supported. The decrypted value follows the same rules as value, including that an empty string clears the field on update. A kid that is not this vault's key returns 400 encryption_key_mismatch; fetch the key again and re-encrypt. Other malformed or undecryptable values return 400 invalid_request. The whole request body is limited to 128 KiB.
+    #[serde(default, skip_serializing_if = "Option::is_none")]
+    pub encrypted_value: Option<CredentialVaultEncryptedValue>,
+    /// Optional human-readable display label. It is returned as non-secret metadata and never affects value keys, updates, or browser fills. Use single-line, trimmed display text without control or formatting characters. The server enforces a 128-byte UTF-8 limit.
+    #[serde(default, skip_serializing_if = "Option::is_none")]
+    pub label: Option<String>,
+    /// Unique stable field name used to key values, updates, and browser fills.
+    #[serde(default)]
+    pub name: String,
+    #[serde(default, skip_serializing_if = "Option::is_none")]
+    pub required: Option<bool>,
+    /// Set false explicitly for ordinary usernames, email addresses, and other non-secret identifiers. Reserve true for secrets such as passwords, API tokens, and TOTP seeds. Password, totp, and passkey fields must be true. Omission defaults to true for safety; do not rely on that default for every field. False permits API reads and form prefilling.
+    #[serde(default, skip_serializing_if = "Option::is_none")]
+    pub sensitive: Option<bool>,
+    /// Text, email, and password have form inputs; totp and passkey do not and are omitted from
+    /// both Kernel-hosted and customer React forms. Password, totp, and passkey must be sensitive.
+    /// A totp value is an RFC 4648 Base32 generator seed (case-insensitive, optional
+    /// trailing padding), not an otpauth URI or current code. Reject invalid or empty
+    /// decoded seeds. Browser fill generates an RFC 6238 code at execution time using
+    /// HMAC-SHA1, 6 digits, and a 30-second period. Preserve leading zeros; never fill
+    /// the seed. Custom algorithms, digits, periods, and form enrollment are unsupported.
+    /// A passkey value is a JSON-encoded FIDO Credential Exchange Format passkey object
+    /// with unpadded base64url `credentialId`, `userHandle` (at most 64 bytes), and `key`
+    /// (a PKCS#8 ECDSA P-256 private key), a lowercase `rpId` domain, and optional
+    /// `username` and `userDisplayName`. Other CXF members are ignored. Passkeys are never
+    /// filled into pages.
+    #[serde(default)]
+    pub r#type: CredentialVaultFieldType,
+    /// Optional initial value satisfying the declared type, at most 16 KiB in UTF-8 bytes. Omit to leave unset; null and empty strings are rejected on creation. Sensitive values are encrypted and never copied into the returned spec. Use this unless your own credential collection web app encrypts values in the browser; mutually exclusive with encrypted_value.
     #[serde(default, skip_serializing_if = "Option::is_none")]
     pub value: Option<String>,
 }
@@ -11957,6 +12449,7 @@ impl CredentialVaultFieldInput {
     #[allow(clippy::too_many_arguments, clippy::new_without_default)]
     pub fn new(name: impl Into<String>, type_: impl Into<CredentialVaultFieldType>) -> Self {
         Self {
+            encrypted_value: None,
             label: None,
             name: name.into(),
             required: None,
@@ -11987,10 +12480,14 @@ impl CredentialVaultFieldState {
     }
 }
 
+/// Set exactly one of value or encrypted_value. Use value unless the update comes from your own credential collection web app that encrypts values in the browser; see encrypted_value.
 #[derive(Debug, Clone, PartialEq, serde::Serialize, serde::Deserialize)]
 pub struct CredentialVaultFieldUpdate {
-    /// Replacement value (at most 16 KiB in UTF-8 bytes), or null or an empty string to immediately clear the stored value. Clearing a required form-supported field reopens collection; clearing an optional field does not prevent readiness. Values must satisfy the declared field type. For totp, value is the generator seed, never a current code. Clearing a required totp field returns 400 because it cannot be collected in a form.
-    #[serde(default)]
+    /// Alternative to value for custom credential collection web apps. Use this only if you run your own credential collection web app and want values encrypted in the browser, sent to your backend still encrypted, and forwarded to Kernel's API still encrypted. In every other case, including server-side code that already holds the plaintext, use value. The field's value encrypted client-side as a compact JWE with alg ECDH-ES and enc A256GCM to the key from GET /vaults/{id_or_name}/encryption_key, with that key's kid in the protected header. Compression is not supported. The decrypted value follows the same rules as value, including that an empty string clears the field on update. A kid that is not this vault's key returns 400 encryption_key_mismatch; fetch the key again and re-encrypt. Other malformed or undecryptable values return 400 invalid_request. The whole request body is limited to 128 KiB.
+    #[serde(default, skip_serializing_if = "Option::is_none")]
+    pub encrypted_value: Option<CredentialVaultEncryptedValue>,
+    /// Replacement value (at most 16 KiB in UTF-8 bytes), or null or an empty string to immediately clear the stored value. Clearing a required form-supported field reopens collection; clearing an optional field does not prevent readiness. Values must satisfy the declared field type. For totp, value is the generator seed, never a current code. For passkey, value is the JSON-encoded CXF passkey object. Clearing a required totp or passkey field returns 400 because it cannot be collected in a form.
+    #[serde(default, skip_serializing_if = "Option::is_none")]
     pub value: Option<String>,
 }
 
@@ -11998,7 +12495,10 @@ impl CredentialVaultFieldUpdate {
     /// Create a `CredentialVaultFieldUpdate` with the required fields set.
     #[allow(clippy::too_many_arguments, clippy::new_without_default)]
     pub fn new() -> Self {
-        Self { value: None }
+        Self {
+            encrypted_value: None,
+            value: None,
+        }
     }
 }
 
@@ -12620,13 +13120,18 @@ impl ManagedAuthCredentialVaultItemState {
 
 #[derive(Debug, Clone, PartialEq, serde::Serialize, serde::Deserialize)]
 pub struct ManagedAuthCredentialVaultField {
-    /// Text, email, and password have form inputs; totp does not and is omitted from
-    /// both Kernel-hosted and customer React forms. Password and totp must be sensitive.
+    /// Text, email, and password have form inputs; totp and passkey do not and are omitted from
+    /// both Kernel-hosted and customer React forms. Password, totp, and passkey must be sensitive.
     /// A totp value is an RFC 4648 Base32 generator seed (case-insensitive, optional
     /// trailing padding), not an otpauth URI or current code. Reject invalid or empty
     /// decoded seeds. Browser fill generates an RFC 6238 code at execution time using
     /// HMAC-SHA1, 6 digits, and a 30-second period. Preserve leading zeros; never fill
     /// the seed. Custom algorithms, digits, periods, and form enrollment are unsupported.
+    /// A passkey value is a JSON-encoded FIDO Credential Exchange Format passkey object
+    /// with unpadded base64url `credentialId`, `userHandle` (at most 64 bytes), and `key`
+    /// (a PKCS#8 ECDSA P-256 private key), a lowercase `rpId` domain, and optional
+    /// `username` and `userDisplayName`. Other CXF members are ignored. Passkeys are never
+    /// filled into pages.
     #[serde(default)]
     pub r#type: CredentialVaultFieldType,
 }
@@ -12662,7 +13167,8 @@ crate::string_enum! {
 /// If they choose 1Password, connect their account and request access to a login
 /// in their own non-shared vault; passkeys are not supported. If they decline
 /// or that path fails, collect a Kernel-hosted credential item instead. Never
-/// automatically retry an uncertain 1Password request or fill.
+/// automatically retry an uncertain 1Password request. After an uncertain fill,
+/// inspect the page to see the result of the fill.
 /// Do not use credential items for credit card data. Use wallet and card item types instead.
 /// Kernel credentials declare fields and may enter pending_collection.
 /// 1Password credentials either reference a connected credential_account or
@@ -12849,11 +13355,17 @@ impl ManagedAuthCredentialVaultItemSpecInput {
 
 #[derive(Debug, Clone, PartialEq, serde::Serialize, serde::Deserialize)]
 pub struct CredentialVaultItemSpecUpdate {
+    /// Field definitions to append, with the same defaults as creation. Set their values in `fields` in the same update. Names must be unique after removals; at most 32 fields may result. A required totp or passkey field needs a value in `fields`.
+    #[serde(default, skip_serializing_if = "Option::is_none")]
+    pub add_fields: Option<Vec<CredentialVaultFieldDefinitionInput>>,
     /// Recognizable site or service name used as the form title, without suffixes such as sign-in credentials. An empty string clears it. Display text only, not an enforced destination policy. The server also enforces a 16 KiB UTF-8 byte limit.
     #[serde(default, skip_serializing_if = "Option::is_none")]
     pub description: Option<String>,
     #[serde(default, skip_serializing_if = "Option::is_none")]
     pub fields: Option<std::collections::HashMap<String, CredentialVaultFieldUpdate>>,
+    /// Names of fields to delete with their values. Unknown names return 400. At least one field must remain.
+    #[serde(default, skip_serializing_if = "Option::is_none")]
+    pub remove_fields: Option<Vec<String>>,
 }
 
 impl CredentialVaultItemSpecUpdate {
@@ -12861,8 +13373,10 @@ impl CredentialVaultItemSpecUpdate {
     #[allow(clippy::too_many_arguments, clippy::new_without_default)]
     pub fn new() -> Self {
         Self {
+            add_fields: None,
             description: None,
             fields: None,
+            remove_fields: None,
         }
     }
 }
@@ -12873,8 +13387,12 @@ impl Default for CredentialVaultItemSpecUpdate {
     }
 }
 
-/// Atomically update description and selected values. Omitted properties are
-/// preserved. Field names, types, required flags, and sensitivity cannot change.
+/// Atomically update description, field definitions, and selected values.
+/// Omitted properties are preserved. `remove_fields` deletes definitions and
+/// their values, then `add_fields` appends definitions, then `fields` sets
+/// values, including for added fields. An existing field's definition cannot
+/// be edited in place; to change it, remove the field and add it again, in
+/// the same update or a later one. The old value is deleted with it.
 /// Unknown field names return 400; stale versions or mismatched item types
 /// return 409 without changing the item. A successful update increments version
 /// and invalidates outstanding Kernel-hosted collection sessions. If required
@@ -13621,6 +14139,11 @@ pub struct ExecutePlaywrightRequest {
     /// Example: "await page.goto('<https://example.com'>); return await page.title();"
     #[serde(default)]
     pub code: String,
+    /// Name of a Playwright executor. Calls with the same name run in the same executor, one at a
+    /// time; the first call with a new name creates it. Calls on different executors run
+    /// concurrently. 'default' names the executor that runs calls without a name.
+    #[serde(default, skip_serializing_if = "Option::is_none")]
+    pub executor: Option<PlaywrightExecutorName>,
     /// Maximum execution time in seconds. Default is 60.
     #[serde(default, skip_serializing_if = "Option::is_none")]
     pub timeout_sec: Option<i64>,
@@ -13632,10 +14155,16 @@ impl ExecutePlaywrightRequest {
     pub fn new(code: impl Into<String>) -> Self {
         Self {
             code: code.into(),
+            executor: None,
             timeout_sec: None,
         }
     }
 }
+
+/// Name of a Playwright executor. Calls with the same name run in the same executor, one at a
+/// time; the first call with a new name creates it. Calls on different executors run
+/// concurrently. 'default' names the executor that runs calls without a name.
+pub type PlaywrightExecutorName = String;
 
 /// Result of Playwright code execution
 #[derive(Debug, Clone, PartialEq, serde::Serialize, serde::Deserialize)]
@@ -13655,6 +14184,9 @@ pub struct ExecutePlaywrightResult {
     /// Whether the code executed successfully
     #[serde(default)]
     pub success: bool,
+    /// The tab 'page' was bound to for this call. Absent if the call failed before binding a tab.
+    #[serde(default, skip_serializing_if = "Option::is_none")]
+    pub tab: Option<PlaywrightTab>,
 }
 
 impl ExecutePlaywrightResult {
@@ -13667,6 +14199,31 @@ impl ExecutePlaywrightResult {
             stderr: None,
             stdout: None,
             success: success.into(),
+            tab: None,
+        }
+    }
+}
+
+/// The tab 'page' was bound to for this call. Absent if the call failed before binding a tab.
+#[derive(Debug, Clone, PartialEq, serde::Serialize, serde::Deserialize)]
+pub struct PlaywrightTab {
+    /// Whether this call opened the tab. For a named executor this happens on its first call and
+    /// after its previous tab was closed. For the default executor it happens only when the
+    /// browser had no open page.
+    #[serde(default)]
+    pub created: bool,
+    /// CDP page target ID of the tab
+    #[serde(default)]
+    pub target_id: String,
+}
+
+impl PlaywrightTab {
+    /// Create a `PlaywrightTab` with the required fields set.
+    #[allow(clippy::too_many_arguments, clippy::new_without_default)]
+    pub fn new(target_id: impl Into<String>, created: impl Into<bool>) -> Self {
+        Self {
+            created: created.into(),
+            target_id: target_id.into(),
         }
     }
 }
@@ -13797,31 +14354,18 @@ crate::string_enum! {
     }
 }
 
-/// Fill selected fields from one ready credential or ready, unexpired Link or
-/// Kernel card into a browser linked to its vault.
-/// Only invoke when the item advertises `fill`. Browser and vault must belong
-/// to the same project. Kernel checks access and allowed destinations before
-/// filling; providing a page URL does not authorize a destination.
+/// Use a vault item in a browser session, for example to fill a login or
+/// payment form. Only invoke when the item advertises `fill`; the advertised
+/// operation describes the inputs that item needs. Requires `browser_id` and
+/// usually `page_url`; some items also require `fields`. Browser and vault must
+/// belong to the same project. Kernel checks access and allowed destinations
+/// before filling; providing a page URL does not authorize a destination.
 ///
-/// Find exactly one open page matching `page_url`. Credential items may omit
-/// `page_url` to require exactly one open page; cards require an HTTPS page URL.
-/// Credentials have no destination allowlist. TOTP fields generate a current
-/// code immediately before writing; their seeds never enter the browser. For each selector, search
-/// the main frame and all descendant frames for editable inputs or selects
-/// matched directly or contained within matching elements. Each selector must
-/// resolve to one unique editable element across all frames; zero or multiple
-/// candidates fail. Count each element once, even if multiple matching
-/// containers contain it. Validate all bindings before filling.
-/// Select elements match an option by its value, not its label.
-/// If the page navigates or a target disappears during filling, stop rather
-/// than selecting a different page or element.
-///
-/// Fill in request order and stop on the first failure. This operation is
-/// not atomic: previously filled fields are not rolled back. Never submit
-/// the form or click buttons, though input/change events may trigger site
-/// behavior. Link and Kernel cards use fill for browser checkout and do not expose
-/// aliases or support egress substitution. Do not automatically retry a
-/// failed or indeterminate operation.
+/// Fill never submits forms or clicks buttons, though input and change events
+/// may trigger site behavior. It is not atomic: completed steps are not rolled
+/// back. Fill does not consume the item, so a failed or indeterminate fill is
+/// safe to retry. A retry right after an indeterminate fill may wait up to 15
+/// seconds for the earlier attempt's browser lock to expire.
 ///
 /// Secret values are never returned or included in operation logs, traces,
 /// audit events, or error details. This does not prevent an agent with
@@ -13832,10 +14376,18 @@ pub struct FillVaultItemOperationRequest {
     /// Browser session ID, not a reusable browser name.
     #[serde(default)]
     pub browser_id: String,
-    /// Field bindings for this step. No two bindings may resolve to the same element.
-    #[serde(default)]
-    pub fields: Vec<VaultFillField>,
-    /// Exact current top-level page URL, including path, query, and fragment. Must match exactly one open page in the browser; zero or multiple matches fail. No prefix or glob matching. Required for cards, which must use HTTPS without embedded credentials. Optional for credentials, where omission requires exactly one open page.
+    /// Field bindings, when the item's advertised fill operation requires them.
+    /// Each selector is searched in the main frame and all descendant frames and
+    /// must resolve to exactly one editable input or select, matched directly or
+    /// through a containing element; zero or multiple candidates fail, and no two
+    /// bindings may resolve to the same element. Select elements match an option
+    /// by value, not label. All bindings are validated before any write, then
+    /// filled in request order, stopping at the first failure. If the page
+    /// navigates or a target disappears, fill stops rather than choosing another
+    /// page or element.
+    #[serde(default, skip_serializing_if = "Option::is_none")]
+    pub fields: Option<Vec<VaultFillField>>,
+    /// Exact current top-level page URL, including path, query, and fragment. Must match exactly one open page in the browser; zero or multiple matches fail. No prefix or glob matching. When an item allows omitting it, the browser must have exactly one open page.
     #[serde(default, skip_serializing_if = "Option::is_none")]
     pub page_url: Option<String>,
     /// Total operation deadline in milliseconds, not a per-field timeout.
@@ -13848,10 +14400,10 @@ pub struct FillVaultItemOperationRequest {
 impl FillVaultItemOperationRequest {
     /// Create a `FillVaultItemOperationRequest` with the required fields set.
     #[allow(clippy::too_many_arguments, clippy::new_without_default)]
-    pub fn new(browser_id: impl Into<String>, fields: impl Into<Vec<VaultFillField>>) -> Self {
+    pub fn new(browser_id: impl Into<String>) -> Self {
         Self {
             browser_id: browser_id.into(),
-            fields: fields.into(),
+            fields: None,
             page_url: None,
             timeout_ms: None,
             r#type: "fill".to_owned(),
@@ -13893,10 +14445,10 @@ crate::string_enum! {
 
 #[derive(Debug, Clone, PartialEq, serde::Serialize, serde::Deserialize)]
 pub struct FillVaultItemOperationResult {
-    /// Exactly one result per request binding, in request order. After the first failed or unknown field, all remaining fields are not_attempted.
+    /// One result per request binding, in request order; empty when the fill used no bindings. After the first failed or unknown field, all remaining fields are not_attempted.
     #[serde(default)]
     pub fields: Vec<VaultFillFieldResult>,
-    /// Completed only when all fields were filled. Failed when execution stopped with known outcomes. Unknown when any field's outcome cannot be determined. None of these statuses confirms payment or merchant acceptance.
+    /// Completed when the fill finished. Failed when execution stopped with known outcomes. Unknown when an outcome cannot be determined. Completed means values were supplied to the page, not that the site accepted or submitted them.
     #[serde(default)]
     pub status: FillVaultItemOperationResultStatus,
     #[serde(default)]
@@ -13967,7 +14519,7 @@ crate::string_enum! {
 }
 
 crate::string_enum! {
-    /// Completed only when all fields were filled. Failed when execution stopped with known outcomes. Unknown when any field's outcome cannot be determined. None of these statuses confirms payment or merchant acceptance.
+    /// Completed when the fill finished. Failed when execution stopped with known outcomes. Unknown when an outcome cannot be determined. Completed means values were supplied to the page, not that the site accepted or submitted them.
     FillVaultItemOperationResultStatus {
         Completed = "completed",
         Failed = "failed",
@@ -14302,7 +14854,7 @@ impl KernelManagedLinkAuthorizationInput {
 pub struct KernelWalletState {
     #[serde(default)]
     pub provider: String,
-    /// pending_authorization asks the cardholder to use the card_enrollment action. connected is ready for supported purchases. reconnect_required asks the cardholder to use a new card_enrollment action after an uncertain enrollment was safely removed. degraded means the enrollment outcome is unknown and the wallet must be deleted before adding another card.
+    /// pending_authorization asks the cardholder to use the card_enrollment action. connected means the card is stored; it can pay once payment_methods reports capabilities.single_use_card.eligible. reconnect_required asks the cardholder to use a new card_enrollment action after an uncertain enrollment was safely removed. degraded means the enrollment outcome is unknown and the wallet must be deleted before adding another card.
     #[serde(default)]
     pub status: KernelWalletStateStatus,
     #[serde(default, skip_serializing_if = "Option::is_none")]
@@ -14322,7 +14874,7 @@ impl KernelWalletState {
 }
 
 crate::string_enum! {
-    /// pending_authorization asks the cardholder to use the card_enrollment action. connected is ready for supported purchases. reconnect_required asks the cardholder to use a new card_enrollment action after an uncertain enrollment was safely removed. degraded means the enrollment outcome is unknown and the wallet must be deleted before adding another card.
+    /// pending_authorization asks the cardholder to use the card_enrollment action. connected means the card is stored; it can pay once payment_methods reports capabilities.single_use_card.eligible. reconnect_required asks the cardholder to use a new card_enrollment action after an uncertain enrollment was safely removed. degraded means the enrollment outcome is unknown and the wallet must be deleted before adding another card.
     KernelWalletStateStatus {
         PendingAuthorization = "pending_authorization",
         Connected = "connected",
@@ -14331,7 +14883,7 @@ crate::string_enum! {
     }
 }
 
-/// One card Kernel enrolls for Visa or Mastercard agentic network tokens using Kernel-managed credentials. Creation returns a card_enrollment action: the cardholder enters the card and their email on a Kernel-hosted page, then Kernel enrolls the securely stored card. The card number never reaches Kernel. The connected wallet's payment_methods expansion lists the enrolled card. Visa cards can be enrolled, but Visa purchases are not yet supported: authorize returns 400.
+/// One card stored with Kernel-managed credentials. Creation returns a card_enrollment action: the cardholder enters the card and their email on a Kernel-hosted page, and the wallet connects once the card is stored. Kernel then enrolls it for an agentic network token when the issuer supports it. The card number never reaches Kernel. The connected wallet's payment_methods expansion lists the card; capabilities.single_use_card.eligible is false, with a network_token_* reason, until the card has a network token, and authorize returns 400 for such a card unless Kernel supports checkout delivery without a network token for that card. In that case, fill types the checkout details. Visa purchases require the cardholder to complete a spend_approval action before Kernel issues a one-time code; Mastercard purchases need no hosted approval.
 #[derive(Debug, Clone, PartialEq, serde::Serialize, serde::Deserialize)]
 pub struct KernelWalletVaultItemSpec {
     #[serde(default)]
@@ -16024,10 +16576,10 @@ impl OnePasswordFillVaultItemOperationRequest {
 /// The submission result reported by the 1Password extension when available. Kernel returns fill_unknown if the extension call has no conclusive result. Inspect the page to determine successful authentication on the website.
 #[derive(Debug, Clone, PartialEq, serde::Serialize, serde::Deserialize)]
 pub struct OnePasswordFillVaultItemOperationResult {
-    /// Present only for a conclusive fill_failed response. These are allowlisted 1Password extension codes, never raw errors, secrets, or page content.
+    /// Present for fill_failed, and for fill_unknown when the extension reported autosubmitFailed (it filled and submitted the form but could not confirm the fill finished). These are allowlisted 1Password extension codes, never raw errors, secrets, or page content.
     #[serde(default, skip_serializing_if = "Option::is_none")]
     pub error_code: Option<OnePasswordFillVaultItemOperationResultErrorCode>,
-    /// Kernel's outcome of the extension call. fill_submitted means the extension reported submission, not website authentication. fill_failed means the extension returned a known failure and may include error_code. fill_unknown means submission may have happened without a conclusive response; it has no error_code and must not be retried in the same browser.
+    /// Kernel's outcome of the extension call. fill_submitted means the extension reported submission, not website authentication. fill_failed means the extension returned a known failure and includes error_code. fill_unknown means the form may have been filled or submitted without a conclusive result; inspect the page to see the result of the fill.
     #[serde(default)]
     pub status: OnePasswordFillVaultItemOperationResultStatus,
     #[serde(default)]
@@ -16047,7 +16599,7 @@ impl OnePasswordFillVaultItemOperationResult {
 }
 
 crate::string_enum! {
-    /// Present only for a conclusive fill_failed response. These are allowlisted 1Password extension codes, never raw errors, secrets, or page content.
+    /// Present for fill_failed, and for fill_unknown when the extension reported autosubmitFailed (it filled and submitted the form but could not confirm the fill finished). These are allowlisted 1Password extension codes, never raw errors, secrets, or page content.
     OnePasswordFillVaultItemOperationResultErrorCode {
         FillFailed = "fillFailed",
         AutosubmitFailed = "autosubmitFailed",
@@ -16057,7 +16609,7 @@ crate::string_enum! {
 }
 
 crate::string_enum! {
-    /// Kernel's outcome of the extension call. fill_submitted means the extension reported submission, not website authentication. fill_failed means the extension returned a known failure and may include error_code. fill_unknown means submission may have happened without a conclusive response; it has no error_code and must not be retried in the same browser.
+    /// Kernel's outcome of the extension call. fill_submitted means the extension reported submission, not website authentication. fill_failed means the extension returned a known failure and includes error_code. fill_unknown means the form may have been filled or submitted without a conclusive result; inspect the page to see the result of the fill.
     OnePasswordFillVaultItemOperationResultStatus {
         FillSubmitted = "fill_submitted",
         FillFailed = "fill_failed",
@@ -16068,8 +16620,6 @@ crate::string_enum! {
 /// Retrieve the status of a 1Password access request after presenting the approval link. On a confirmed failed status, ask the end-user before deleting and recreating the credential item for at most one new request. Do not retry an uncertain dispatched request. The response remains non-secret; approved references are retained only for fill.
 #[derive(Debug, Clone, PartialEq, serde::Serialize, serde::Deserialize)]
 pub struct OnePasswordPollAccessVaultItemOperationRequest {
-    #[serde(default)]
-    pub browser_id: String,
     #[serde(default, skip_serializing_if = "Option::is_none")]
     pub timeout_seconds: Option<i64>,
     #[serde(default)]
@@ -16079,12 +16629,17 @@ pub struct OnePasswordPollAccessVaultItemOperationRequest {
 impl OnePasswordPollAccessVaultItemOperationRequest {
     /// Create a `OnePasswordPollAccessVaultItemOperationRequest` with the required fields set.
     #[allow(clippy::too_many_arguments, clippy::new_without_default)]
-    pub fn new(browser_id: impl Into<String>) -> Self {
+    pub fn new() -> Self {
         Self {
-            browser_id: browser_id.into(),
             timeout_seconds: None,
             r#type: "1pw_access_request_status".to_owned(),
         }
+    }
+}
+
+impl Default for OnePasswordPollAccessVaultItemOperationRequest {
+    fn default() -> Self {
+        Self::new()
     }
 }
 
@@ -16111,12 +16666,9 @@ impl Default for OnePasswordRecoverVaultItemOperationRequest {
     }
 }
 
-/// Request access to login entries in the end-user's own, non-shared 1Password vault through the browser extension, auto-loaded into the browser. The end-user approves access in the 1Password app. Shared-vault items and passkeys are not supported. Per-entry reason and keywords overrides are only supported for a single login entry.
+/// Request access to login entries in the end-user's own, non-shared 1Password vault. No browser is needed; the end-user approves access in the 1Password app. Shared-vault items and passkeys are not supported. Per-entry reason and keywords overrides are only supported for a single login entry.
 #[derive(Debug, Clone, PartialEq, serde::Serialize, serde::Deserialize)]
 pub struct OnePasswordRequestAccessVaultItemOperationRequest {
-    /// Kernel browser session used to invoke the extension.
-    #[serde(default)]
-    pub browser_id: String,
     #[serde(default, skip_serializing_if = "Option::is_none")]
     pub goal: Option<String>,
     #[serde(default, skip_serializing_if = "Option::is_none")]
@@ -16130,14 +16682,19 @@ pub struct OnePasswordRequestAccessVaultItemOperationRequest {
 impl OnePasswordRequestAccessVaultItemOperationRequest {
     /// Create a `OnePasswordRequestAccessVaultItemOperationRequest` with the required fields set.
     #[allow(clippy::too_many_arguments, clippy::new_without_default)]
-    pub fn new(browser_id: impl Into<String>) -> Self {
+    pub fn new() -> Self {
         Self {
-            browser_id: browser_id.into(),
             goal: None,
             keywords: None,
             reason: None,
             r#type: "1pw_create_access_request".to_owned(),
         }
+    }
+}
+
+impl Default for OnePasswordRequestAccessVaultItemOperationRequest {
+    fn default() -> Self {
+        Self::new()
     }
 }
 
@@ -16494,6 +17051,89 @@ impl OrgLimits {
             max_vaults: None,
             min_health_check_interval_seconds: min_health_check_interval_seconds.into(),
             vaults_used: vaults_used.into(),
+        }
+    }
+}
+
+/// A Playwright executor on the browser
+#[derive(Debug, Clone, PartialEq, serde::Serialize, serde::Deserialize)]
+pub struct PlaywrightExecutor {
+    /// Whether a call is running on the executor
+    #[serde(default)]
+    pub busy: bool,
+    /// When the executor was created
+    #[serde(default)]
+    pub created_at: chrono::DateTime<chrono::Utc>,
+    /// When the most recent call on the executor started
+    #[serde(default)]
+    pub last_used_at: chrono::DateTime<chrono::Utc>,
+    /// Name of a Playwright executor. Calls with the same name run in the same executor, one at a
+    /// time; the first call with a new name creates it. Calls on different executors run
+    /// concurrently. 'default' names the executor that runs calls without a name.
+    pub name: PlaywrightExecutorName,
+    /// CDP page target ID of the executor's tab, once it has one. The default executor owns no tab.
+    #[serde(default, skip_serializing_if = "Option::is_none")]
+    pub target_id: Option<String>,
+    /// Current URL of the executor's tab, when it is open
+    #[serde(default, skip_serializing_if = "Option::is_none")]
+    pub url: Option<String>,
+}
+
+impl PlaywrightExecutor {
+    /// Create a `PlaywrightExecutor` with the required fields set.
+    #[allow(clippy::too_many_arguments, clippy::new_without_default)]
+    pub fn new(
+        name: impl Into<PlaywrightExecutorName>,
+        busy: impl Into<bool>,
+        created_at: impl Into<chrono::DateTime<chrono::Utc>>,
+        last_used_at: impl Into<chrono::DateTime<chrono::Utc>>,
+    ) -> Self {
+        Self {
+            busy: busy.into(),
+            created_at: created_at.into(),
+            last_used_at: last_used_at.into(),
+            name: name.into(),
+            target_id: None,
+            url: None,
+        }
+    }
+}
+
+/// Returned when a call would create a named executor beyond the per-browser limit
+#[derive(Debug, Clone, PartialEq, serde::Serialize, serde::Deserialize)]
+pub struct PlaywrightExecutorLimitError {
+    /// The default executor and the named executors that already exist
+    #[serde(default)]
+    pub executors: Vec<PlaywrightExecutor>,
+    /// Human-readable error description
+    #[serde(default)]
+    pub message: String,
+}
+
+impl PlaywrightExecutorLimitError {
+    /// Create a `PlaywrightExecutorLimitError` with the required fields set.
+    #[allow(clippy::too_many_arguments, clippy::new_without_default)]
+    pub fn new(message: impl Into<String>, executors: impl Into<Vec<PlaywrightExecutor>>) -> Self {
+        Self {
+            executors: executors.into(),
+            message: message.into(),
+        }
+    }
+}
+
+/// The default executor followed by the named executors
+#[derive(Debug, Clone, PartialEq, serde::Serialize, serde::Deserialize)]
+pub struct PlaywrightExecutorList {
+    #[serde(default)]
+    pub executors: Vec<PlaywrightExecutor>,
+}
+
+impl PlaywrightExecutorList {
+    /// Create a `PlaywrightExecutorList` with the required fields set.
+    #[allow(clippy::too_many_arguments, clippy::new_without_default)]
+    pub fn new(executors: impl Into<Vec<PlaywrightExecutor>>) -> Self {
+        Self {
+            executors: executors.into(),
         }
     }
 }
@@ -17045,7 +17685,7 @@ pub struct Proxy {
     /// Current health status of the proxy.
     #[serde(default, skip_serializing_if = "Option::is_none")]
     pub status: Option<ProxyStatus>,
-    /// Proxy type to use. In terms of quality for avoiding bot-detection, from best to worst: `mobile` \> `residential` \> `isp` \> `datacenter`.
+    /// Proxy type to use. In terms of quality for avoiding bot-detection, from best to worst: `mobile` \> `residential` \> `isp`. `datacenter` is deprecated; use `isp` instead. Existing datacenter proxies remain supported.
     #[serde(default)]
     pub r#type: ProxyType,
 }
@@ -17129,7 +17769,7 @@ crate::string_enum! {
 }
 
 crate::string_enum! {
-    /// Proxy type to use. In terms of quality for avoiding bot-detection, from best to worst: `mobile` \> `residential` \> `isp` \> `datacenter`.
+    /// Proxy type to use. In terms of quality for avoiding bot-detection, from best to worst: `mobile` \> `residential` \> `isp`. `datacenter` is deprecated; use `isp` instead. Existing datacenter proxies remain supported.
     ProxyType {
         Datacenter = "datacenter",
         Isp = "isp",
@@ -17142,7 +17782,7 @@ crate::string_enum! {
 /// Optional parameters for the proxy health check.
 #[derive(Debug, Clone, PartialEq, serde::Serialize, serde::Deserialize)]
 pub struct ProxyCheckRequest {
-    /// An optional URL to test reachability against. If provided, the proxy check will test connectivity to this URL instead of the default test URLs. Only HTTP and HTTPS schemes are allowed, and the URL must resolve to a public IP address. For ISP and datacenter proxies, the exit IP is stable, so a successful check reliably indicates that subsequent browser sessions will reach the target site with the same IP. For residential and mobile proxies, the exit node changes between requests, so a successful check validates proxy configuration but does not guarantee that a subsequent browser session will use the same exit IP or reach the same site — it is useful for verifying credentials and connectivity, not for predicting site-specific behavior. When provided, the check result does not update the proxy's health status, since a failure may indicate a problem with the target site rather than the proxy itself.
+    /// An optional URL to test reachability against. If provided, the proxy check will test connectivity to this URL instead of the default test URLs. Only HTTP and HTTPS schemes are allowed, and the URL must resolve to a public IP address. For ISP proxies, the exit IP is stable, so a successful check reliably indicates that subsequent browser sessions will reach the target site with the same IP. For residential and mobile proxies, the exit node changes between requests, so a successful check validates proxy configuration but does not guarantee that a subsequent browser session will use the same exit IP or reach the same site — it is useful for verifying credentials and connectivity, not for predicting site-specific behavior. When provided, the check result does not update the proxy's health status, since a failure may indicate a problem with the target site rather than the proxy itself.
     #[serde(default, skip_serializing_if = "Option::is_none")]
     pub url: Option<String>,
 }
@@ -17173,6 +17813,29 @@ impl ProxyUpdateRequest {
     #[allow(clippy::too_many_arguments, clippy::new_without_default)]
     pub fn new(name: impl Into<String>) -> Self {
         Self { name: name.into() }
+    }
+}
+
+/// Explicitly prepare a fresh local verification session for the same Kernel Visa purchase and connected wallet, only when restart_verification is advertised. Kernel must have durable proof of an initial attestation failure before intent dispatch. Replaces the spend_approval capability and discards session-bound verification data without calling the provider or granting spend consent. The cardholder must use the new link, verify again and explicitly approve the purchase. Unknown intent creation, legacy unclassified recovery, enrollment completion, issuance and confirmation cannot restart. Do not automatically retry this operation.
+#[derive(Debug, Clone, PartialEq, serde::Serialize, serde::Deserialize)]
+pub struct RestartVerificationVaultItemOperationRequest {
+    #[serde(default)]
+    pub r#type: String,
+}
+
+impl RestartVerificationVaultItemOperationRequest {
+    /// Create a `RestartVerificationVaultItemOperationRequest` with the required fields set.
+    #[allow(clippy::too_many_arguments, clippy::new_without_default)]
+    pub fn new() -> Self {
+        Self {
+            r#type: "restart_verification".to_owned(),
+        }
+    }
+}
+
+impl Default for RestartVerificationVaultItemOperationRequest {
+    fn default() -> Self {
+        Self::new()
     }
 }
 
@@ -17952,7 +18615,7 @@ impl Default for SearchExaOptions {
 /// Provider-native content retrieval. Available without requesting Kernel browser retrieval; may incur provider retrieval charges.
 #[derive(Debug, Clone, PartialEq, serde::Serialize, serde::Deserialize)]
 pub struct SearchExaOptionsContents {
-    /// Return query-relevant provider excerpts.
+    /// Return query-relevant provider excerpts. Defaults to true for Exa search requests; set false to disable.
     #[serde(default, skip_serializing_if = "Option::is_none")]
     pub highlights: Option<bool>,
     /// Return provider page text.
@@ -18031,7 +18694,7 @@ pub struct SearchPerplexityOptions {
     /// Provider-native multi-query form, applied only to Perplexity. Other fallback providers receive the top-level query. Each query may incur a separate provider charge.
     #[serde(default, skip_serializing_if = "Option::is_none")]
     pub query: Option<Vec<String>>,
-    /// Provider context size supported by the selected model.
+    /// Amount of page content Perplexity extracts per result. Defaults to medium unless max_tokens or max_tokens_per_page is set.
     #[serde(default, skip_serializing_if = "Option::is_none")]
     pub search_context_size: Option<SearchPerplexityOptionsSearchContextSize>,
     /// ISO 639-1 language codes, max 20.
@@ -18063,7 +18726,7 @@ impl Default for SearchPerplexityOptions {
 }
 
 crate::string_enum! {
-    /// Provider context size supported by the selected model.
+    /// Amount of page content Perplexity extracts per result. Defaults to medium unless max_tokens or max_tokens_per_page is set.
     SearchPerplexityOptionsSearchContextSize {
         Low = "low",
         Medium = "medium",
@@ -20388,6 +21051,63 @@ crate::string_enum! {
     }
 }
 
+/// Public key for encrypted_value on credential fields. Use this only if you run your own credential collection web app and want values encrypted in the browser, sent to your backend still encrypted, and forwarded to Kernel's API still encrypted. In every other case, including server-side code that already holds the plaintext, use value. Each vault has its own key; a value encrypted for one vault is rejected by every other vault. The key is created on first request and stays the same for the vault's lifetime, so it may be cached.
+#[derive(Debug, Clone, PartialEq, serde::Serialize, serde::Deserialize)]
+pub struct VaultEncryptionKey {
+    /// JWE key management algorithm.
+    #[serde(default)]
+    pub alg: String,
+    /// JWE content encryption algorithm.
+    #[serde(default)]
+    pub enc: String,
+    /// P-256 public key in JWK form.
+    pub jwk: VaultEncryptionPublicJwk,
+    /// Key ID. Set it as the kid protected header of every encrypted_value.
+    #[serde(default)]
+    pub kid: String,
+}
+
+impl VaultEncryptionKey {
+    /// Create a `VaultEncryptionKey` with the required fields set.
+    #[allow(clippy::too_many_arguments, clippy::new_without_default)]
+    pub fn new(kid: impl Into<String>, jwk: impl Into<VaultEncryptionPublicJwk>) -> Self {
+        Self {
+            alg: "ECDH-ES".to_owned(),
+            enc: "A256GCM".to_owned(),
+            jwk: jwk.into(),
+            kid: kid.into(),
+        }
+    }
+}
+
+/// P-256 public key in JWK form.
+#[derive(Debug, Clone, PartialEq, serde::Serialize, serde::Deserialize)]
+pub struct VaultEncryptionPublicJwk {
+    #[serde(default)]
+    pub crv: String,
+    #[serde(default)]
+    pub kty: String,
+    /// Base64url-encoded y coordinate.
+    #[serde(default)]
+    pub y: String,
+    /// Base64url-encoded x coordinate.
+    #[serde(default)]
+    pub x: String,
+}
+
+impl VaultEncryptionPublicJwk {
+    /// Create a `VaultEncryptionPublicJwk` with the required fields set.
+    #[allow(clippy::too_many_arguments, clippy::new_without_default)]
+    pub fn new(x: impl Into<String>, y: impl Into<String>) -> Self {
+        Self {
+            crv: "P-256".to_owned(),
+            kty: "EC".to_owned(),
+            y: y.into(),
+            x: x.into(),
+        }
+    }
+}
+
 #[derive(Debug, Clone, PartialEq, serde::Serialize)]
 #[serde(untagged)]
 #[non_exhaustive]
@@ -20459,6 +21179,9 @@ pub struct WalletVaultItem {
     pub available_operations: Vec<AvailableVaultItemOperation>,
     #[serde(default)]
     pub created_at: chrono::DateTime<chrono::Utc>,
+    /// Server-generated provider and lifecycle guidance for agents.
+    #[serde(default, skip_serializing_if = "Option::is_none")]
+    pub description: Option<String>,
     /// Live, non-persisted data requested through the item GET expand parameter.
     #[serde(default, skip_serializing_if = "Option::is_none")]
     pub expanded: Option<VaultItemExpanded>,
@@ -20495,6 +21218,7 @@ impl WalletVaultItem {
             available_expansions: available_expansions.into(),
             available_operations: available_operations.into(),
             created_at: created_at.into(),
+            description: None,
             expanded: None,
             expires_at: None,
             id: id.into(),
@@ -20779,6 +21503,8 @@ impl VaultItemEvent {
 #[non_exhaustive]
 pub enum VaultItemOperationRequest {
     Authorize(AuthorizeVaultItemOperationRequest),
+    RestartVerification(RestartVerificationVaultItemOperationRequest),
+    ConfirmTransaction(ConfirmTransactionVaultItemOperationRequest),
     Collect(CollectVaultItemOperationRequest),
     PrepareCheckout(PrepareCheckoutVaultItemOperationRequest),
     Fill(FillVaultItemOperationRequest),
@@ -20802,6 +21528,12 @@ impl<'de> serde::Deserialize<'de> for VaultItemOperationRequest {
         match tag.as_deref() {
             Some("authorize") => serde_json::from_value(value)
                 .map(Self::Authorize)
+                .map_err(serde::de::Error::custom),
+            Some("restart_verification") => serde_json::from_value(value)
+                .map(Self::RestartVerification)
+                .map_err(serde::de::Error::custom),
+            Some("confirm_transaction") => serde_json::from_value(value)
+                .map(Self::ConfirmTransaction)
                 .map_err(serde::de::Error::custom),
             Some("collect") => serde_json::from_value(value)
                 .map(Self::Collect)
@@ -20838,6 +21570,18 @@ impl<'de> serde::Deserialize<'de> for VaultItemOperationRequest {
 impl From<AuthorizeVaultItemOperationRequest> for VaultItemOperationRequest {
     fn from(v: AuthorizeVaultItemOperationRequest) -> Self {
         Self::Authorize(v)
+    }
+}
+
+impl From<RestartVerificationVaultItemOperationRequest> for VaultItemOperationRequest {
+    fn from(v: RestartVerificationVaultItemOperationRequest) -> Self {
+        Self::RestartVerification(v)
+    }
+}
+
+impl From<ConfirmTransactionVaultItemOperationRequest> for VaultItemOperationRequest {
+    fn from(v: ConfirmTransactionVaultItemOperationRequest) -> Self {
+        Self::ConfirmTransaction(v)
     }
 }
 
@@ -20950,7 +21694,7 @@ impl WebMcpInvokeVaultItemOperationRequest {
 
 #[derive(Debug, Clone, PartialEq, serde::Serialize, serde::Deserialize)]
 pub struct VaultWebMcpBinding {
-    /// A declared, populated credential field or supported card field. A TOTP field supplies a fresh code, never its seed.
+    /// A declared, populated credential field or supported card field. A TOTP field supplies a fresh code, never its seed. Passkey fields cannot be filled.
     #[serde(default)]
     pub field: String,
     /// Required for card expiration (MM/YY or MM/YYYY), forbidden for other fields. Invalid formats are rejected before invocation.
@@ -22192,13 +22936,16 @@ pub struct BrowserCreateParams {
     /// If true, launches the browser in kiosk mode to hide address bar and tabs in live view.
     #[serde(default, skip_serializing_if = "Option::is_none")]
     pub kiosk_mode: Option<bool>,
-    /// Memory for a headful, non-GPU browser session. Defaults to 8GiB.
+    /// Optional session-only timezone and locale overrides. Each omitted field uses the default for the browser's region. start_url opens once the location applies.
+    #[serde(default, skip_serializing_if = "Option::is_none")]
+    pub location: Option<BrowserLocationRequest>,
+    /// Memory for a non-GPU browser. Headless: 1GiB (default), 2GiB, or 4GiB. Headful: 8GiB (default) or 16GiB.
     #[serde(default, skip_serializing_if = "Option::is_none")]
     pub memory: Option<BrowserMemoryRequest>,
     /// Optional human-readable name for the browser session, used to find it later in the dashboard. Must be unique among active sessions within the project. Can be changed later via PATCH /browsers/{id_or_name}.
     #[serde(default, skip_serializing_if = "Option::is_none")]
     pub name: Option<String>,
-    /// Network configuration for the browser session. Cannot be changed after creation.
+    /// Network configuration for the browser session. Only allowed_hosts can be changed after creation, with PATCH /browsers/{id_or_name}.
     #[serde(default, skip_serializing_if = "Option::is_none")]
     pub network: Option<BrowserNetworkConfig>,
     /// Profile selection for the browser session. Provide either id or name. If specified, the
@@ -22237,6 +22984,9 @@ pub struct BrowserCreateParams {
     /// Project-scoped vaults to link to the browser session. Links are immutable after creation.
     #[serde(default, skip_serializing_if = "Option::is_none")]
     pub vaults: Option<Vec<VaultReference>>,
+    /// Video memory (VRAM) for a GPU browser session. Requires gpu=true. Defaults to 2GiB, which comes with 4 vCPU and 6GiB memory. 4GiB comes with 8 vCPU and 12GiB memory.
+    #[serde(default, skip_serializing_if = "Option::is_none")]
+    pub video_memory: Option<BrowserVideoMemory>,
     /// Initial browser window size in pixels with optional refresh rate.
     /// If omitted, image defaults apply (1920x1080@25).
     /// For GPU images, the default is 1920x1080@60.
@@ -22263,6 +23013,7 @@ impl BrowserCreateParams {
             headless: None,
             invocation_id: None,
             kiosk_mode: None,
+            location: None,
             memory: None,
             name: None,
             network: None,
@@ -22276,6 +23027,7 @@ impl BrowserCreateParams {
             telemetry: None,
             timeout_seconds: None,
             vaults: None,
+            video_memory: None,
             viewport: None,
         }
     }
@@ -22321,9 +23073,16 @@ pub struct BrowserUpdateParams {
     /// If true, stealth browsers connect directly instead of using the default stealth proxy. Deprecated in favor of proxy.mode.
     #[serde(default, skip_serializing_if = "Option::is_none")]
     pub disable_default_proxy: Option<bool>,
+    /// Session-only timezone and locale overrides. Omit the object or a field to leave it unchanged; set a string to override; set null to clear that field and use the browser region's default.
+    /// A browser that cannot change location refuses the request before anything changes. The location applies after the request's other changes, and start_url opens once it has applied. If applying it fails, the other changes and the saved override remain and start_url does not open; retry the request to apply both.
+    #[serde(default, skip_serializing_if = "Option::is_none")]
+    pub location: Option<BrowserLocationUpdateRequest>,
     /// Human-readable name for the browser session. Omit to leave unchanged, set to an empty string to clear the name. When set, must be unique among active sessions within the project.
     #[serde(default, skip_serializing_if = "Option::is_none")]
     pub name: Option<String>,
+    /// Network configuration changes to apply to the running browser session.
+    #[serde(default, skip_serializing_if = "Option::is_none")]
+    pub network: Option<BrowserNetworkUpdate>,
     /// Profile to load into the browser session. Only allowed if the session does not already have a profile loaded.
     #[serde(default, skip_serializing_if = "Option::is_none")]
     pub profile: Option<BrowserProfile>,
@@ -22355,7 +23114,9 @@ impl BrowserUpdateParams {
     pub fn new() -> Self {
         Self {
             disable_default_proxy: None,
+            location: None,
             name: None,
+            network: None,
             profile: None,
             proxy: None,
             proxy_id: None,
@@ -22687,7 +23448,7 @@ pub struct ProxyCreateParams {
     /// Protocol to use for the proxy connection.
     #[serde(default, skip_serializing_if = "Option::is_none")]
     pub protocol: Option<ProxyCreateRequestProtocol>,
-    /// Proxy type to use. In terms of quality for avoiding bot-detection, from best to worst: `mobile` \> `residential` \> `isp` \> `datacenter`.
+    /// Proxy type to use. In terms of quality for avoiding bot-detection, from best to worst: `mobile` \> `residential` \> `isp`. `datacenter` is deprecated; use `isp` instead. Datacenter proxy creation remains supported for backward compatibility.
     #[serde(default)]
     pub r#type: ProxyCreateRequestType,
 }
@@ -22769,7 +23530,7 @@ pub type ProxyListResponse = Proxy;
 /// Parameters for `proxies.check`.
 #[derive(Debug, Clone, PartialEq, serde::Serialize, serde::Deserialize)]
 pub struct ProxyCheckParams {
-    /// An optional URL to test reachability against. If provided, the proxy check will test connectivity to this URL instead of the default test URLs. Only HTTP and HTTPS schemes are allowed, and the URL must resolve to a public IP address. For ISP and datacenter proxies, the exit IP is stable, so a successful check reliably indicates that subsequent browser sessions will reach the target site with the same IP. For residential and mobile proxies, the exit node changes between requests, so a successful check validates proxy configuration but does not guarantee that a subsequent browser session will use the same exit IP or reach the same site — it is useful for verifying credentials and connectivity, not for predicting site-specific behavior. When provided, the check result does not update the proxy's health status, since a failure may indicate a problem with the target site rather than the proxy itself.
+    /// An optional URL to test reachability against. If provided, the proxy check will test connectivity to this URL instead of the default test URLs. Only HTTP and HTTPS schemes are allowed, and the URL must resolve to a public IP address. For ISP proxies, the exit IP is stable, so a successful check reliably indicates that subsequent browser sessions will reach the target site with the same IP. For residential and mobile proxies, the exit node changes between requests, so a successful check validates proxy configuration but does not guarantee that a subsequent browser session will use the same exit IP or reach the same site — it is useful for verifying credentials and connectivity, not for predicting site-specific behavior. When provided, the check result does not update the proxy's health status, since a failure may indicate a problem with the target site rather than the proxy itself.
     #[serde(default, skip_serializing_if = "Option::is_none")]
     pub url: Option<String>,
 }
@@ -22918,13 +23679,13 @@ pub struct BrowserPoolCreateParams {
     /// If true, launches the browser in kiosk mode to hide address bar and tabs in live view. Defaults to false.
     #[serde(default, skip_serializing_if = "Option::is_none")]
     pub kiosk_mode: Option<bool>,
-    /// Memory requested for headful browsers in this pool.
+    /// Memory for browsers in this pool. Headless: 1GiB (default), 2GiB, or 4GiB. Headful: 8GiB (default) or 16GiB.
     #[serde(default, skip_serializing_if = "Option::is_none")]
     pub memory: Option<BrowserMemoryRequest>,
     /// Optional name for the browser pool. Must be unique within the project.
     #[serde(default, skip_serializing_if = "Option::is_none")]
     pub name: Option<String>,
-    /// Network configuration applied to browsers in this pool.
+    /// Network configuration applied to browsers in this pool. Egress allowlists and proxy routes require proxy-v3; the pool will not provision browsers through Envoy if proxy-v3 is unavailable.
     #[serde(default, skip_serializing_if = "Option::is_none")]
     pub network: Option<BrowserNetworkConfig>,
     /// Profile selection for browsers in the pool.
@@ -22998,9 +23759,12 @@ pub struct BrowserPoolUpdateParams {
     /// If provided, replaces the custom Chrome enterprise policy overrides applied to all browsers in this pool. Empty object clears any previously-set policy. Keys are Chrome enterprise policy names; values must match their expected types. Blocked: kernel-managed policies (extensions, proxy, CDP/automation). See <https://chromeenterprise.google/policies/> The serialized JSON payload is capped at 5 MiB.
     #[serde(default, skip_serializing_if = "Option::is_none")]
     pub chrome_policy: Option<std::collections::HashMap<String, serde_json::Value>>,
-    /// Whether to discard all idle browsers and rebuild them immediately with the new configuration. Defaults to false. Only browsers that are idle when the update runs are rebuilt. A browser that is in use during the update keeps its original configuration, and if it is later released with `reuse: true` it returns to the pool with that stale configuration until it is discarded (by this flag on a later update, or by flushing the pool).
+    /// Whether to discard all idle browsers and rebuild them immediately with the new configuration. Defaults to false. Only browsers that are idle when the update runs are rebuilt. A browser that is in use during the update keeps its original configuration, except that its allowlist is reset to the current pool baseline on release or the browser is replaced. For other configuration fields, if it is later released with `reuse: true` it returns to the pool with that stale configuration until it is discarded (by this flag on a later update, or by flushing the pool).
     #[serde(default, skip_serializing_if = "Option::is_none")]
     pub discard_all_idle: Option<bool>,
+    /// Optional optimistic concurrency precondition. Send the network configuration from the last pool response, or {} when it has no network configuration. The entire update is rejected with 409 stale_network if the saved network differs, checked atomically with the write. Omit for unconditional updates. Explicit empty lists differ from omitted lists; route targets must match the saved references (resolved IDs, not equivalent proxy names).
+    #[serde(default, skip_serializing_if = "Option::is_none")]
+    pub expected_network: Option<BrowserNetworkConfig>,
     /// If provided, replaces the extension list. Empty array clears all previously-selected
     /// extensions. Omit this field to leave extensions unchanged.
     #[serde(default, skip_serializing_if = "Option::is_none")]
@@ -23016,14 +23780,14 @@ pub struct BrowserPoolUpdateParams {
     /// If provided, replaces whether browsers launch in kiosk mode.
     #[serde(default, skip_serializing_if = "Option::is_none")]
     pub kiosk_mode: Option<bool>,
-    /// Memory requested for newly-warmed headful browsers in this pool. Existing browsers retain their original allocation. Use discard_all_idle to replace idle browsers.
+    /// Memory requested for newly-warmed browsers in this pool: 1GiB, 2GiB, or 4GiB for headless, 8GiB or 16GiB for headful. Existing browsers retain their original allocation. Use discard_all_idle to replace idle browsers.
     #[serde(default, skip_serializing_if = "Option::is_none")]
     pub memory: Option<BrowserPoolUpdateRequestMemory>,
     /// If provided, replaces the pool name. Empty string is a no-op; the pool name cannot
     /// be cleared or reset to empty once assigned.
     #[serde(default, skip_serializing_if = "Option::is_none")]
     pub name: Option<String>,
-    /// If provided, replaces the pool's network configuration. Omit to leave the existing configuration unchanged; an empty object ({}) removes it, while network: {private_hosts: \[\]} sets an explicit empty list. Only applied to browsers created in the pool after the update; browsers already in the pool keep their configuration until discarded (see discard_all_idle).
+    /// If provided, replaces the pool's network configuration. Omit to leave the existing configuration unchanged; an empty object ({}) removes it, while network: {private_hosts: \[\]} or network: {proxy_routes: \[\]} sets an explicit empty list; allowed_hosts must be non-empty when supplied. Egress allowlists and proxy routes require proxy-v3; the pool will not provision browsers through Envoy if proxy-v3 is unavailable. Changing allowed_hosts automatically replaces idle browsers. Leased browsers retain their allowlist until release, when it is reset to the current pool baseline or the browser is replaced if it cannot safely receive that baseline. Stale browsers cannot be acquired. Other network fields only apply to browsers created after the update; existing browsers keep those fields until discarded (see discard_all_idle).
     #[serde(default, skip_serializing_if = "Option::is_none")]
     pub network: Option<BrowserNetworkConfig>,
     /// If provided, replaces the previously-selected profile. To clear the profile reference,
@@ -23073,6 +23837,7 @@ impl BrowserPoolUpdateParams {
         Self {
             chrome_policy: None,
             discard_all_idle: None,
+            expected_network: None,
             extensions: None,
             fill_rate_per_minute: None,
             headless: None,
@@ -23717,12 +24482,18 @@ crate::string_enum! {
 /// Parameters for `api_keys.create`.
 #[derive(Debug, Clone, PartialEq, serde::Serialize, serde::Deserialize)]
 pub struct ApiKeyCreateParams {
-    /// Number of days until expiry, up to 3650. Use null for never.
+    /// Number of days until expiry, up to 3650. Use null for never. Cannot be combined with expires_at.
     #[serde(default, skip_serializing_if = "Option::is_none")]
     pub days_to_expire: Option<i64>,
+    /// Exact expiry time. Must be in the future and no later than the issuing credential's own expiry. Cannot be combined with days_to_expire.
+    #[serde(default, skip_serializing_if = "Option::is_none")]
+    pub expires_at: Option<chrono::DateTime<chrono::Utc>>,
     /// Label for the API key (1-255 characters). API keys are not addressable by name.
     #[serde(default)]
     pub name: String,
+    /// Issue a scoped key that may only perform the listed actions on the listed resources.
+    #[serde(default, skip_serializing_if = "Option::is_none")]
+    pub policy: Option<ApiKeyPolicy>,
     /// Unique project identifier
     #[serde(default, skip_serializing_if = "Option::is_none")]
     pub project_id: Option<String>,
@@ -23734,7 +24505,9 @@ impl ApiKeyCreateParams {
     pub fn new(name: impl Into<String>) -> Self {
         Self {
             days_to_expire: None,
+            expires_at: None,
             name: name.into(),
+            policy: None,
             project_id: None,
         }
     }
