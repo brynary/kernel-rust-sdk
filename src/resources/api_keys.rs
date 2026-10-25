@@ -13,7 +13,7 @@ pub struct ApiKeys<'a> {
 impl<'a> ApiKeys<'a> {
     /// Create an API key
     ///
-    /// Create a new API key within the authenticated organization.
+    /// Create a new API key. API keys may be scoped by project and may include a policy.
     ///
     /// `POST /org/api_keys`
     pub async fn create(
