@@ -26,27 +26,33 @@ impl<'a> Proxies<'a> {
         self.client.execute(req).await
     }
 
-    /// Get proxy by ID
+    /// Get proxy by ID or name
     ///
-    /// Retrieve a proxy in the resolved project by ID.
+    /// Retrieve a proxy in the resolved project by ID or exact name using the database collation. IDs take precedence when a value matches both an ID and a name. Proxy names are not unique; an ambiguous name returns a 400 response with code ambiguous_proxy_name.
     ///
-    /// `GET /proxies/{id}`
-    pub async fn retrieve(&self, id: &str) -> Result<crate::types::ProxyRetrieveResponse> {
-        let req = ApiRequest::new(Method::GET, format!("/proxies/{}", path_segment(id)));
+    /// `GET /proxies/{id_or_name}`
+    pub async fn retrieve(&self, id_or_name: &str) -> Result<crate::types::ProxyRetrieveResponse> {
+        let req = ApiRequest::new(
+            Method::GET,
+            format!("/proxies/{}", path_segment(id_or_name)),
+        );
         self.client.execute(req).await
     }
 
     /// Rename proxy by ID
     ///
-    /// Update a proxy's name. Proxy names are not unique and are not ID-or-name addressable on this endpoint; duplicate names are allowed. Name-based session-create lookups can remain ambiguous until callers resolve proxies by ID or the API adds a stronger uniqueness contract.
+    /// Update a proxy's name. Proxy names are not unique and duplicate names are allowed.
     ///
-    /// `PATCH /proxies/{id}`
+    /// `PATCH /proxies/{id_or_name}`
     pub async fn update(
         &self,
-        id: &str,
+        id_or_name: &str,
         params: crate::types::ProxyUpdateParams,
     ) -> Result<crate::types::ProxyUpdateResponse> {
-        let mut req = ApiRequest::new(Method::PATCH, format!("/proxies/{}", path_segment(id)));
+        let mut req = ApiRequest::new(
+            Method::PATCH,
+            format!("/proxies/{}", path_segment(id_or_name)),
+        );
         let fields = to_fields(&params)?;
         req = req.json(&fields)?;
         self.client.execute(req).await
@@ -72,23 +78,29 @@ impl<'a> Proxies<'a> {
     /// Soft delete a proxy. Session records referencing it are not modified. If egress binding polling is enabled, existing tunnels for active sessions using the proxy are terminated within one polling interval; subsequent connections through the deleted proxy are rejected.
     ///
     ///
-    /// `DELETE /proxies/{id}`
-    pub async fn delete(&self, id: &str) -> Result<()> {
-        let req = ApiRequest::new(Method::DELETE, format!("/proxies/{}", path_segment(id)));
+    /// `DELETE /proxies/{id_or_name}`
+    pub async fn delete(&self, id_or_name: &str) -> Result<()> {
+        let req = ApiRequest::new(
+            Method::DELETE,
+            format!("/proxies/{}", path_segment(id_or_name)),
+        );
         self.client.execute_unit(req).await
     }
 
     /// Check proxy health
     ///
-    /// Run a health check on the proxy to verify it's working. Optionally specify a URL to test reachability against a specific target. For ISP and datacenter proxies, this reliably tests whether the target site is reachable from the proxy's stable exit IP. For residential and mobile proxies, the exit node varies between requests, so this validates proxy configuration and connectivity rather than guaranteeing site-specific reachability.
+    /// Run a health check on the proxy to verify it's working. Optionally specify a URL to test reachability against a specific target. For ISP proxies, this reliably tests whether the target site is reachable from the proxy's stable exit IP. For residential and mobile proxies, the exit node varies between requests, so this validates proxy configuration and connectivity rather than guaranteeing site-specific reachability.
     ///
-    /// `POST /proxies/{id}/check`
+    /// `POST /proxies/{id_or_name}/check`
     pub async fn check(
         &self,
-        id: &str,
+        id_or_name: &str,
         params: crate::types::ProxyCheckParams,
     ) -> Result<crate::types::ProxyCheckResponse> {
-        let mut req = ApiRequest::new(Method::POST, format!("/proxies/{}/check", path_segment(id)));
+        let mut req = ApiRequest::new(
+            Method::POST,
+            format!("/proxies/{}/check", path_segment(id_or_name)),
+        );
         let fields = to_fields(&params)?;
         req = req.json(&fields)?;
         self.client.execute(req).await

@@ -117,9 +117,15 @@ Types:
 
 ```python
 from kernel.types import (
+    BrowserAllowlistState,
+    BrowserLocation,
+    BrowserLocationRequest,
+    BrowserLocationSource,
+    BrowserLocationUpdateRequest,
     BrowserMemory,
     BrowserMemoryRequest,
     BrowserNetworkConfig,
+    BrowserNetworkUpdate,
     BrowserPoolRef,
     BrowserProxy,
     BrowserProxyConfig,
@@ -130,6 +136,7 @@ from kernel.types import (
     BrowserReplResult,
     BrowserReplTextContent,
     BrowserUsage,
+    BrowserVideoMemory,
     Profile,
     Tags,
     VaultReference,
@@ -334,12 +341,25 @@ Methods:
 Types:
 
 ```python
-from kernel.types.browsers import PlaywrightExecuteResponse
+from kernel.types.browsers import ExecutorLimitError, Tab, PlaywrightExecuteResponse
 ```
 
 Methods:
 
-- <code title="post /browsers/{id_or_name}/playwright/execute">client.browsers.playwright.<a href="./src/kernel/resources/browsers/playwright.py">execute</a>(id_or_name, \*\*<a href="src/kernel/types/browsers/playwright_execute_params.py">params</a>) -> <a href="./src/kernel/types/browsers/playwright_execute_response.py">PlaywrightExecuteResponse</a></code>
+- <code title="post /browsers/{id_or_name}/playwright/execute">client.browsers.playwright.<a href="./src/kernel/resources/browsers/playwright/playwright.py">execute</a>(id_or_name, \*\*<a href="src/kernel/types/browsers/playwright_execute_params.py">params</a>) -> <a href="./src/kernel/types/browsers/playwright_execute_response.py">PlaywrightExecuteResponse</a></code>
+
+### Executors
+
+Types:
+
+```python
+from kernel.types.browsers.playwright import Executor, ExecutorList
+```
+
+Methods:
+
+- <code title="get /browsers/{id_or_name}/playwright/executors">client.browsers.playwright.executors.<a href="./src/kernel/resources/browsers/playwright/executors.py">list</a>(id_or_name) -> <a href="./src/kernel/types/browsers/playwright/executor_list.py">ExecutorList</a></code>
+- <code title="delete /browsers/{id_or_name}/playwright/executors/{name}">client.browsers.playwright.executors.<a href="./src/kernel/resources/browsers/playwright/executors.py">delete</a>(name, \*, id_or_name, \*\*<a href="src/kernel/types/browsers/playwright/executor_delete_params.py">params</a>) -> None</code>
 
 ## Webmcp
 
@@ -469,11 +489,11 @@ from kernel.types import (
 Methods:
 
 - <code title="post /proxies">client.proxies.<a href="./src/kernel/resources/proxies.py">create</a>(\*\*<a href="src/kernel/types/proxy_create_params.py">params</a>) -> <a href="./src/kernel/types/proxy_create_response.py">ProxyCreateResponse</a></code>
-- <code title="get /proxies/{id}">client.proxies.<a href="./src/kernel/resources/proxies.py">retrieve</a>(id) -> <a href="./src/kernel/types/proxy_retrieve_response.py">ProxyRetrieveResponse</a></code>
-- <code title="patch /proxies/{id}">client.proxies.<a href="./src/kernel/resources/proxies.py">update</a>(id, \*\*<a href="src/kernel/types/proxy_update_params.py">params</a>) -> <a href="./src/kernel/types/proxy_update_response.py">ProxyUpdateResponse</a></code>
+- <code title="get /proxies/{id_or_name}">client.proxies.<a href="./src/kernel/resources/proxies.py">retrieve</a>(id_or_name) -> <a href="./src/kernel/types/proxy_retrieve_response.py">ProxyRetrieveResponse</a></code>
+- <code title="patch /proxies/{id_or_name}">client.proxies.<a href="./src/kernel/resources/proxies.py">update</a>(id_or_name, \*\*<a href="src/kernel/types/proxy_update_params.py">params</a>) -> <a href="./src/kernel/types/proxy_update_response.py">ProxyUpdateResponse</a></code>
 - <code title="get /proxies">client.proxies.<a href="./src/kernel/resources/proxies.py">list</a>(\*\*<a href="src/kernel/types/proxy_list_params.py">params</a>) -> <a href="./src/kernel/types/proxy_list_response.py">SyncOffsetPagination[ProxyListResponse]</a></code>
-- <code title="delete /proxies/{id}">client.proxies.<a href="./src/kernel/resources/proxies.py">delete</a>(id) -> None</code>
-- <code title="post /proxies/{id}/check">client.proxies.<a href="./src/kernel/resources/proxies.py">check</a>(id, \*\*<a href="src/kernel/types/proxy_check_params.py">params</a>) -> <a href="./src/kernel/types/proxy_check_response.py">ProxyCheckResponse</a></code>
+- <code title="delete /proxies/{id_or_name}">client.proxies.<a href="./src/kernel/resources/proxies.py">delete</a>(id_or_name) -> None</code>
+- <code title="post /proxies/{id_or_name}/check">client.proxies.<a href="./src/kernel/resources/proxies.py">check</a>(id_or_name, \*\*<a href="src/kernel/types/proxy_check_params.py">params</a>) -> <a href="./src/kernel/types/proxy_check_response.py">ProxyCheckResponse</a></code>
 
 # Extensions
 
@@ -532,7 +552,7 @@ Methods:
 Types:
 
 ```python
-from kernel.types import Vault
+from kernel.types import Vault, VaultEncryptionKey
 ```
 
 Methods:
@@ -540,6 +560,7 @@ Methods:
 - <code title="get /vaults/{id_or_name}">client.vaults.<a href="./src/kernel/resources/vaults/vaults.py">retrieve</a>(id_or_name) -> <a href="./src/kernel/types/vault.py">Vault</a></code>
 - <code title="get /vaults">client.vaults.<a href="./src/kernel/resources/vaults/vaults.py">list</a>(\*\*<a href="src/kernel/types/vault_list_params.py">params</a>) -> <a href="./src/kernel/types/vault.py">SyncOffsetPagination[Vault]</a></code>
 - <code title="delete /vaults/{id_or_name}">client.vaults.<a href="./src/kernel/resources/vaults/vaults.py">delete</a>(id_or_name) -> None</code>
+- <code title="get /vaults/{id_or_name}/encryption_key">client.vaults.<a href="./src/kernel/resources/vaults/vaults.py">retrieve_encryption_key</a>(id_or_name) -> <a href="./src/kernel/types/vault_encryption_key.py">VaultEncryptionKey</a></code>
 - <code title="post /vaults">client.vaults.<a href="./src/kernel/resources/vaults/vaults.py">upsert</a>(\*\*<a href="src/kernel/types/vault_upsert_params.py">params</a>) -> <a href="./src/kernel/types/vault.py">Vault</a></code>
 
 ## Items
@@ -555,10 +576,12 @@ from kernel.types.vaults import (
     CardVaultItemSpec,
     CardVaultItemState,
     CollectVaultItemOperationRequest,
+    ConfirmTransactionVaultItemOperationRequest,
     CredentialAccountVaultItem,
     CredentialAccountVaultItemRequest,
     CredentialCollectionAction,
     CredentialVaultFieldDefinition,
+    CredentialVaultFieldDefinitionInput,
     CredentialVaultFieldInput,
     CredentialVaultFieldState,
     CredentialVaultFieldType,
@@ -579,6 +602,8 @@ from kernel.types.vaults import (
     KernelCredentialVaultItemState,
     KernelWalletState,
     KernelWalletVaultItemSpec,
+    LinkShippingAddress,
+    LinkUserInfo,
     ManagedAuthCredentialVaultField,
     ManagedAuthCredentialVaultItemSpec,
     ManagedAuthCredentialVaultItemSpecInput,
@@ -594,6 +619,7 @@ from kernel.types.vaults import (
     OnePasswordRecoverVaultItemOperationRequest,
     OnePasswordRequestAccessVaultItemOperationRequest,
     PrepareCheckoutVaultItemOperationRequest,
+    RestartVerificationVaultItemOperationRequest,
     VaultCardAliases,
     VaultCardFillField,
     VaultCheckoutContext,
