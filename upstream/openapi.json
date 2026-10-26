@@ -152,6 +152,14 @@
             {
               "description": "List funding methods available to this wallet.",
               "type": "payment_methods"
+            },
+            {
+              "description": "Read Link's user info for this wallet.",
+              "type": "link_user_info"
+            },
+            {
+              "description": "List the shipping addresses saved to this Link account.",
+              "type": "link_shipping_addresses"
             }
           ],
           "available_operations": [],
@@ -179,7 +187,7 @@
         }
       },
       "ExampleLinkApproval": {
-        "summary": "Link authorization creates or resumes a spend awaiting cardholder approval",
+        "summary": "Link authorization binds the checkout and creates a spend awaiting cardholder approval",
         "value": {
           "action": {
             "name": "spend_approval",
@@ -188,7 +196,7 @@
           "available_expansions": [],
           "available_operations": [
             {
-              "description": "Resume this existing spend request without creating another payment.",
+              "description": "Re-check this existing spend request without creating another payment.",
               "type": "authorize"
             }
           ],
@@ -208,7 +216,7 @@
           },
           "state": {
             "domains": [
-              "store.example.com"
+              "example.com"
             ],
             "provider": "link",
             "status": "pending_authorization"
@@ -223,7 +231,7 @@
           "available_expansions": [],
           "available_operations": [
             {
-              "description": "Request cardholder approval for this payment.",
+              "description": "Request cardholder approval for this payment at the final checkout page.",
               "type": "authorize"
             }
           ],
@@ -333,6 +341,109 @@
           "provider": "link",
           "publishable_key": "pk_live_example",
           "updated_at": "2026-01-02T12:00:00Z"
+        }
+      },
+      "ExampleLinkWalletUserInfoAndShippingAddresses": {
+        "summary": "Connected Link wallet read with expand=link_user_info,link_shipping_addresses",
+        "value": {
+          "available_expansions": [
+            {
+              "description": "List funding methods available to this wallet.",
+              "type": "payment_methods"
+            },
+            {
+              "description": "Read Link's user info for this wallet.",
+              "type": "link_user_info"
+            },
+            {
+              "description": "List the shipping addresses saved to this Link account.",
+              "type": "link_shipping_addresses"
+            }
+          ],
+          "available_operations": [],
+          "created_at": "2026-01-01T12:00:00Z",
+          "expanded": {
+            "link_shipping_addresses": [
+              {
+                "address": {
+                  "administrative_area": "CA",
+                  "country_code": "US",
+                  "dependent_locality": null,
+                  "line_1": "510 Townsend St",
+                  "line_2": null,
+                  "locality": "San Francisco",
+                  "name": "Jane Doe",
+                  "postal_code": "94103",
+                  "sorting_code": null
+                },
+                "id": "sa_example",
+                "is_default": true,
+                "nickname": "Home"
+              },
+              {
+                "id": "sa_example_2",
+                "is_default": false,
+                "nickname": null
+              }
+            ],
+            "link_user_info": {
+              "address": {
+                "city": "San Francisco",
+                "country": "US",
+                "line1": "510 Townsend St",
+                "line2": null,
+                "postal_code": "94103",
+                "state": "CA"
+              },
+              "agent_wallet_spend_limits": {
+                "daily": {
+                  "limit": 500000,
+                  "remaining": 380000,
+                  "used": 120000
+                },
+                "per_transaction": {
+                  "limit": 50000
+                },
+                "thirty_day": {
+                  "limit": null,
+                  "remaining": null,
+                  "used": 600000
+                }
+              },
+              "agent_wallet_step_up": {
+                "action_url": null,
+                "status": "not_required"
+              },
+              "default_spend_request_currency": "usd",
+              "eligible_for_balance": true,
+              "email": "jane@example.com",
+              "first_name": "Jane",
+              "id": "usr_example",
+              "last_name": "Doe",
+              "name": "Jane Doe",
+              "phone": null
+            }
+          },
+          "id": "wallet_imported_example",
+          "key": "imported-wallet",
+          "spec": {
+            "authorization": {
+              "client": {
+                "provider_config": {
+                  "id": "vpc_link_example"
+                },
+                "type": "customer_managed"
+              },
+              "method": "oauth"
+            },
+            "provider": "link"
+          },
+          "state": {
+            "provider": "link",
+            "status": "connected"
+          },
+          "type": "wallet",
+          "updated_at": "2026-01-01T12:00:00Z"
         }
       },
       "ExampleManagedAgentCardWallet": {
@@ -950,7 +1061,7 @@
       },
       "AgentCardWalletVaultItemSpec": {
         "additionalProperties": false,
-        "description": "AgentCard wallet. Omit provider_config to use Kernel-managed credentials, or select a customer-owned configuration. Mode (sandbox vs live) is determined by the selected credential; there is no per-item test flag. Without user_id, creation returns a hosted enrollment action and Kernel polls until the user connects. user_id may only reference a user already enrolled by a wallet in this organization under the same configuration.",
+        "description": "AgentCard wallet. Omit provider_config to use Kernel-managed credentials, or select a customer-owned configuration. Mode (sandbox vs live) is determined by the selected credential; there is no per-item test flag. Without user_id, creation returns a hosted enrollment action and Kernel polls until the user connects. With a customer-owned provider_config, user_id imports an existing connection after verifying access with the selected credentials in their sandbox or live mode; no hosted enrollment is needed, even if the connected user has no stored cards. With Kernel-managed credentials, user_id may only reference a user already enrolled by a wallet in this organization under the same configuration. The user and configuration bindings cannot be changed after creation. Import validation is read-only and runs before creation: a failed validation leaves no wallet or reserved key, so the user_id can be corrected and retried. Concurrent imports of the same key may both validate, but create at most one wallet and connected event.",
         "properties": {
           "provider": {
             "enum": [
@@ -1009,6 +1120,11 @@
             "example": "production",
             "type": "string"
           },
+          "policy": {
+            "$ref": "#/components/schemas/ApiKeyPolicy",
+            "description": "Permissions granted to a scoped API key. Absent for an ordinary key, which keeps unrestricted access within its organization or project.",
+            "nullable": true
+          },
           "project_id": {
             "description": "Project identifier for project-scoped API keys. Null means org-wide.",
             "example": "proj_abc123",
@@ -1059,6 +1175,42 @@
           "id",
           "email",
           "name"
+        ],
+        "type": "object"
+      },
+      "ApiKeyPolicy": {
+        "properties": {
+          "statements": {
+            "description": "Allow statements. Every action and resource not listed is denied.",
+            "items": {
+              "$ref": "#/components/schemas/ApiKeyPolicyStatement"
+            },
+            "maxItems": 256,
+            "minItems": 1,
+            "type": "array"
+          }
+        },
+        "required": [
+          "statements"
+        ],
+        "type": "object"
+      },
+      "ApiKeyPolicyStatement": {
+        "properties": {
+          "action": {
+            "description": "Permitted action, such as browsers:use or vaults:read.",
+            "example": "browsers:use",
+            "type": "string"
+          },
+          "resource": {
+            "description": "Resource the action applies to, in the format projects/{project_id}/{kind}/{id}. Wildcards are supported.",
+            "example": "projects/proj_abc123/browsers/br_abc123",
+            "type": "string"
+          }
+        },
+        "required": [
+          "action",
+          "resource"
         ],
         "type": "object"
       },
@@ -1199,6 +1351,39 @@
           "version",
           "region",
           "actions"
+        ],
+        "type": "object"
+      },
+      "ArmPasskeyVaultItemOperationRequest": {
+        "additionalProperties": false,
+        "description": "Let a browser attached to the item's vault sign in with a stored passkey.\nOnly invoke when the item advertises `arm_passkey`. Returns immediately;\nthere is no time limit. While armed, when a page in that browser whose\norigin matches the passkey's relying party asks for a passkey\n(`navigator.credentials.get`, including autofill requests made at page\nload), Kernel answers with this passkey. The private key never enters the\nbrowser: Kernel signs on its servers, using the origin Chrome reports for\nthe requesting frame. Arming a passkey for a relying party replaces any\npasskey armed earlier in the browser for the same relying party. The arm\nlasts until `disarm_passkey`, the browser ends, the vault is detached, or\nthe item or field is deleted. Drive the sign-in with your own browser\ntools and inspect the page to confirm it. A page opened in a new tab\nor window can run its first scripts before Kernel's handler attaches;\nif such a page asks for a passkey as soon as it loads, reload it. While\narmed, any script running on the relying party's pages can obtain a\nsign-in without user interaction, as with a password manager that\nfills automatically; disarm when the task is done. Passkeys report a\nsignature counter of 0 and backup flags, as synced passkeys do.\n",
+        "example": {
+          "browser_id": "browser-session-id",
+          "field": "passkey",
+          "type": "arm_passkey"
+        },
+        "properties": {
+          "browser_id": {
+            "description": "Browser session ID, not a reusable browser name.",
+            "minLength": 1,
+            "type": "string"
+          },
+          "field": {
+            "description": "Passkey field to arm. Required when more than one passkey field holds a passkey.",
+            "maxLength": 64,
+            "minLength": 1,
+            "type": "string"
+          },
+          "type": {
+            "enum": [
+              "arm_passkey"
+            ],
+            "type": "string"
+          }
+        },
+        "required": [
+          "type",
+          "browser_id"
         ],
         "type": "object"
       },
@@ -1564,8 +1749,19 @@
       },
       "AuthorizeVaultItemOperationRequest": {
         "additionalProperties": false,
-        "description": "Authorize a Link or Kernel card using its existing purchase specification. Use only after explicit user approval and when the item advertises authorize. Do not automatically retry provider failures or indeterminate outcomes. Checkout context is not accepted.",
+        "description": "Authorize a Link or Kernel card using its existing purchase specification. Use only after explicit user approval and when the item advertises authorize; follow the advertised operation's description. For a Link card, pass browser_id and page_url together while the browser is on the final checkout page: Kernel inspects that checkout, chooses how the credential is delivered, and limits fill to that checkout's origin in any browser with this vault attached. Omitting both issues a virtual card that fills any page on the merchant origin. Once approval has been requested, browser_id and page_url are ignored and authorize only re-checks the request. Browser and checkout inspection errors occur before any provider request and can be retried once the browser is on the checkout page. Kernel cards do not accept browser_id or page_url.",
         "properties": {
+          "browser_id": {
+            "description": "Browser session ID, not a reusable browser name. The browser must have this vault attached.",
+            "minLength": 1,
+            "type": "string"
+          },
+          "page_url": {
+            "description": "Exact current top-level URL of the final checkout page open in browser_id.",
+            "format": "uri",
+            "pattern": "^https://[^/?#@*\\s]+(?:[/?#][^\\s]*)?$",
+            "type": "string"
+          },
           "type": {
             "enum": [
               "authorize"
@@ -1679,6 +1875,10 @@
             "example": false,
             "type": "boolean"
           },
+          "location": {
+            "$ref": "#/components/schemas/BrowserLocation",
+            "description": "Effective browser timezone and locale with per-field provenance."
+          },
           "memory": {
             "$ref": "#/components/schemas/BrowserMemory",
             "description": "Memory allocated to the browser session."
@@ -1757,6 +1957,10 @@
             },
             "type": "array"
           },
+          "video_memory": {
+            "$ref": "#/components/schemas/BrowserVideoMemory",
+            "description": "Video memory (VRAM) of the GPU browser session. Only present when gpu is true."
+          },
           "viewport": {
             "$ref": "#/components/schemas/BrowserViewport"
           },
@@ -1776,6 +1980,26 @@
           "headless",
           "memory",
           "timeout_seconds"
+        ],
+        "type": "object"
+      },
+      "BrowserAllowlistState": {
+        "properties": {
+          "base_revision": {
+            "description": "Revision against which that mutation was accepted; reuse it when retrying the mutation.",
+            "type": "string"
+          },
+          "mutation_id": {
+            "description": "ID of the last conditional allowlist update saved on this browser.",
+            "type": "string"
+          },
+          "revision": {
+            "description": "Opaque revision to pass as network.expected_allowlist_revision on an update.",
+            "type": "string"
+          }
+        },
+        "required": [
+          "revision"
         ],
         "type": "object"
       },
@@ -1901,7 +2125,7 @@
         "type": "string"
       },
       "BrowserCaptchaChallengeResultEvent": {
-        "description": "A visible captcha challenge reached a terminal outcome.",
+        "description": "A captcha challenge reached an observed or inferred terminal outcome.",
         "properties": {
           "category": {
             "const": "captcha",
@@ -1912,20 +2136,29 @@
           },
           "data": {
             "additionalProperties": false,
-            "description": "Per-challenge payload. This event is emitted once per challenge and determines its overall outcome; captcha_solve_started and captcha_solve_result describe individual tasks and may occur multiple times within the challenge.",
+            "description": "An observed challenge emits one outcome across any number of solver tasks. For eligible providers without a widget observer, each successful token task emits an inferred solved result instead; multiple such results may belong to one challenge. Failed tasks and image_challenge rounds produce no inferred result. Exactly one of challenge_id or task_id is present: challenge_id on an observed result, task_id on an inferred one. A challenge whose tasks all fail produces task events only, so consumers fall back to captcha_solve_result for it.",
             "properties": {
+              "captcha_provider": {
+                "$ref": "#/components/schemas/BrowserCaptchaProvider"
+              },
               "captcha_type": {
-                "$ref": "#/components/schemas/BrowserCaptchaType"
+                "$ref": "#/components/schemas/BrowserCaptchaType",
+                "deprecated": true,
+                "description": "Deprecated: use captcha_provider."
               },
               "challenge_id": {
                 "$ref": "#/components/schemas/BrowserCaptchaChallengeID"
               },
               "duration_ms": {
-                "description": "Wall-clock duration from the challenge appearing to its terminal outcome, covering every solver attempt in between.",
+                "description": "Wall-clock duration from the challenge appearing to its terminal outcome, covering every solver attempt in between. For an inferred result, the duration of its solver task.",
                 "type": "number"
               },
+              "inferred": {
+                "description": "True when the relay derived this result from a successful token task without observing the page. An inferred result has task_id instead of challenge_id. Absent on page-observed results.",
+                "type": "boolean"
+              },
               "status": {
-                "description": "Terminal outcome of the visible challenge. solved: the page observed the challenge clear after a solver attempt. failure: a terminal solver failure occurred, or all attempts ended while the challenge remained. timeout: the challenge-level wait budget expired while the challenge remained. abandoned: observation ended without an attributable terminal challenge outcome. This includes a dismissed widget or page unload without a solved signal or terminal solver outcome, and a token appearing while multiple same-provider challenges are open, because the producer cannot attribute that token to this visible challenge. A captcha_solve_result with the same challenge_id may therefore report success while the challenge result reports abandoned. A solved challenge does not prove the site accepted the token or that the guarded action succeeded.",
+                "description": "Terminal outcome of a challenge. solved: the page observed the challenge clear after a solver attempt, or an inferred result reports a token for the whole widget without page observation. failure: a terminal solver failure occurred, or all attempts ended while the challenge remained. timeout: the challenge-level wait budget expired while the challenge remained. abandoned: observation ended without an attributable terminal challenge outcome. This includes a dismissed widget or page unload without a solved signal or terminal solver outcome, and a token appearing while multiple same-provider challenges are open, because the producer cannot attribute that token to this visible challenge. A captcha_solve_result with the same challenge_id may therefore report success while the challenge result reports abandoned. A solved challenge does not prove the site accepted the token or that the guarded action succeeded.",
                 "enum": [
                   "solved",
                   "failure",
@@ -1940,6 +2173,10 @@
                   "ChallengeAbandoned"
                 ]
               },
+              "task_id": {
+                "description": "The task_id of the solver task an inferred result was derived from. Join on it to pair the result with that task's captcha_solve_started and captcha_solve_result. Present only when inferred is true.",
+                "type": "string"
+              },
               "website_host": {
                 "description": "Host of the page where the challenge appeared.",
                 "type": "string"
@@ -1952,7 +2189,6 @@
             "required": [
               "captcha_type",
               "status",
-              "challenge_id",
               "duration_ms"
             ],
             "type": "object"
@@ -1983,6 +2219,22 @@
         ],
         "type": "object"
       },
+      "BrowserCaptchaProvider": {
+        "description": "Captcha product the challenge belongs to, not the service that solved it. Enterprise reCAPTCHA variants are grouped into their version bucket (recaptcha_v2 or recaptcha_v3), FunCaptcha uses arkose, press-and-hold challenges served by HUMAN (formerly PerimeterX) use human, and unlisted products, including text captchas a site draws itself, use other.",
+        "enum": [
+          "hcaptcha",
+          "recaptcha_v2",
+          "recaptcha_v3",
+          "turnstile",
+          "geetest",
+          "arkose",
+          "human",
+          "binance",
+          "other"
+        ],
+        "type": "string",
+        "x-go-type": "string"
+      },
       "BrowserCaptchaSolveResultEvent": {
         "description": "A captcha solve attempt reached a terminal outcome.",
         "properties": {
@@ -1993,8 +2245,13 @@
           "data": {
             "additionalProperties": false,
             "properties": {
+              "captcha_provider": {
+                "$ref": "#/components/schemas/BrowserCaptchaProvider"
+              },
               "captcha_type": {
-                "$ref": "#/components/schemas/BrowserCaptchaType"
+                "$ref": "#/components/schemas/BrowserCaptchaType",
+                "deprecated": true,
+                "description": "Deprecated: use captcha_provider and task_kind."
               },
               "challenge_id": {
                 "$ref": "#/components/schemas/BrowserCaptchaChallengeID"
@@ -2005,6 +2262,14 @@
               },
               "error_code": {
                 "description": "Solver-specific error code on failure (e.g. ERROR_CAPTCHA_UNSOLVABLE). Absent on success.",
+                "type": "string"
+              },
+              "media": {
+                "description": "Captured hCaptcha recognition media, when known.",
+                "enum": [
+                  "image",
+                  "video"
+                ],
                 "type": "string"
               },
               "status": {
@@ -2021,6 +2286,10 @@
               "task_id": {
                 "description": "Opaque identifier shared with the matching captcha_solve_started.",
                 "type": "string"
+              },
+              "task_kind": {
+                "$ref": "#/components/schemas/BrowserCaptchaTaskKind",
+                "description": "What the solver task produces. Absent when the producer cannot tell."
               },
               "website_host": {
                 "description": "Host of the page where the captcha was solved.",
@@ -2077,15 +2346,32 @@
             "additionalProperties": false,
             "description": "Per-task payload. A visible challenge may create multiple tasks. When present, task_id correlates this event with a captcha_solve_result, while challenge_id groups tasks from the same challenge. Events may arrive out of order or be absent, so their arrival does not indicate current solve state.",
             "properties": {
+              "captcha_provider": {
+                "$ref": "#/components/schemas/BrowserCaptchaProvider"
+              },
               "captcha_type": {
-                "$ref": "#/components/schemas/BrowserCaptchaType"
+                "$ref": "#/components/schemas/BrowserCaptchaType",
+                "deprecated": true,
+                "description": "Deprecated: use captcha_provider and task_kind."
               },
               "challenge_id": {
                 "$ref": "#/components/schemas/BrowserCaptchaChallengeID"
               },
+              "media": {
+                "description": "Captured hCaptcha recognition media, when known.",
+                "enum": [
+                  "image",
+                  "video"
+                ],
+                "type": "string"
+              },
               "task_id": {
                 "description": "Opaque identifier shared with the matching captcha_solve_result.",
                 "type": "string"
+              },
+              "task_kind": {
+                "$ref": "#/components/schemas/BrowserCaptchaTaskKind",
+                "description": "What the solver task produces. Absent when the producer cannot tell."
               },
               "website_host": {
                 "description": "Host of the page where the captcha is being solved. May be empty for solver tasks that carry no page URL.",
@@ -2127,8 +2413,18 @@
         ],
         "type": "object"
       },
+      "BrowserCaptchaTaskKind": {
+        "description": "What a solver task produces. token: a single answer for the whole challenge, such as a widget's response token or a text captcha's text, so a successful task is the challenge's final answer. image_challenge: the answer to one image round (grid selection, point click, drag), after which the challenge may serve another round. press_and_hold: one press-and-hold attempt.",
+        "enum": [
+          "token",
+          "image_challenge",
+          "press_and_hold"
+        ],
+        "type": "string",
+        "x-go-type": "string"
+      },
       "BrowserCaptchaType": {
-        "description": "Captcha kind. Enterprise reCAPTCHA variants are grouped into their version bucket (recaptcha_v2 or recaptcha_v3), press-and-hold challenges use press_and_hold, and unlisted kinds use other.",
+        "description": "Captcha kind. Enterprise reCAPTCHA variants are grouped into their version bucket (recaptcha_v2 or recaptcha_v3), press-and-hold challenges use press_and_hold, and unlisted kinds use other. Its values are frozen: image rounds submitted as a plain ComplexImageTask report other, and press-and-hold reports press_and_hold. Use captcha_provider and task_kind instead.",
         "enum": [
           "hcaptcha",
           "recaptcha_v2",
@@ -5341,22 +5637,102 @@
         ],
         "type": "object"
       },
+      "BrowserLocation": {
+        "additionalProperties": false,
+        "properties": {
+          "locale": {
+            "description": "Effective canonical BCP 47 formatting locale selected for the browser session.",
+            "example": "en-US",
+            "type": "string"
+          },
+          "locale_source": {
+            "$ref": "#/components/schemas/BrowserLocationSource"
+          },
+          "timezone": {
+            "description": "Effective IANA timezone selected for the browser session.",
+            "example": "America/Los_Angeles",
+            "type": "string"
+          },
+          "timezone_source": {
+            "$ref": "#/components/schemas/BrowserLocationSource"
+          }
+        },
+        "required": [
+          "timezone",
+          "locale",
+          "timezone_source",
+          "locale_source"
+        ],
+        "type": "object"
+      },
+      "BrowserLocationRequest": {
+        "additionalProperties": false,
+        "properties": {
+          "locale": {
+            "description": "Session-only supported canonical BCP 47 locale override. Omit to use the default for the browser's region.",
+            "example": "en-US",
+            "type": "string"
+          },
+          "timezone": {
+            "description": "Session-only IANA timezone override. Omit to use the default for the browser's region.",
+            "example": "America/Los_Angeles",
+            "type": "string"
+          }
+        },
+        "type": "object"
+      },
+      "BrowserLocationSource": {
+        "description": "Where one effective browser location field came from. `override` is set explicitly on the session; `default` comes from the browser's region.",
+        "enum": [
+          "override",
+          "default"
+        ],
+        "type": "string",
+        "x-go-type": "string"
+      },
+      "BrowserLocationUpdateRequest": {
+        "additionalProperties": false,
+        "description": "Omit a field to leave it unchanged, set a string override, or set null to clear the override and use the default for the browser's region.",
+        "properties": {
+          "locale": {
+            "description": "Session-only supported canonical BCP 47 locale override. Null clears the override and uses the browser region's default.",
+            "example": "en-US",
+            "nullable": true,
+            "type": "string",
+            "x-go-type": "json.RawMessage",
+            "x-go-type-skip-optional-pointer": true
+          },
+          "timezone": {
+            "description": "Session-only IANA timezone override. Null clears the override and uses the browser region's default.",
+            "example": "America/Los_Angeles",
+            "nullable": true,
+            "type": "string",
+            "x-go-type": "json.RawMessage",
+            "x-go-type-skip-optional-pointer": true
+          }
+        },
+        "type": "object"
+      },
       "BrowserMemory": {
         "description": "Memory allocated to the browser session.",
         "enum": [
           "1GiB",
           "2GiB",
+          "4GiB",
           "6GiB",
           "8GiB",
+          "12GiB",
           "16GiB"
         ],
         "example": "8GiB",
         "type": "string"
       },
       "BrowserMemoryRequest": {
-        "default": "8GiB",
-        "description": "Memory requested for a headful, non-GPU browser session.",
+        "description": "Memory requested for a non-GPU browser. Headless browsers support 1GiB (default), 2GiB, or 4GiB; headful browsers support 8GiB (default) or 16GiB.",
         "enum": [
+          "1GiB",
+          "2GiB",
+          "4GiB",
           "8GiB",
           "16GiB"
         ],
@@ -5589,6 +5965,25 @@
       "BrowserNetworkConfig": {
         "description": "Network configuration for a browser session or browser pool.\n",
         "properties": {
+          "allowed_hosts": {
+            "description": "Egress allowlist for a browser session: the only destinations the browser may reach through Kernel-managed egress. Any other destination is refused with a 403 whose X-Kernel-Proxy-Error header is network_policy_denied, so pages cannot load or send data to unlisted hosts, including with fetch() and WebSockets. Omit the field for unfiltered egress; an empty list is invalid. The allowlist applies from the browser's first request, and start_url must be allowed by it. Entries are exact hostnames (\"example.com\"), one leading \"*.\" wildcard that matches subdomains at any depth but not the domain itself (\"*.example.com\" matches api.example.com, not example.com), public IPv4 addresses (\"8.8.8.8\"), bracketed public IPv6 addresses (\"[2001:4860:4860::8888]\"), or public CIDR ranges in canonical form (\"8.8.4.0/24\", \"2001:4860::/32\"). IP and CIDR entries only match destinations written as an IP address, never hostnames that resolve into the range. Entries cannot include ports, paths, or schemes, and match every port on their host. Wildcards over a public suffix (\"*.com\", \"*.github.io\") and private or reserved IP ranges are rejected, as are entries that overlap private_hosts. Enforced at Kernel's egress proxy only: destinations in private_hosts, and processes in the browser VM that do not use the browser's proxy, are not filtered, and Kernel's own control traffic is always allowed. Can be replaced or removed while the session runs with PATCH /browsers/{id_or_name}, but not added to a browser created without one. Supported on browser pools and their leased browsers. Per-lease changes are reset to the pool's allowlist on release. If a lessee removes the allowlist and the pool still requires one, the browser is replaced on release rather than given an allowlist again. Requires proxy v3.\n",
+            "example": [
+              "example.com",
+              "*.example.com"
+            ],
+            "items": {
+              "maxLength": 253,
+              "type": "string"
+            },
+            "maxItems": 100,
+            "minItems": 1,
+            "type": "array"
+          },
+          "allowlist_state": {
+            "$ref": "#/components/schemas/BrowserAllowlistState",
+            "description": "Concurrency metadata for a browser's saved allowlist configuration. Browser pools omit it. This remains present after removal so an uncertain removal can be retried. It does not prove proxy or VM application completed. Do not include it in creation or pool updates.\n",
+            "readOnly": true
+          },
           "private_hosts": {
             "description": "Destinations the browser reaches directly through the session's own network instead of through Kernel-managed egress \u2014 for private hosts reachable over a VPN or tunnel the session has joined (e.g. a Tailscale tailnet). By default, private IP ranges already route directly: RFC1918 (10.0.0.0/8, 172.16.0.0/12, 192.168.0.0/16), CGNAT/Tailscale (100.64.0.0/10), and IPv6 ULA (fc00::/7). An explicitly supplied list replaces those defaults with exactly the entries given, and an empty list ([]) disables them so all traffic uses Kernel-managed egress; omit private_hosts to keep the defaults. Entries are hostname patterns (\"*.example.ts.net\", \"preview.internal\") or IP/CIDR literals (\"100.64.0.0/10\", \"10.1.30.63\"). IP and CIDR entries only match URLs written with a literal IP address; they never match hostnames that resolve into the range, so private DNS names need a hostname entry even when they resolve inside the default ranges. CIDRs must be in canonical masked form (host bits zero), and only the private ranges listed above are accepted; public, loopback, link-local, and unspecified ranges are rejected. Exact IPv6 addresses must be bracketed (\"[fd00::1]\"); IPv6 CIDR ranges are unbracketed (\"fd00::/8\"). Wildcards are limited to one leading \"*.\" over a suffix with at least two labels that is not a public suffix (so \"*.co.uk\" or \"*.ts.net\" are rejected, while \"*.example.ts.net\" is accepted). Hostname and IP entries may carry a port; CIDR ranges may not. Hostname entries are not resolved during validation, so callers must ensure they identify private destinations. Not related to a proxy's bypass_hosts, which selects between upstream-proxy and Kernel-managed direct egress and cannot reach into a VPN.\n",
             "example": [
@@ -5603,7 +5998,7 @@
             "type": "array"
           },
           "proxy_routes": {
-            "description": "Per-destination proxy routes for a browser session. After setup, a destination hostname is matched against every route's hosts, regardless of port; route order does not matter. An exact hostname beats a wildcard, and a longer wildcard suffix beats a shorter one (for a.b.example.com: \"a.b.example.com\" > \"*.b.example.com\" > \"*.example.com\"). A host pattern may appear in only one route. \"*.example.com\" matches subdomains only, not example.com. A matched request selects the route's proxy instead of the session's top-level proxy (including mode: direct); the route proxy's own bypass_hosts still apply. If the route proxy becomes unavailable, matched requests fail closed without falling back. Requests that match no route use the session's default egress from the top-level proxy field (or the browser default when proxy is omitted: stealth proxy or direct egress). Routes take effect once the session is created; start_url and other traffic during browser setup use the top-level proxy. Setting routes requires proxy v3. Not supported on browser pools.\n",
+            "description": "Per-destination proxy routes for a browser session. A destination hostname is matched against every route's hosts, regardless of port; route order does not matter. An exact hostname beats a wildcard, and a longer wildcard suffix beats a shorter one (for a.b.example.com: \"a.b.example.com\" > \"*.b.example.com\" > \"*.example.com\"). A host pattern may appear in only one route. \"*.example.com\" matches subdomains only, not example.com. A matched request selects the route's proxy instead of the session's top-level proxy (including mode: direct); the route proxy's own bypass_hosts still apply. If the route proxy becomes unavailable, matched requests fail closed without falling back. Requests that match no route use the session's default egress from the top-level proxy field (or the browser default when proxy is omitted: stealth proxy or direct egress). Routes apply from the start of the session, including to start_url and other traffic during browser setup. Setting routes requires proxy v3. Browser pools also support these routes.\n",
             "items": {
               "$ref": "#/components/schemas/BrowserProxyRoute"
             },
@@ -5866,6 +6261,44 @@
           "source"
         ],
         "title": "network_response",
+        "type": "object"
+      },
+      "BrowserNetworkUpdate": {
+        "additionalProperties": false,
+        "description": "Network configuration changes for a running browser session. Other network settings can only be set at creation.",
+        "properties": {
+          "allowed_hosts": {
+            "description": "Replaces the session's egress allowlist, using the same entry rules as network.allowed_hosts on create. Only an allowlist the browser was created with can be changed: a browser created without one can't be given one, and an allowlist removed with null can't be added back. Omit to leave the allowlist unchanged, or set to null to remove it and return to unfiltered egress; an empty list is invalid. The new list applies without restarting the browser: new requests to destinations it no longer allows are refused within a few seconds, and open connections to them are closed within about 30 seconds, or up to 10 minutes during a Kernel deploy. Connections to destinations it still allows, such as WebSockets, stay open. A start_url in the same request must be allowed by the updated list, and is loaded only after the list takes effect. Requires a browser created with proxy v3. Supported on leased pooled browsers; the pool's allowlist is restored before reuse, or the browser is destroyed if it cannot be safely restored. If the request fails, retry it: the new list may already apply to some requests.\n",
+            "example": [
+              "example.com",
+              "*.example.com"
+            ],
+            "items": {
+              "maxLength": 253,
+              "type": "string"
+            },
+            "maxItems": 100,
+            "minItems": 1,
+            "nullable": true,
+            "type": "array",
+            "x-go-type": "AllowedHostsUpdate",
+            "x-go-type-skip-optional-pointer": true,
+            "x-omitzero": true
+          },
+          "expected_allowlist_revision": {
+            "description": "The network.allowlist_state.revision from the browser's last saved snapshot. Supply together with mutation_id to opt into conditional allowlist updates. The revision is checked atomically with the configuration write. A stale request returns 409 stale_network without changing the allowlist. A GET alone does not fence an earlier unfinished PATCH.\n",
+            "maxLength": 64,
+            "minLength": 64,
+            "type": "string"
+          },
+          "mutation_id": {
+            "description": "A unique ID for this allowlist update, supplied together with expected_allowlist_revision. Reuse both values and the identical allowed_hosts payload when retrying an uncertain update. If it is still the current mutation, the retry finishes proxy and VM application without creating another revision. A superseded mutation returns 409 stale_network. These fields guard only network.allowed_hosts, not other browser update fields.\n",
+            "maxLength": 64,
+            "minLength": 1,
+            "pattern": "^[A-Za-z0-9_-]+$",
+            "type": "string"
+          }
+        },
         "type": "object"
       },
       "BrowserPageCrashedEvent": {
@@ -6678,7 +7111,7 @@
           },
           "memory": {
             "$ref": "#/components/schemas/BrowserMemoryRequest",
-            "description": "Memory requested for headful browsers in this pool."
+            "description": "Memory for browsers in this pool. Headless: 1GiB (default), 2GiB, or 4GiB. Headful: 8GiB (default) or 16GiB."
           },
           "name": {
             "description": "Optional name for the browser pool. Must be unique within the project.",
@@ -6688,7 +7121,7 @@
           },
           "network": {
             "$ref": "#/components/schemas/BrowserNetworkConfig",
-            "description": "Network configuration applied to browsers in this pool.\n"
+            "description": "Network configuration applied to browsers in this pool. Egress allowlists and proxy routes require proxy-v3; the pool will not provision browsers through Envoy if proxy-v3 is unavailable.\n"
           },
           "profile": {
             "allOf": [
@@ -6844,9 +7277,13 @@
           },
           "discard_all_idle": {
             "default": false,
-            "description": "Whether to discard all idle browsers and rebuild them immediately with the new configuration. Defaults to false. Only browsers that are idle when the update runs are rebuilt. A browser that is in use during the update keeps its original configuration, and if it is later released with `reuse: true` it returns to the pool with that stale configuration until it is discarded (by this flag on a later update, or by flushing the pool).",
+            "description": "Whether to discard all idle browsers and rebuild them immediately with the new configuration. Defaults to false. Only browsers that are idle when the update runs are rebuilt. A browser that is in use during the update keeps its original configuration, except that its allowlist is reset to the current pool baseline on release or the browser is replaced. For other configuration fields, if it is later released with `reuse: true` it returns to the pool with that stale configuration until it is discarded (by this flag on a later update, or by flushing the pool).",
             "example": false,
             "type": "boolean"
+          },
+          "expected_network": {
+            "$ref": "#/components/schemas/BrowserNetworkConfig",
+            "description": "Optional optimistic concurrency precondition. Send the network configuration from the last pool response, or {} when it has no network configuration. The entire update is rejected with 409 stale_network if the saved network differs, checked atomically with the write. Omit for unconditional updates. Explicit empty lists differ from omitted lists; route targets must match the saved references (resolved IDs, not equivalent proxy names).\n"
           },
           "extensions": {
             "description": "If provided, replaces the extension list. Empty array clears all previously-selected\nextensions. Omit this field to leave extensions unchanged.\n",
@@ -6872,8 +7309,11 @@
             "type": "boolean"
           },
           "memory": {
-            "description": "Memory requested for newly-warmed headful browsers in this pool. Existing browsers retain their original allocation. Use discard_all_idle to replace idle browsers.\n",
+            "description": "Memory requested for newly-warmed browsers in this pool: 1GiB, 2GiB, or 4GiB for headless, 8GiB or 16GiB for headful. Existing browsers retain their original allocation. Use discard_all_idle to replace idle browsers.\n",
             "enum": [
+              "1GiB",
+              "2GiB",
+              "4GiB",
               "8GiB",
               "16GiB"
             ],
@@ -6888,7 +7328,7 @@
           },
           "network": {
             "$ref": "#/components/schemas/BrowserNetworkConfig",
-            "description": "If provided, replaces the pool's network configuration. Omit to leave the existing configuration unchanged; an empty object ({}) removes it, while network: {private_hosts: []} sets an explicit empty list. Only applied to browsers created in the pool after the update; browsers already in the pool keep their configuration until discarded (see discard_all_idle).\n"
+            "description": "If provided, replaces the pool's network configuration. Omit to leave the existing configuration unchanged; an empty object ({}) removes it, while network: {private_hosts: []} or network: {proxy_routes: []} sets an explicit empty list; allowed_hosts must be non-empty when supplied. Egress allowlists and proxy routes require proxy-v3; the pool will not provision browsers through Envoy if proxy-v3 is unavailable. Changing allowed_hosts automatically replaces idle browsers. Leased browsers retain their allowlist until release, when it is reset to the current pool baseline or the browser is replaced if it cannot safely receive that baseline. Stale browsers cannot be acquired. Other network fields only apply to browsers created after the update; existing browsers keep those fields until discarded (see discard_all_idle).\n"
           },
           "profile": {
             "allOf": [
@@ -7055,7 +7495,7 @@
         "type": "object"
       },
       "BrowserProxyErrorEvent": {
-        "description": "A branded proxy-layer failure observed by the browser. Emitted when the metro egress host-proxy serves a branded 5xx error page whose response carries the X-Kernel-Proxy-Error header. Low-volume and carries a typed code. Its value is per-session and per-URL attribution for sessions that already capture the network stream: proxy failures are only observable while the CDP network collector is running, so this is an opt-in refinement of the raw network events rather than a default-on alerting signal.\n",
+        "description": "A branded proxy-layer failure observed by the browser. Emitted when the metro egress host-proxy serves a branded error page whose response carries the X-Kernel-Proxy-Error header: a 502 for proxy-layer failures, or a 403 when the session's network policy blocks the destination. Low-volume and carries a typed code. Its value is per-session and per-URL attribution for sessions that already capture the network stream: proxy failures are only observable while the CDP network collector is running, so this is an opt-in refinement of the raw network events rather than a default-on alerting signal.\n",
         "properties": {
           "category": {
             "const": "network",
@@ -7069,10 +7509,11 @@
               {
                 "properties": {
                   "code": {
-                    "description": "Proxy-layer error code: the X-Kernel-Proxy-Error response header value from a branded 5xx error page served by the metro egress host-proxy. Values mirror what the proxy emits: destination_blocked, destination_route_unavailable, provider_blacklisted, provider_unreachable, provider_rejected, origin_tls_timeout, origin_response_incomplete, proxy_unavailable, restricted_route_unavailable, upstream_timeout, upstream_dns_failure, upstream_connect_failed. A header value the browser image does not recognize is reported as unknown, with the header value in raw_code.\n",
+                    "description": "Proxy-layer error code: the X-Kernel-Proxy-Error response header value from a branded error page served by the metro egress host-proxy. Values mirror what the proxy emits: destination_blocked, destination_route_unavailable, network_policy_denied, provider_blacklisted, provider_unreachable, provider_rejected, origin_tls_timeout, origin_response_incomplete, proxy_unavailable, restricted_route_unavailable, upstream_timeout, upstream_dns_failure, upstream_connect_failed. A header value the browser image does not recognize is reported as unknown, with the header value in raw_code.\n",
                     "enum": [
                       "destination_blocked",
                       "destination_route_unavailable",
+                      "network_policy_denied",
                       "provider_blacklisted",
                       "provider_unreachable",
                       "provider_rejected",
@@ -7089,6 +7530,7 @@
                     "x-enum-varnames": [
                       "BrowserProxyErrorEventDataCodeDestinationBlocked",
                       "BrowserProxyErrorEventDataCodeDestinationRouteUnavailable",
+                      "BrowserProxyErrorEventDataCodeNetworkPolicyDenied",
                       "BrowserProxyErrorEventDataCodeProviderBlacklisted",
                       "BrowserProxyErrorEventDataCodeProviderUnreachable",
                       "BrowserProxyErrorEventDataCodeProviderRejected",
@@ -7121,7 +7563,7 @@
                     "type": "string"
                   },
                   "status": {
-                    "description": "HTTP response status of the branded error page (502).",
+                    "description": "HTTP response status of the branded error page (502, or 403 for network_policy_denied).",
                     "type": "integer"
                   }
                 },
@@ -7443,9 +7885,13 @@
             "example": true,
             "type": "boolean"
           },
+          "location": {
+            "$ref": "#/components/schemas/BrowserLocationRequest",
+            "description": "Optional session-only timezone and locale overrides. Each omitted field uses the default for the browser's region. start_url opens once the location applies."
+          },
           "memory": {
             "$ref": "#/components/schemas/BrowserMemoryRequest",
-            "description": "Memory for a headful, non-GPU browser session. Defaults to 8GiB."
+            "description": "Memory for a non-GPU browser. Headless: 1GiB (default), 2GiB, or 4GiB. Headful: 8GiB (default) or 16GiB."
           },
           "name": {
             "description": "Optional human-readable name for the browser session, used to find it later in the dashboard. Must be unique among active sessions within the project. Can be changed later via PATCH /browsers/{id_or_name}.\n",
@@ -7457,7 +7903,7 @@
           },
           "network": {
             "$ref": "#/components/schemas/BrowserNetworkConfig",
-            "description": "Network configuration for the browser session. Cannot be changed after creation.\n"
+            "description": "Network configuration for the browser session. Only allowed_hosts can be changed after creation, with PATCH /browsers/{id_or_name}.\n"
           },
           "profile": {
             "$ref": "#/components/schemas/BrowserProfile"
@@ -7508,6 +7954,10 @@
             },
             "maxItems": 20,
             "type": "array"
+          },
+          "video_memory": {
+            "$ref": "#/components/schemas/BrowserVideoMemory",
+            "description": "Video memory (VRAM) for a GPU browser session. Requires gpu=true. Defaults to 2GiB, which comes with 4 vCPU and 6GiB memory. 4GiB comes with 8 vCPU and 12GiB memory.\n"
           },
           "viewport": {
             "$ref": "#/components/schemas/BrowserViewport"
@@ -8073,6 +8523,10 @@
             "type": "boolean",
             "x-deprecated-reason": "Use proxy.mode instead."
           },
+          "location": {
+            "$ref": "#/components/schemas/BrowserLocationUpdateRequest",
+            "description": "Session-only timezone and locale overrides. Omit the object or a field to leave it unchanged; set a string to override; set null to clear that field and use the browser region's default.\nA browser that cannot change location refuses the request before anything changes. The location applies after the request's other changes, and start_url opens once it has applied. If applying it fails, the other changes and the saved override remain and start_url does not open; retry the request to apply both.\n"
+          },
           "name": {
             "description": "Human-readable name for the browser session. Omit to leave unchanged, set to an empty string to clear the name. When set, must be unique among active sessions within the project.\n",
             "example": "checkout-flow-1",
@@ -8081,6 +8535,10 @@
             "nullable": true,
             "pattern": "^[a-zA-Z0-9._-]{1,255}$",
             "type": "string"
+          },
+          "network": {
+            "$ref": "#/components/schemas/BrowserNetworkUpdate",
+            "description": "Network configuration changes to apply to the running browser session."
           },
           "profile": {
             "$ref": "#/components/schemas/BrowserProfile",
@@ -8145,6 +8603,19 @@
           "BrowserUsageStatusReady"
         ]
       },
+      "BrowserVideoMemory": {
+        "description": "Video memory (VRAM) of a GPU browser session. 2GiB sessions have 4 vCPU and 6GiB memory. 4GiB sessions have 8 vCPU and 12GiB memory.\n",
+        "enum": [
+          "2GiB",
+          "4GiB"
+        ],
+        "example": "2GiB",
+        "type": "string",
+        "x-enum-varnames": [
+          "BrowserVideoMemoryN2GiB",
+          "BrowserVideoMemoryN4GiB"
+        ]
+      },
       "BrowserViewport": {
         "description": "Initial browser window size in pixels with optional refresh rate.\nIf omitted, image defaults apply (1920x1080@25).\nFor GPU images, the default is 1920x1080@60.\nArbitrary viewport dimensions and refresh rates are accepted.\nKnown-good presets include:\n2560x1440@10, 1920x1080@25, 1920x1200@25, 1440x900@25, 1280x800@60, 1024x768@60, 1200x800@60, 768x1024@60, 390x844@60.\nFor GPU images, recommended presets use one of these resolutions with refresh rates 60, 30, 25, or 10:\n800x600, 960x720, 1024x576, 1024x768, 1152x648, 1200x800, 1280x720, 1368x768, 1440x900, 1600x900, 1920x1080, 1920x1200, 390x844, 360x250, 768x1024, 800x1600.\nViewports outside this list may exhibit unstable live view or recording behavior.\nIf refresh_rate is not provided, it will be automatically determined based on the resolution\n(higher resolutions use lower refresh rates to keep bandwidth reasonable).\n",
         "properties": {
@@ -8155,7 +8626,7 @@
             "type": "integer"
           },
           "refresh_rate": {
-            "description": "Display refresh rate in Hz. Any positive integer is accepted; if omitted, automatically determined from width and height.",
+            "description": "Display refresh rate in Hz. Any positive integer is accepted; if omitted, GPU browsers default to 60 and other browsers derive it from width and height.",
             "example": 60,
             "minimum": 1,
             "type": "integer"
@@ -8194,6 +8665,10 @@
       "CardEnrollmentAction": {
         "additionalProperties": false,
         "properties": {
+          "capture_token": {
+            "description": "Secret bearer capability for embedded card capture with @onkernel/vault-react. Present only for Kernel wallets; never for AgentCard. Treat it like the enrollment URL and do not log or persist it in browser storage.",
+            "type": "string"
+          },
           "name": {
             "enum": [
               "card_enrollment"
@@ -8434,7 +8909,7 @@
       },
       "CollectVaultItemOperationRequest": {
         "additionalProperties": false,
-        "description": "Return the credential item with its collection action. Supported for ready\nand pending_collection credential items. Always render the same form from\nevery form-supported field; totp fields have no form input and are omitted.\nNo caller-selected field subsets or form overrides are accepted.\nReuse an active Kernel-hosted session or renew an expired session atomically.\nCustomer-hosted forms use their own backend and ordinary item GET/PATCH. Opening\nthe form does not clear values or change readiness or item version.\nTo observe edits on a ready item, record its version and poll GET without\nwait until the version changes, then reconcile the returned state. Version\nchanges may also come from PATCH; they do not identify a particular form\nsubmission. Customer-hosted apps use their own submission callback, including\nfor unchanged forms. The wait parameter waits for readiness, not edits.\n",
+        "description": "Return the credential item with its collection action. Supported for ready\nand pending_collection credential items. Always render the same form from\nevery form-supported field; totp and passkey fields have no form input and are omitted.\nNo caller-selected field subsets or form overrides are accepted.\nReuse an active Kernel-hosted session or renew an expired session atomically.\nCustomer-hosted forms use their own backend and ordinary item GET/PATCH. Opening\nthe form does not clear values or change readiness or item version.\nTo observe edits on a ready item, record its version and poll GET without\nwait until the version changes, then reconcile the returned state. Version\nchanges may also come from PATCH; they do not identify a particular form\nsubmission. Customer-hosted apps use their own submission callback, including\nfor unchanged forms. The wait parameter waits for readiness, not edits.\n",
         "properties": {
           "type": {
             "enum": [
@@ -9058,15 +9533,84 @@
         ],
         "type": "object"
       },
+      "ConfirmTransactionVaultItemOperationRequest": {
+        "additionalProperties": false,
+        "description": "Report a real merchant transaction outcome for an issued Kernel Visa credential. Never infer success from filling checkout or receiving a credential. Supply the observed status, transaction type, actual amount, currency and timestamp. Unknown outcomes require manual reconciliation, not retry. Each purchase accepts one report.",
+        "properties": {
+          "amount": {
+            "description": "Actual transaction amount in minor units, no greater than the approved limit.",
+            "format": "int64",
+            "maximum": 1000000,
+            "minimum": 0,
+            "type": "integer"
+          },
+          "currency": {
+            "description": "Must match the approved purchase currency.",
+            "pattern": "^[A-Z]{3}$",
+            "type": "string"
+          },
+          "occurred_at": {
+            "description": "Time the merchant outcome was observed.",
+            "format": "date-time",
+            "type": "string"
+          },
+          "status": {
+            "enum": [
+              "APPROVED",
+              "DECLINED",
+              "PENDING",
+              "ERROR",
+              "CANCELLED"
+            ],
+            "type": "string"
+          },
+          "transaction_type": {
+            "enum": [
+              "PURCHASE",
+              "AUTHORIZATION",
+              "CAPTURE",
+              "REFUND",
+              "REVERSAL",
+              "VERIFICATION",
+              "CHARGEBACK",
+              "FRAUD"
+            ],
+            "type": "string"
+          },
+          "type": {
+            "enum": [
+              "confirm_transaction"
+            ],
+            "type": "string",
+            "x-go-type": "VaultItemOperationType"
+          }
+        },
+        "required": [
+          "type",
+          "status",
+          "transaction_type",
+          "amount",
+          "currency",
+          "occurred_at"
+        ],
+        "type": "object"
+      },
       "CreateApiKeyRequest": {
         "properties": {
           "days_to_expire": {
-            "description": "Number of days until expiry, up to 3650. Use null for never.",
+            "description": "Number of days until expiry, up to 3650. Use null for never. Cannot be combined with expires_at.",
             "example": 30,
             "maximum": 3650,
             "minimum": 1,
             "nullable": true,
             "type": "integer"
+          },
+          "expires_at": {
+            "description": "Exact expiry time. Must be in the future and no later than the issuing credential's own expiry. Cannot be combined with days_to_expire.",
+            "example": "2025-01-15T09:00:00Z",
+            "format": "date-time",
+            "nullable": true,
+            "type": "string"
           },
           "name": {
             "description": "Label for the API key (1-255 characters). API keys are not addressable by name.",
@@ -9074,6 +9618,10 @@
             "maxLength": 255,
             "minLength": 1,
             "type": "string"
+          },
+          "policy": {
+            "$ref": "#/components/schemas/ApiKeyPolicy",
+            "description": "Issue a scoped key that may only perform the listed actions on the listed resources."
           },
           "project_id": {
             "description": "Unique project identifier",
@@ -9524,7 +10072,7 @@
       },
       "CredentialCollectionAction": {
         "additionalProperties": false,
-        "description": "One schema-derived form for the item, available in ready or pending_collection\nstate. Render every form-supported field as editable; omit totp fields and\npreserve their stored seeds. Prefill non-sensitive values,\nand allow existing sensitive values to be preserved or replaced without ever\nrevealing them. No field subsets or per-request form configuration exist.\nValidate required fields against the resulting values, including preserved\nsecrets. Submit changed values only, using the version used to render the form.\nScoped hosted submission rejects totp edits; seed writes require the ordinary\nauthenticated item API. Customer forms likewise omit totp from their payloads.\nSave edits atomically. A successful hosted submission increments the version,\nmarks ready, and consumes the session; an empty edit may complete collection\nwhile preserving values. A customer form uses PATCH for changed values and\ndoes not send an empty PATCH when nothing changed.\nKernel-hosted bearer sessions require no Kernel account and are bound to the\nitem version. Expired, superseded, consumed, or deleted-item sessions cannot\nsubmit. Authenticated item GET renews expired active sessions for ready or pending items; pending\nitems always receive an action. A ready item with no active session omits the\naction until collect is invoked. Concurrent renewals return the same link.\nRenewal changes neither values nor item version. An expired link cannot renew\nitself. The hosted form handles its collection protocol; callers only open\nthe returned URL and do not extract or submit its token through the public API.\nFor customer-hosted forms, use @onkernel/vault-react and an authenticated\ncustomer backend calling the ordinary item GET/PATCH API. Kernel does not\nstore customer collection URLs or authenticate the customer's end users.\nTreat URLs and submitted values as secrets and exclude them from logs,\ntraces, and errors.\n",
+        "description": "One schema-derived form for the item, available in ready or pending_collection\nstate. Render every form-supported field as editable; omit totp and passkey\nfields and preserve their stored values. Prefill non-sensitive values,\nand allow existing sensitive values to be preserved or replaced without ever\nrevealing them. No field subsets or per-request form configuration exist.\nValidate required fields against the resulting values, including preserved\nsecrets. Submit changed values only, using the version used to render the form.\nScoped hosted submission rejects totp and passkey edits; those writes require the ordinary\nauthenticated item API. Customer forms likewise omit them from their payloads.\nSave edits atomically. A successful hosted submission increments the version,\nmarks ready, and consumes the session; an empty edit may complete collection\nwhile preserving values. A customer form uses PATCH for changed values and\ndoes not send an empty PATCH when nothing changed.\nKernel-hosted bearer sessions require no Kernel account and are bound to the\nitem version. Expired, superseded, consumed, or deleted-item sessions cannot\nsubmit. Authenticated item GET renews expired active sessions for ready or pending items; pending\nitems always receive an action. A ready item with no active session omits the\naction until collect is invoked. Concurrent renewals return the same link.\nRenewal changes neither values nor item version. An expired link cannot renew\nitself. The hosted form handles its collection protocol; callers only open\nthe returned URL and do not extract or submit its token through the public API.\nFor customer-hosted forms, use @onkernel/vault-react and an authenticated\ncustomer backend calling the ordinary item GET/PATCH API. Kernel does not\nstore customer collection URLs or authenticate the customer's end users.\nTreat URLs and submitted values as secrets and exclude them from logs,\ntraces, and errors.\n",
         "properties": {
           "expires_at": {
             "description": "Expiry of the Kernel-hosted collection link (30 minutes after issuance).",
@@ -9727,6 +10275,12 @@
         },
         "type": "object"
       },
+      "CredentialVaultEncryptedValue": {
+        "description": "Alternative to value for custom credential collection web apps. Use this only if you run your own credential collection web app and want values encrypted in the browser, sent to your backend still encrypted, and forwarded to Kernel's API still encrypted. In every other case, including server-side code that already holds the plaintext, use value. The field's value encrypted client-side as a compact JWE with alg ECDH-ES and enc A256GCM to the key from GET /vaults/{id_or_name}/encryption_key, with that key's kid in the protected header. Compression is not supported. The decrypted value follows the same rules as value, including that an empty string clears the field on update. A kid that is not this vault's key returns 400 encryption_key_mismatch; fetch the key again and re-encrypt. Other malformed or undecryptable values return 400 invalid_request. The whole request body is limited to 128 KiB.",
+        "maxLength": 24576,
+        "minLength": 1,
+        "type": "string"
+      },
       "CredentialVaultFieldDefinition": {
         "additionalProperties": false,
         "properties": {
@@ -9762,8 +10316,9 @@
         ],
         "type": "object"
       },
-      "CredentialVaultFieldInput": {
+      "CredentialVaultFieldDefinitionInput": {
         "additionalProperties": false,
+        "description": "A field definition without a value. Field updates add fields with this shape and set their values in `fields`.",
         "properties": {
           "label": {
             "description": "Optional human-readable display label. It is returned as non-secret metadata and never affects value keys, updates, or browser fills. Use single-line, trimmed display text without control or formatting characters. The server enforces a 128-byte UTF-8 limit.",
@@ -9783,14 +10338,51 @@
           },
           "sensitive": {
             "default": true,
-            "description": "Set false explicitly for ordinary usernames, email addresses, and other non-secret identifiers. Reserve true for secrets such as passwords, API tokens, and TOTP seeds. Password and totp fields must be true. Omission defaults to true for safety; do not rely on that default for every field. False permits API reads and form prefilling.",
+            "description": "Set false explicitly for ordinary usernames, email addresses, and other non-secret identifiers. Reserve true for secrets such as passwords, API tokens, and TOTP seeds. Password, totp, and passkey fields must be true. Omission defaults to true for safety; do not rely on that default for every field. False permits API reads and form prefilling.",
+            "type": "boolean"
+          },
+          "type": {
+            "$ref": "#/components/schemas/CredentialVaultFieldType"
+          }
+        },
+        "required": [
+          "name",
+          "type"
+        ],
+        "type": "object"
+      },
+      "CredentialVaultFieldInput": {
+        "additionalProperties": false,
+        "properties": {
+          "encrypted_value": {
+            "$ref": "#/components/schemas/CredentialVaultEncryptedValue"
+          },
+          "label": {
+            "description": "Optional human-readable display label. It is returned as non-secret metadata and never affects value keys, updates, or browser fills. Use single-line, trimmed display text without control or formatting characters. The server enforces a 128-byte UTF-8 limit.",
+            "maxLength": 128,
+            "minLength": 1,
+            "pattern": "^\\S(?:.*\\S)?$",
+            "type": "string"
+          },
+          "name": {
+            "description": "Unique stable field name used to key values, updates, and browser fills.",
+            "pattern": "^[a-zA-Z][a-zA-Z0-9_]{0,63}$",
+            "type": "string"
+          },
+          "required": {
+            "default": true,
+            "type": "boolean"
+          },
+          "sensitive": {
+            "default": true,
+            "description": "Set false explicitly for ordinary usernames, email addresses, and other non-secret identifiers. Reserve true for secrets such as passwords, API tokens, and TOTP seeds. Password, totp, and passkey fields must be true. Omission defaults to true for safety; do not rely on that default for every field. False permits API reads and form prefilling.",
             "type": "boolean"
           },
           "type": {
             "$ref": "#/components/schemas/CredentialVaultFieldType"
           },
           "value": {
-            "description": "Optional initial value satisfying the declared type, at most 16 KiB in UTF-8 bytes. Omit to leave unset; null and empty strings are rejected on creation. Sensitive values are encrypted and never copied into the returned spec.",
+            "description": "Optional initial value satisfying the declared type, at most 16 KiB in UTF-8 bytes. Omit to leave unset; null and empty strings are rejected on creation. Sensitive values are encrypted and never copied into the returned spec. Use this unless your own credential collection web app encrypts values in the browser; mutually exclusive with encrypted_value.",
             "maxLength": 16384,
             "minLength": 1,
             "type": "string"
@@ -9820,20 +10412,27 @@
         "type": "object"
       },
       "CredentialVaultFieldType": {
-        "description": "Text, email, and password have form inputs; totp does not and is omitted from\nboth Kernel-hosted and customer React forms. Password and totp must be sensitive.\nA totp value is an RFC 4648 Base32 generator seed (case-insensitive, optional\ntrailing padding), not an otpauth URI or current code. Reject invalid or empty\ndecoded seeds. Browser fill generates an RFC 6238 code at execution time using\nHMAC-SHA1, 6 digits, and a 30-second period. Preserve leading zeros; never fill\nthe seed. Custom algorithms, digits, periods, and form enrollment are unsupported.\n",
+        "description": "Text, email, and password have form inputs; totp and passkey do not and are omitted from\nboth Kernel-hosted and customer React forms. Password, totp, and passkey must be sensitive.\nA totp value is an RFC 4648 Base32 generator seed (case-insensitive, optional\ntrailing padding), not an otpauth URI or current code. Reject invalid or empty\ndecoded seeds. Browser fill generates an RFC 6238 code at execution time using\nHMAC-SHA1, 6 digits, and a 30-second period. Preserve leading zeros; never fill\nthe seed. Custom algorithms, digits, periods, and form enrollment are unsupported.\nA passkey value is a JSON-encoded FIDO Credential Exchange Format passkey object\nwith unpadded base64url `credentialId`, `userHandle` (at most 64 bytes), and `key`\n(a PKCS#8 ECDSA P-256 private key), a lowercase `rpId` domain, and optional\n`username` and `userDisplayName`. Other CXF members are ignored. Passkeys are never\nfilled into pages; use arm_passkey to sign in with one and register_passkey to create one.\n",
         "enum": [
           "text",
           "email",
           "password",
-          "totp"
+          "totp",
+          "passkey"
         ],
         "type": "string"
       },
       "CredentialVaultFieldUpdate": {
         "additionalProperties": false,
+        "description": "Set exactly one of value or encrypted_value. Use value unless the update comes from your own credential collection web app that encrypts values in the browser; see encrypted_value.",
+        "maxProperties": 1,
+        "minProperties": 1,
         "properties": {
+          "encrypted_value": {
+            "$ref": "#/components/schemas/CredentialVaultEncryptedValue"
+          },
           "value": {
-            "description": "Replacement value (at most 16 KiB in UTF-8 bytes), or null or an empty string to immediately clear the stored value. Clearing a required form-supported field reopens collection; clearing an optional field does not prevent readiness. Values must satisfy the declared field type. For totp, value is the generator seed, never a current code. Clearing a required totp field returns 400 because it cannot be collected in a form.",
+            "description": "Replacement value (at most 16 KiB in UTF-8 bytes), or null or an empty string to immediately clear the stored value. Clearing a required form-supported field reopens collection; clearing an optional field does not prevent readiness. Values must satisfy the declared field type. For totp, value is the generator seed, never a current code. For passkey, value is the JSON-encoded CXF passkey object. Clearing a required totp or passkey field returns 400 because it cannot be collected in a form.",
             "maxLength": 16384,
             "type": [
               "string",
@@ -9841,9 +10440,6 @@
             ]
           }
         },
-        "required": [
-          "value"
-        ],
         "type": "object"
       },
       "CredentialVaultItem": {
@@ -9932,7 +10528,7 @@
       },
       "CredentialVaultItemRequest": {
         "additionalProperties": false,
-        "description": "Ask the end-user whether to link their site credential through 1Password.\nIf they choose 1Password, connect their account and request access to a login\nin their own non-shared vault; passkeys are not supported. If they decline\nor that path fails, collect a Kernel-hosted credential item instead. Never\nautomatically retry an uncertain 1Password request or fill.\nDo not use credential items for credit card data. Use wallet and card item types instead.\nKernel credentials declare fields and may enter pending_collection.\n1Password credentials either reference a connected credential_account or\nstore a supplied access token and integration key encrypted on the item.\nThey store no login values or selectors.\nManaged auth credentials reference a managed auth connection in the same\nproject that already has a saved credential, and read it at fill time;\nthey store no values.\nRepeating the original creation request returns the current item without\noverwriting later state. A different request at the same key returns 409.\n",
+        "description": "Ask the end-user whether to link their site credential through 1Password.\nIf they choose 1Password, connect their account and request access to a login\nin their own non-shared vault; passkeys are not supported. If they decline\nor that path fails, collect a Kernel-hosted credential item instead. Never\nautomatically retry an uncertain 1Password request. After an uncertain fill,\ninspect the page to see the result of the fill.\nDo not use credential items for credit card data. Use wallet and card item types instead.\nKernel credentials declare fields and may enter pending_collection.\n1Password credentials either reference a connected credential_account or\nstore a supplied access token and integration key encrypted on the item.\nThey store no login values or selectors.\nManaged auth credentials reference a managed auth connection in the same\nproject that already has a saved credential, and read it at fill time;\nthey store no values.\nRepeating the original creation request returns the current item without\noverwriting later state. A different request at the same key returns 409.\n",
         "properties": {
           "spec": {
             "$ref": "#/components/schemas/CredentialVaultItemSpecInput"
@@ -9996,6 +10592,15 @@
         "additionalProperties": false,
         "minProperties": 1,
         "properties": {
+          "add_fields": {
+            "description": "Field definitions to append, with the same defaults as creation. Set their values in `fields` in the same update. Names must be unique after removals; at most 32 fields may result. A required totp or passkey field needs a value in `fields`.",
+            "items": {
+              "$ref": "#/components/schemas/CredentialVaultFieldDefinitionInput"
+            },
+            "maxItems": 32,
+            "minItems": 1,
+            "type": "array"
+          },
           "description": {
             "description": "Recognizable site or service name used as the form title, without suffixes such as sign-in credentials. An empty string clears it. Display text only, not an enforced destination policy. The server also enforces a 16 KiB UTF-8 byte limit.",
             "maxLength": 16384,
@@ -10008,6 +10613,18 @@
             "maxProperties": 32,
             "minProperties": 1,
             "type": "object"
+          },
+          "remove_fields": {
+            "description": "Names of fields to delete with their values. Unknown names return 400. At least one field must remain.",
+            "items": {
+              "maxLength": 64,
+              "minLength": 1,
+              "type": "string"
+            },
+            "maxItems": 32,
+            "minItems": 1,
+            "type": "array",
+            "uniqueItems": true
           }
         },
         "type": "object"
@@ -10035,7 +10652,7 @@
       },
       "CredentialVaultItemUpdateRequest": {
         "additionalProperties": false,
-        "description": "Atomically update description and selected values. Omitted properties are\npreserved. Field names, types, required flags, and sensitivity cannot change.\nUnknown field names return 400; stale versions or mismatched item types\nreturn 409 without changing the item. A successful update increments version\nand invalidates outstanding Kernel-hosted collection sessions. If required\nvalues remain missing, return pending_collection and a fresh collection\naction. Otherwise return ready without an action; collect can open the form\nagain without clearing values. Customer URLs have no Kernel-managed expiry.\n1Password and managed auth credentials return 409.\n",
+        "description": "Atomically update description, field definitions, and selected values.\nOmitted properties are preserved. `remove_fields` deletes definitions and\ntheir values, then `add_fields` appends definitions, then `fields` sets\nvalues, including for added fields. An existing field's definition cannot\nbe edited in place; to change it, remove the field and add it again, in\nthe same update or a later one. The old value is deleted with it.\nUnknown field names return 400; stale versions or mismatched item types\nreturn 409 without changing the item. A successful update increments version\nand invalidates outstanding Kernel-hosted collection sessions. If required\nvalues remain missing, return pending_collection and a fresh collection\naction. Otherwise return ready without an action; collect can open the form\nagain without clearing values. Customer URLs have no Kernel-managed expiry.\n1Password and managed auth credentials return 409.\n",
         "properties": {
           "expected_item_id": {
             "description": "Optional immutable item ID precondition. Returns 409 if the key now identifies a different item. Accepted writes target this immutable ID, preventing replacement-key races. Supply this when submitting a form bound to a previously read item.",
@@ -10181,7 +10798,8 @@
         "type": "object"
       },
       "DatacenterProxyConfig": {
-        "description": "Configuration for a datacenter proxy.",
+        "deprecated": true,
+        "description": "Configuration for a deprecated datacenter proxy. Use an ISP proxy instead.",
         "properties": {
           "country": {
             "description": "ISO 3166 country code. Defaults to US if not provided.",
@@ -10190,7 +10808,8 @@
           }
         },
         "title": "Datacenter",
-        "type": "object"
+        "type": "object",
+        "x-deprecated-reason": "Use an ISP proxy instead."
       },
       "DeletePathRequest": {
         "additionalProperties": false,
@@ -10476,6 +11095,38 @@
         ],
         "type": "object"
       },
+      "DisarmPasskeyVaultItemOperationRequest": {
+        "additionalProperties": false,
+        "description": "Stop a browser from using this item's passkeys: removes its armed\npasskeys and its pending registration into this item. Pages that already\nloaded keep Kernel's WebAuthn handler but get the browser's own behavior.\n",
+        "example": {
+          "browser_id": "browser-session-id",
+          "type": "disarm_passkey"
+        },
+        "properties": {
+          "browser_id": {
+            "description": "Browser session ID, not a reusable browser name.",
+            "minLength": 1,
+            "type": "string"
+          },
+          "field": {
+            "description": "Limit disarming to one passkey field. Omit to disarm every passkey field of the item.",
+            "maxLength": 64,
+            "minLength": 1,
+            "type": "string"
+          },
+          "type": {
+            "enum": [
+              "disarm_passkey"
+            ],
+            "type": "string"
+          }
+        },
+        "required": [
+          "type",
+          "browser_id"
+        ],
+        "type": "object"
+      },
       "DiscoveredField": {
         "additionalProperties": false,
         "description": "A discovered form field",
@@ -10698,6 +11349,9 @@
             "description": "TypeScript/JavaScript code to execute. The code has access to 'page', 'context', and 'browser' variables.\nIt runs within a function, so you can use a return statement at the end to return a value.\nThis value is returned as the `result` property in the response.\nExample: \"await page.goto('https://example.com'); return await page.title();\"\n",
             "type": "string"
           },
+          "executor": {
+            "$ref": "#/components/schemas/PlaywrightExecutorName"
+          },
           "timeout_sec": {
             "default": 60,
             "description": "Maximum execution time in seconds. Default is 60.",
@@ -10733,6 +11387,9 @@
           "success": {
             "description": "Whether the code executed successfully",
             "type": "boolean"
+          },
+          "tab": {
+            "$ref": "#/components/schemas/PlaywrightTab"
           }
         },
         "required": [
@@ -10854,7 +11511,7 @@
       },
       "FillVaultItemOperationRequest": {
         "additionalProperties": false,
-        "description": "Fill selected fields from one ready credential or ready, unexpired Link or\nKernel card into a browser linked to its vault.\nOnly invoke when the item advertises `fill`. Browser and vault must belong\nto the same project. Kernel checks access and allowed destinations before\nfilling; providing a page URL does not authorize a destination.\n\nFind exactly one open page matching `page_url`. Credential items may omit\n`page_url` to require exactly one open page; cards require an HTTPS page URL.\nCredentials have no destination allowlist. TOTP fields generate a current\ncode immediately before writing; their seeds never enter the browser. For each selector, search\nthe main frame and all descendant frames for editable inputs or selects\nmatched directly or contained within matching elements. Each selector must\nresolve to one unique editable element across all frames; zero or multiple\ncandidates fail. Count each element once, even if multiple matching\ncontainers contain it. Validate all bindings before filling.\nSelect elements match an option by its value, not its label.\nIf the page navigates or a target disappears during filling, stop rather\nthan selecting a different page or element.\n\nFill in request order and stop on the first failure. This operation is\nnot atomic: previously filled fields are not rolled back. Never submit\nthe form or click buttons, though input/change events may trigger site\nbehavior. Link and Kernel cards use fill for browser checkout and do not expose\naliases or support egress substitution. Do not automatically retry a\nfailed or indeterminate operation.\n\nSecret values are never returned or included in operation logs, traces,\naudit events, or error details. This does not prevent an agent with\nunrestricted browser access from reading values from the page or other\nbrowser observation surfaces.\n",
+        "description": "Use a vault item in a browser session, for example to fill a login or\npayment form. Only invoke when the item advertises `fill`; the advertised\noperation describes the inputs that item needs. Requires `browser_id` and\nusually `page_url`; some items also require `fields`. Browser and vault must\nbelong to the same project. Kernel checks access and allowed destinations\nbefore filling; providing a page URL does not authorize a destination.\n\nFill never submits forms or clicks buttons, though input and change events\nmay trigger site behavior. It is not atomic: completed steps are not rolled\nback. Fill does not consume the item, so a failed or indeterminate fill is\nsafe to retry. A retry right after an indeterminate fill may wait up to 15\nseconds for the earlier attempt's browser lock to expire.\n\nSecret values are never returned or included in operation logs, traces,\naudit events, or error details. This does not prevent an agent with\nunrestricted browser access from reading values from the page or other\nbrowser observation surfaces.\n",
         "example": {
           "browser_id": "browser-session-id",
           "fields": [
@@ -10885,24 +11542,25 @@
             "type": "string"
           },
           "fields": {
-            "description": "Field bindings for this step. No two bindings may resolve to the same element.",
+            "description": "Field bindings, when the item's advertised fill operation requires them.\nEach selector is searched in the main frame and all descendant frames and\nmust resolve to exactly one editable input or select, matched directly or\nthrough a containing element; zero or multiple candidates fail, and no two\nbindings may resolve to the same element. Select elements match an option\nby value, not label. All bindings are validated before any write, then\nfilled in request order, stopping at the first failure. If the page\nnavigates or a target disappears, fill stops rather than choosing another\npage or element.\n",
             "items": {
               "$ref": "#/components/schemas/VaultFillField"
             },
             "maxItems": 32,
             "minItems": 1,
-            "type": "array"
+            "type": "array",
+            "x-go-type-skip-optional-pointer": true
           },
           "page_url": {
-            "description": "Exact current top-level page URL, including path, query, and fragment. Must match exactly one open page in the browser; zero or multiple matches fail. No prefix or glob matching. Required for cards, which must use HTTPS without embedded credentials. Optional for credentials, where omission requires exactly one open page.",
+            "description": "Exact current top-level page URL, including path, query, and fragment. Must match exactly one open page in the browser; zero or multiple matches fail. No prefix or glob matching. When an item allows omitting it, the browser must have exactly one open page.",
             "format": "uri",
             "pattern": "^\\S+$",
             "type": "string",
             "x-go-type-skip-optional-pointer": true
           },
           "timeout_ms": {
-            "default": 10000,
-            "description": "Total operation deadline in milliseconds, not a per-field timeout.",
+            "deprecated": true,
+            "description": "Ignored. Fill sets no operation deadline; typing pace adapts to the length of the values instead. Accepted for compatibility.",
             "maximum": 30000,
             "minimum": 1,
             "type": "integer"
@@ -10916,8 +11574,7 @@
         },
         "required": [
           "type",
-          "browser_id",
-          "fields"
+          "browser_id"
         ],
         "type": "object"
       },
@@ -10925,16 +11582,16 @@
         "additionalProperties": false,
         "properties": {
           "fields": {
-            "description": "Exactly one result per request binding, in request order. After the first failed or unknown field, all remaining fields are not_attempted.",
+            "description": "One result per request binding, in request order; empty when the fill used no bindings. After the first failed or unknown field, all remaining fields are not_attempted.",
             "items": {
               "$ref": "#/components/schemas/VaultFillFieldResult"
             },
             "maxItems": 32,
-            "minItems": 1,
+            "minItems": 0,
             "type": "array"
           },
           "status": {
-            "description": "Completed only when all fields were filled. Failed when execution stopped with known outcomes. Unknown when any field's outcome cannot be determined. None of these statuses confirms payment or merchant acceptance.",
+            "description": "Completed when the fill finished. Failed when execution stopped with known outcomes. Unknown when an outcome cannot be determined. Completed means values were supplied to the page, not that the site accepted or submitted them.",
             "enum": [
               "completed",
               "failed",
@@ -11207,7 +11864,7 @@
         "description": "Configuration for an ISP proxy.",
         "properties": {
           "country": {
-            "description": "ISO 3166 country code. Supported countries are US, GB, FR, DE, and SG. Defaults to US if not provided.",
+            "description": "ISO 3166 country code. Supported countries are US, GB, FR, DE, SG, and KR. Defaults to US if not provided.",
             "example": "US",
             "type": "string"
           }
@@ -11217,7 +11874,7 @@
       },
       "KernelCardState": {
         "additionalProperties": false,
-        "description": "A ready Kernel card retains its encrypted network token and one-time code for the fill operation until the item's expires_at. Fill and submit checkout before then. Visa cards can be enrolled, but Visa purchases are not yet supported and authorize returns 400; supported Mastercard purchases need no cardholder approval. masks.last4 is the enrolled card's last four digits; masks.token_last4 is the network token's last four digits shown to the merchant. Kernel cards do not expose aliases or support egress substitution. Kernel does not observe whether the merchant charged the card.",
+        "description": "A ready Kernel card supports authorize, fill, then submit checkout. Card details are delivered for a few minutes after fill; submit promptly. Repeated fill is safe and never submits checkout. Visa purchases require a spend_approval action before details are issued; Mastercard purchases need no hosted approval. masks.last4 is the enrolled card's last four digits; masks.token_last4, when present, is the token's last four digits shown to the merchant. Kernel does not observe whether the merchant charged the card.",
         "properties": {
           "domains": {
             "description": "Informational registrable domain. Fill is locked to merchant_url's exact origin.",
@@ -11236,7 +11893,7 @@
             "type": "string"
           },
           "status": {
-            "description": "recovery_required means issuing the one-time code has an unresolved outcome. Kernel never issues another code for the item automatically, and the item cannot be deleted or replaced until the original attempt is reconciled with support. When status_reason says the provider refused retrieval before acceptance, no code was issued and a later read retries.",
+            "description": "pending_authorization waits for cardholder approval on Visa purchases or fresh security-code collection on alias-mode purchases through the spend_approval action; an unused link expires after 30 minutes. Alias-mode cards become ready after collection and expire at the temporary security-code alias deadline, by default five minutes later. An expired alias purchase requires a new card. recovery_required means verification, approving the purchase or issuing the one-time code has an unresolved outcome. A server-classified initial attestation failure before intent dispatch may advertise restart_verification to prepare a fresh local verification link; this does not approve spending or replay any provider request. Unclassified legacy recovery and uncertain intent creation cannot restart. Kernel never approves again or issues another code for the item automatically. To continue, delete this card and create a new purchase; the cardholder approves the new purchase separately. Recovery while reporting a merchant transaction cannot be deleted and must be reconciled with support. When status_reason says the provider refused retrieval before acceptance, no code was issued and a later read retries. declined means the card network refused to issue a code.",
             "enum": [
               "requested",
               "pending_authorization",
@@ -11260,12 +11917,12 @@
       },
       "KernelCardVaultItemSpec": {
         "additionalProperties": false,
-        "description": "One live purchase with a Kernel-enrolled card. Authorization obtains an agentic network token number, expiry and one-time 3-digit code. They are stored encrypted for the fill operation, which types them only on merchant_url's origin; the merchant's own checkout submits the payment. The one-time code is valid until the item's expires_at; fill and submit checkout before then. Visa cards can be enrolled, but Visa purchases are not yet supported: authorize returns 400. Supported Mastercard purchases need no cardholder approval. Card updates are not supported; delete and create a new item instead.",
+        "description": "One live purchase with a Kernel-enrolled card. Authorization obtains an agentic network token number, expiry and one-time 3-digit code. They are stored encrypted for the fill operation, which types them only on merchant_url's origin; the merchant's own checkout submits the payment. The one-time code is valid until the item's expires_at; fill and submit checkout before then. Mastercard purchases need no cardholder approval. A Visa purchase returns a spend_approval action: the cardholder approves it with a Visa passkey, and Kernel registers a Visa intent for one transaction up to the amount before issuing the code. For supported cards whose network cannot be enrolled for agentic tokens, authorize returns pending_authorization with a spend_approval action to collect a fresh security code in a hosted field. Once collected, the card is ready and can be filled before its expires_at, by default five minutes after collection. An expired card requires a new purchase. Fill types those details on merchant_url's origin. The amount, merchant_url and merchant_country are recorded but do not restrict payment requests sent by the browser. Card updates are not supported; delete and create a new item instead.",
         "properties": {
           "amount": {
-            "description": "Integer amount in minor currency units (at most 50000), bound to the one-time code.",
+            "description": "Integer amount in minor currency units (at most 1000000), bound to the one-time code.",
             "format": "int64",
-            "maximum": 50000,
+            "maximum": 1000000,
             "minimum": 1,
             "type": "integer"
           },
@@ -11274,6 +11931,24 @@
             "maxLength": 3,
             "minLength": 3,
             "pattern": "^[A-Za-z]{3}$",
+            "type": "string"
+          },
+          "merchant_category": {
+            "description": "Actual merchant category when known. Omit rather than invent a category.",
+            "maxLength": 255,
+            "minLength": 1,
+            "type": "string"
+          },
+          "merchant_category_code": {
+            "description": "Actual merchant MCC when known. Omit rather than invent a code. 0000 is not accepted.",
+            "pattern": "^[0-9]{4}$",
+            "type": "string"
+          },
+          "merchant_country": {
+            "description": "The merchant's ISO 3166-1 alpha-2 country code. Required for Visa cards, whose one-time code is issued for the merchant's country.",
+            "maxLength": 2,
+            "minLength": 2,
+            "pattern": "^[A-Za-z]{2}$",
             "type": "string"
           },
           "merchant_name": {
@@ -11447,7 +12122,7 @@
             "type": "string"
           },
           "status": {
-            "description": "pending_authorization asks the cardholder to use the card_enrollment action. connected is ready for supported purchases. reconnect_required asks the cardholder to use a new card_enrollment action after an uncertain enrollment was safely removed. degraded means the enrollment outcome is unknown and the wallet must be deleted before adding another card.",
+            "description": "pending_authorization asks the cardholder to use the card_enrollment action. connected means the card is stored; it can pay once payment_methods reports capabilities.single_use_card.eligible. reconnect_required asks the cardholder to use a new card_enrollment action after an uncertain enrollment was safely removed. degraded means the enrollment outcome is unknown and the wallet must be deleted before adding another card.",
             "enum": [
               "pending_authorization",
               "connected",
@@ -11468,7 +12143,7 @@
       },
       "KernelWalletVaultItemSpec": {
         "additionalProperties": false,
-        "description": "One card Kernel enrolls for Visa or Mastercard agentic network tokens using Kernel-managed credentials. Creation returns a card_enrollment action: the cardholder enters the card and their email on a Kernel-hosted page, then Kernel enrolls the securely stored card. The card number never reaches Kernel. The connected wallet's payment_methods expansion lists the enrolled card. Visa cards can be enrolled, but Visa purchases are not yet supported: authorize returns 400.",
+        "description": "One card stored with Kernel-managed credentials. Creation returns a card_enrollment action: the cardholder enters the card and their email on a Kernel-hosted page, and the wallet connects once the card is stored. Kernel then enrolls it for an agentic network token when the issuer supports it. The card number never reaches Kernel. The connected wallet's payment_methods expansion lists the card; capabilities.single_use_card.eligible is false, with a network_token_* reason, until the card has a network token, and authorize returns 400 for such a card unless Kernel supports checkout delivery without a network token for that card. In that case, fill types the checkout details. Visa purchases require the cardholder to complete a spend_approval action before Kernel issues a one-time code; Mastercard purchases need no hosted approval.",
         "properties": {
           "provider": {
             "enum": [
@@ -11479,6 +12154,49 @@
         },
         "required": [
           "provider"
+        ],
+        "type": "object"
+      },
+      "LinkAgentWalletSpendLimits": {
+        "additionalProperties": false,
+        "description": "Link's agent wallet spend limits, per transaction and over rolling periods.",
+        "properties": {
+          "daily": {
+            "$ref": "#/components/schemas/LinkRollingSpendLimit"
+          },
+          "per_transaction": {
+            "$ref": "#/components/schemas/LinkSpendLimit"
+          },
+          "thirty_day": {
+            "$ref": "#/components/schemas/LinkRollingSpendLimit"
+          }
+        },
+        "required": [
+          "per_transaction",
+          "daily",
+          "thirty_day"
+        ],
+        "type": "object"
+      },
+      "LinkAgentWalletStepUp": {
+        "additionalProperties": false,
+        "description": "Verification Link requires from the user before the agent wallet can spend.",
+        "properties": {
+          "action_url": {
+            "description": "URL where the user completes verification; null when no action is available.",
+            "type": [
+              "string",
+              "null"
+            ]
+          },
+          "status": {
+            "description": "Link status such as not_required, ssn_verification, identity_verification, contact_support or complete.",
+            "type": "string"
+          }
+        },
+        "required": [
+          "status",
+          "action_url"
         ],
         "type": "object"
       },
@@ -11502,7 +12220,7 @@
             "type": "string"
           },
           "status": {
-            "description": "recovery_required means an original provider operation has an unresolved outcome. Do not retry, delete, or replace it. Known references may be observed safely, but unknown creation without an ID and uncertain card-material retrieval require manual reconciliation with the provider or support. There is no reset or caller-asserted reconciliation operation.",
+            "description": "recovery_required means an original provider operation has an unresolved outcome and the card cannot be used. Reads keep observing a known provider request and may clear the recovery. To continue, delete this card and create a new one; deleting cancels the original request when its ID is known and keeps the recovery evidence. The user may see an approval request for the original card and should approve only the new one.",
             "enum": [
               "requested",
               "pending_authorization",
@@ -11526,10 +12244,10 @@
       },
       "LinkCardVaultItemSpec": {
         "additionalProperties": false,
-        "description": "Live payment card. Test-mode card creation is not supported.",
+        "description": "Live Link card request. Test-mode card creation is not supported. The spec can be changed with PATCH until the card is authorized at a checkout. Authorize it with the browser at final checkout: Kernel inspects the checkout through WebMCP and internally chooses a merchant-bound Link Pay Token when supported or a virtual card otherwise. Callers never receive or choose how the credential is delivered.",
         "properties": {
           "amount": {
-            "description": "Integer amount in minor currency units. Link permits at most 50000 per spend request.",
+            "description": "Integer amount in minor currency units, at most 50000. With recurring, the spending limit per period, not a lifetime total.",
             "maximum": 50000,
             "minimum": 1,
             "type": "integer"
@@ -11543,10 +12261,6 @@
             "minLength": 3,
             "pattern": "^[A-Za-z]{3}$",
             "type": "string"
-          },
-          "expires_at": {
-            "format": "int64",
-            "type": "integer"
           },
           "line_items": {
             "items": {
@@ -11580,6 +12294,9 @@
             ],
             "type": "string"
           },
+          "recurring": {
+            "$ref": "#/components/schemas/LinkRecurring"
+          },
           "totals": {
             "items": {
               "$ref": "#/components/schemas/LinkTotal"
@@ -11587,7 +12304,7 @@
             "type": "array"
           },
           "wallet": {
-            "description": "Wallet item key used to mint this card.",
+            "description": "Connected Link wallet item key.",
             "type": "string"
           }
         },
@@ -11700,6 +12417,187 @@
           }
         ]
       },
+      "LinkRecurring": {
+        "additionalProperties": false,
+        "description": "Recurring terms for a subscription or other repeated purchase. The amount becomes the spending limit for each period of interval_count intervals, for example every 2 weeks. The merchant schedules charges. The card stays ready after each charge until it expires or is deleted; do not create a new card each period. Deleting the card, its wallet or its vault first cancels the credential with Link, so later charges decline; if Link cannot be reached, deletion returns 409 provider_revocation_pending and should be retried. Deletion does not cancel the subscription with the merchant. Recurring terms cannot be changed once the card is authorized.",
+        "properties": {
+          "interval": {
+            "enum": [
+              "day",
+              "week",
+              "month",
+              "year"
+            ],
+            "type": "string",
+            "x-enum-varnames": [
+              "LinkRecurringIntervalDay",
+              "LinkRecurringIntervalWeek",
+              "LinkRecurringIntervalMonth",
+              "LinkRecurringIntervalYear"
+            ]
+          },
+          "interval_count": {
+            "description": "Number of intervals per period. Link defaults it to 1.",
+            "minimum": 1,
+            "type": "integer"
+          }
+        },
+        "required": [
+          "interval"
+        ],
+        "type": "object"
+      },
+      "LinkRollingSpendLimit": {
+        "additionalProperties": false,
+        "properties": {
+          "limit": {
+            "description": "Null means unlimited.",
+            "format": "int64",
+            "type": [
+              "integer",
+              "null"
+            ]
+          },
+          "remaining": {
+            "description": "Amount still available in the rolling period; null means unlimited.",
+            "format": "int64",
+            "type": [
+              "integer",
+              "null"
+            ]
+          },
+          "used": {
+            "description": "Amount already spent in the rolling period.",
+            "format": "int64",
+            "type": "integer"
+          }
+        },
+        "required": [
+          "limit",
+          "used",
+          "remaining"
+        ],
+        "type": "object"
+      },
+      "LinkShippingAddress": {
+        "additionalProperties": false,
+        "description": "One entry of Link's `GET /shipping_addresses` response, passed through as Link reports it. Kernel never stores it.",
+        "properties": {
+          "address": {
+            "$ref": "#/components/schemas/LinkShippingAddressDetails"
+          },
+          "id": {
+            "description": "Link shipping address ID.",
+            "type": "string"
+          },
+          "is_default": {
+            "type": "boolean"
+          },
+          "nickname": {
+            "type": [
+              "string",
+              "null"
+            ]
+          }
+        },
+        "required": [
+          "id",
+          "is_default",
+          "nickname"
+        ],
+        "type": "object"
+      },
+      "LinkShippingAddressDetails": {
+        "additionalProperties": false,
+        "description": "Link's nullable postal address fields. Omitted from the shipping address when Link reports null.",
+        "properties": {
+          "administrative_area": {
+            "description": "State, province or region.",
+            "type": [
+              "string",
+              "null"
+            ]
+          },
+          "country_code": {
+            "type": [
+              "string",
+              "null"
+            ]
+          },
+          "dependent_locality": {
+            "type": [
+              "string",
+              "null"
+            ]
+          },
+          "line_1": {
+            "type": [
+              "string",
+              "null"
+            ]
+          },
+          "line_2": {
+            "type": [
+              "string",
+              "null"
+            ]
+          },
+          "locality": {
+            "description": "City or town.",
+            "type": [
+              "string",
+              "null"
+            ]
+          },
+          "name": {
+            "type": [
+              "string",
+              "null"
+            ]
+          },
+          "postal_code": {
+            "type": [
+              "string",
+              "null"
+            ]
+          },
+          "sorting_code": {
+            "type": [
+              "string",
+              "null"
+            ]
+          }
+        },
+        "required": [
+          "name",
+          "line_1",
+          "line_2",
+          "locality",
+          "dependent_locality",
+          "administrative_area",
+          "postal_code",
+          "sorting_code",
+          "country_code"
+        ],
+        "type": "object"
+      },
+      "LinkSpendLimit": {
+        "additionalProperties": false,
+        "properties": {
+          "limit": {
+            "description": "Null means unlimited.",
+            "format": "int64",
+            "type": [
+              "integer",
+              "null"
+            ]
+          }
+        },
+        "required": [
+          "limit"
+        ],
+        "type": "object"
+      },
       "LinkTotal": {
         "additionalProperties": false,
         "properties": {
@@ -11718,6 +12616,126 @@
           "type",
           "display_text",
           "amount"
+        ],
+        "type": "object"
+      },
+      "LinkUserInfo": {
+        "additionalProperties": false,
+        "description": "Link's `GET /userinfo` response for the connected wallet, passed through as Link reports it when the `link_user_info` expansion is requested. Kernel never stores it. Null fields are null at Link; omitted fields were not reported. Amounts are in the minor unit of `default_spend_request_currency`.",
+        "properties": {
+          "address": {
+            "$ref": "#/components/schemas/LinkUserInfoAddress"
+          },
+          "agent_wallet_spend_limits": {
+            "$ref": "#/components/schemas/LinkAgentWalletSpendLimits"
+          },
+          "agent_wallet_step_up": {
+            "$ref": "#/components/schemas/LinkAgentWalletStepUp"
+          },
+          "default_spend_request_currency": {
+            "description": "Lowercase ISO currency Link applies to a spend request created without one.",
+            "type": "string"
+          },
+          "eligible_for_balance": {
+            "description": "Whether the user can fund purchases from a Link balance.",
+            "type": "boolean"
+          },
+          "email": {
+            "type": [
+              "string",
+              "null"
+            ]
+          },
+          "first_name": {
+            "type": [
+              "string",
+              "null"
+            ]
+          },
+          "id": {
+            "description": "Stable Link user ID.",
+            "type": [
+              "string",
+              "null"
+            ]
+          },
+          "last_name": {
+            "type": [
+              "string",
+              "null"
+            ]
+          },
+          "name": {
+            "type": [
+              "string",
+              "null"
+            ]
+          },
+          "phone": {
+            "type": [
+              "string",
+              "null"
+            ]
+          }
+        },
+        "required": [
+          "id",
+          "email",
+          "name",
+          "first_name",
+          "last_name",
+          "phone"
+        ],
+        "type": "object"
+      },
+      "LinkUserInfoAddress": {
+        "additionalProperties": false,
+        "description": "The Link user's postal address. Omitted when Link reports none.",
+        "properties": {
+          "city": {
+            "type": [
+              "string",
+              "null"
+            ]
+          },
+          "country": {
+            "type": [
+              "string",
+              "null"
+            ]
+          },
+          "line1": {
+            "type": [
+              "string",
+              "null"
+            ]
+          },
+          "line2": {
+            "type": [
+              "string",
+              "null"
+            ]
+          },
+          "postal_code": {
+            "type": [
+              "string",
+              "null"
+            ]
+          },
+          "state": {
+            "type": [
+              "string",
+              "null"
+            ]
+          }
+        },
+        "required": [
+          "line1",
+          "line2",
+          "city",
+          "state",
+          "postal_code",
+          "country"
         ],
         "type": "object"
       },
@@ -13740,7 +14758,7 @@
         "description": "The submission result reported by the 1Password extension when available. Kernel returns fill_unknown if the extension call has no conclusive result. Inspect the page to determine successful authentication on the website.",
         "properties": {
           "error_code": {
-            "description": "Present only for a conclusive fill_failed response. These are allowlisted 1Password extension codes, never raw errors, secrets, or page content.",
+            "description": "Present for fill_failed, and for fill_unknown when the extension reported autosubmitFailed (it filled and submitted the form but could not confirm the fill finished). These are allowlisted 1Password extension codes, never raw errors, secrets, or page content.",
             "enum": [
               "fillFailed",
               "autosubmitFailed",
@@ -13750,7 +14768,7 @@
             "type": "string"
           },
           "status": {
-            "description": "Kernel's outcome of the extension call. fill_submitted means the extension reported submission, not website authentication. fill_failed means the extension returned a known failure and may include error_code. fill_unknown means submission may have happened without a conclusive response; it has no error_code and must not be retried in the same browser.",
+            "description": "Kernel's outcome of the extension call. fill_submitted means the extension reported submission, not website authentication. fill_failed means the extension returned a known failure and includes error_code. fill_unknown means the form may have been filled or submitted without a conclusive result; inspect the page to see the result of the fill.",
             "enum": [
               "fill_submitted",
               "fill_failed",
@@ -13815,10 +14833,6 @@
         "additionalProperties": false,
         "description": "Retrieve the status of a 1Password access request after presenting the approval link. On a confirmed failed status, ask the end-user before deleting and recreating the credential item for at most one new request. Do not retry an uncertain dispatched request. The response remains non-secret; approved references are retained only for fill.",
         "properties": {
-          "browser_id": {
-            "minLength": 1,
-            "type": "string"
-          },
           "timeout_seconds": {
             "default": 10,
             "maximum": 120,
@@ -13834,8 +14848,7 @@
           }
         },
         "required": [
-          "type",
-          "browser_id"
+          "type"
         ],
         "type": "object"
       },
@@ -13858,13 +14871,8 @@
       },
       "OnePasswordRequestAccessVaultItemOperationRequest": {
         "additionalProperties": false,
-        "description": "Request access to login entries in the end-user's own, non-shared 1Password vault through the browser extension, auto-loaded into the browser. The end-user approves access in the 1Password app. Shared-vault items and passkeys are not supported. Per-entry reason and keywords overrides are only supported for a single login entry.",
+        "description": "Request access to login entries in the end-user's own, non-shared 1Password vault. No browser is needed; the end-user approves access in the 1Password app. Shared-vault items and passkeys are not supported. Per-entry reason and keywords overrides are only supported for a single login entry.",
         "properties": {
-          "browser_id": {
-            "description": "Kernel browser session used to invoke the extension.",
-            "minLength": 1,
-            "type": "string"
-          },
           "goal": {
             "maxLength": 140,
             "type": "string"
@@ -13892,8 +14900,7 @@
           }
         },
         "required": [
-          "type",
-          "browser_id"
+          "type"
         ],
         "type": "object"
       },
@@ -14319,6 +15326,137 @@
           "health_check_interval_min_seconds",
           "health_check_interval_default_seconds",
           "health_check_interval_max_seconds"
+        ],
+        "type": "object"
+      },
+      "PasskeyVaultItemOperationResult": {
+        "additionalProperties": false,
+        "properties": {
+          "rp_id": {
+            "description": "Relying party the armed passkey answers for. Returned by arm_passkey.",
+            "type": "string"
+          },
+          "status": {
+            "description": "armed means the browser will answer matching passkey requests; it does not mean a page has asked yet. disarmed means the browser no longer uses this item's passkeys.",
+            "enum": [
+              "armed",
+              "disarmed"
+            ],
+            "type": "string"
+          },
+          "type": {
+            "enum": [
+              "arm_passkey",
+              "register_passkey",
+              "disarm_passkey"
+            ],
+            "type": "string"
+          }
+        },
+        "required": [
+          "type",
+          "status"
+        ],
+        "type": "object"
+      },
+      "PlaywrightExecutor": {
+        "additionalProperties": false,
+        "description": "A Playwright executor on the browser",
+        "properties": {
+          "busy": {
+            "description": "Whether a call is running on the executor",
+            "type": "boolean"
+          },
+          "created_at": {
+            "description": "When the executor was created",
+            "format": "date-time",
+            "type": "string"
+          },
+          "last_used_at": {
+            "description": "When the most recent call on the executor started",
+            "format": "date-time",
+            "type": "string"
+          },
+          "name": {
+            "$ref": "#/components/schemas/PlaywrightExecutorName"
+          },
+          "target_id": {
+            "description": "CDP page target ID of the executor's tab, once it has one. The default executor owns no tab.",
+            "type": "string"
+          },
+          "url": {
+            "description": "Current URL of the executor's tab, when it is open",
+            "type": "string"
+          }
+        },
+        "required": [
+          "name",
+          "busy",
+          "created_at",
+          "last_used_at"
+        ],
+        "type": "object"
+      },
+      "PlaywrightExecutorLimitError": {
+        "additionalProperties": false,
+        "description": "Returned when a call would create a named executor beyond the per-browser limit",
+        "properties": {
+          "executors": {
+            "description": "The default executor and the named executors that already exist",
+            "items": {
+              "$ref": "#/components/schemas/PlaywrightExecutor"
+            },
+            "type": "array"
+          },
+          "message": {
+            "description": "Human-readable error description",
+            "type": "string"
+          }
+        },
+        "required": [
+          "message",
+          "executors"
+        ],
+        "type": "object"
+      },
+      "PlaywrightExecutorList": {
+        "additionalProperties": false,
+        "description": "The default executor followed by the named executors",
+        "properties": {
+          "executors": {
+            "items": {
+              "$ref": "#/components/schemas/PlaywrightExecutor"
+            },
+            "type": "array"
+          }
+        },
+        "required": [
+          "executors"
+        ],
+        "type": "object"
+      },
+      "PlaywrightExecutorName": {
+        "description": "Name of a Playwright executor. Calls with the same name run in the same executor, one at a\ntime; the first call with a new name creates it. Calls on different executors run\nconcurrently. 'default' names the executor that runs calls without a name.\n",
+        "example": "checkout",
+        "pattern": "^[A-Za-z0-9_-]{1,64}$",
+        "type": "string"
+      },
+      "PlaywrightTab": {
+        "additionalProperties": false,
+        "description": "The tab 'page' was bound to for this call. Absent if the call failed before binding a tab.",
+        "properties": {
+          "created": {
+            "description": "Whether this call opened the tab. For a named executor this happens on its first call and\nafter its previous tab was closed. For the default executor it happens only when the\nbrowser had no open page.\n",
+            "type": "boolean"
+          },
+          "target_id": {
+            "description": "CDP page target ID of the tab",
+            "type": "string"
+          }
+        },
+        "required": [
+          "target_id",
+          "created"
         ],
         "type": "object"
       },
@@ -14790,7 +15928,23 @@
               {
                 "$ref": "#/components/schemas/CustomProxyConfig"
               }
-            ]
+            ],
+            "x-stainless-override-schema": {
+              "oneOf": [
+                {
+                  "$ref": "#/components/schemas/IspProxyConfig"
+                },
+                {
+                  "$ref": "#/components/schemas/ResidentialProxyConfig"
+                },
+                {
+                  "$ref": "#/components/schemas/MobileProxyConfig"
+                },
+                {
+                  "$ref": "#/components/schemas/CustomProxyConfig"
+                }
+              ]
+            }
           },
           "id": {
             "type": "string"
@@ -14827,7 +15981,7 @@
             "type": "string"
           },
           "type": {
-            "description": "Proxy type to use. In terms of quality for avoiding bot-detection, from best to worst: `mobile` > `residential` > `isp` > `datacenter`.\n",
+            "description": "Proxy type to use. In terms of quality for avoiding bot-detection, from best to worst: `mobile` > `residential` > `isp`. `datacenter` is deprecated; use `isp` instead. Existing datacenter proxies remain supported.\n",
             "enum": [
               "datacenter",
               "isp",
@@ -14835,7 +15989,16 @@
               "mobile",
               "custom"
             ],
-            "type": "string"
+            "type": "string",
+            "x-stainless-override-schema": {
+              "enum": [
+                "isp",
+                "residential",
+                "mobile",
+                "custom"
+              ],
+              "type": "string"
+            }
           }
         },
         "required": [
@@ -14847,7 +16010,7 @@
         "description": "Optional parameters for the proxy health check.",
         "properties": {
           "url": {
-            "description": "An optional URL to test reachability against. If provided, the proxy check will test connectivity to this URL instead of the default test URLs. Only HTTP and HTTPS schemes are allowed, and the URL must resolve to a public IP address. For ISP and datacenter proxies, the exit IP is stable, so a successful check reliably indicates that subsequent browser sessions will reach the target site with the same IP. For residential and mobile proxies, the exit node changes between requests, so a successful check validates proxy configuration but does not guarantee that a subsequent browser session will use the same exit IP or reach the same site \u2014 it is useful for verifying credentials and connectivity, not for predicting site-specific behavior. When provided, the check result does not update the proxy's health status, since a failure may indicate a problem with the target site rather than the proxy itself.",
+            "description": "An optional URL to test reachability against. If provided, the proxy check will test connectivity to this URL instead of the default test URLs. Only HTTP and HTTPS schemes are allowed, and the URL must resolve to a public IP address. For ISP proxies, the exit IP is stable, so a successful check reliably indicates that subsequent browser sessions will reach the target site with the same IP. For residential and mobile proxies, the exit node changes between requests, so a successful check validates proxy configuration but does not guarantee that a subsequent browser session will use the same exit IP or reach the same site \u2014 it is useful for verifying credentials and connectivity, not for predicting site-specific behavior. When provided, the check result does not update the proxy's health status, since a failure may indicate a problem with the target site rather than the proxy itself.",
             "example": "https://example.com",
             "type": "string"
           }
@@ -14892,7 +16055,23 @@
               {
                 "$ref": "#/components/schemas/CreateCustomProxyConfig"
               }
-            ]
+            ],
+            "x-stainless-override-schema": {
+              "oneOf": [
+                {
+                  "$ref": "#/components/schemas/IspProxyConfig"
+                },
+                {
+                  "$ref": "#/components/schemas/ResidentialProxyConfig"
+                },
+                {
+                  "$ref": "#/components/schemas/MobileProxyConfig"
+                },
+                {
+                  "$ref": "#/components/schemas/CreateCustomProxyConfig"
+                }
+              ]
+            }
           },
           "name": {
             "description": "Readable name of the proxy.",
@@ -14908,7 +16087,7 @@
             "type": "string"
           },
           "type": {
-            "description": "Proxy type to use. In terms of quality for avoiding bot-detection, from best to worst: `mobile` > `residential` > `isp` > `datacenter`.\n",
+            "description": "Proxy type to use. In terms of quality for avoiding bot-detection, from best to worst: `mobile` > `residential` > `isp`. `datacenter` is deprecated; use `isp` instead. Datacenter proxy creation remains supported for backward compatibility.\n",
             "enum": [
               "datacenter",
               "isp",
@@ -14916,7 +16095,16 @@
               "mobile",
               "custom"
             ],
-            "type": "string"
+            "type": "string",
+            "x-stainless-override-schema": {
+              "enum": [
+                "isp",
+                "residential",
+                "mobile",
+                "custom"
+              ],
+              "type": "string"
+            }
           }
         },
         "required": [
@@ -14984,10 +16172,44 @@
         "description": "Geographic region for hosting browser sessions or pools.\n",
         "enum": [
           "us-east",
+          "us-west",
           "eu-west",
           "ap-southeast"
         ],
         "type": "string"
+      },
+      "RegisterPasskeyVaultItemOperationRequest": {
+        "additionalProperties": false,
+        "description": "Let a browser attached to the item's vault create a passkey on a website\nand store it in an empty passkey field. Only invoke when the item\nadvertises `register_passkey`; declare the field first, for example by\nadding an optional passkey field with a credential update. Returns\nimmediately; there is no time limit. The next passkey a page in that\nbrowser creates (`navigator.credentials.create`) is generated by Kernel,\nstored in the field, and only then returned to the page, so the website\nnever receives a passkey Kernel failed to store. Each browser has one\npending registration; a later `register_passkey` replaces it. Drive the\nwebsite's \"add a passkey\" flow with your own browser tools, then confirm\nby reading the item (the field reports `has_value`) or its\n`credential_passkey_registered` event, and by signing in with\n`arm_passkey`. Only ES256 passkeys are created.\n",
+        "example": {
+          "browser_id": "browser-session-id",
+          "field": "passkey",
+          "type": "register_passkey"
+        },
+        "properties": {
+          "browser_id": {
+            "description": "Browser session ID, not a reusable browser name.",
+            "minLength": 1,
+            "type": "string"
+          },
+          "field": {
+            "description": "Empty passkey field to store the new passkey in. Required when more than one passkey field is empty.",
+            "maxLength": 64,
+            "minLength": 1,
+            "type": "string"
+          },
+          "type": {
+            "enum": [
+              "register_passkey"
+            ],
+            "type": "string"
+          }
+        },
+        "required": [
+          "type",
+          "browser_id"
+        ],
+        "type": "object"
       },
       "ResidentialProxyConfig": {
         "description": "Configuration for residential proxies.",
@@ -15030,6 +16252,23 @@
           }
         },
         "title": "Residential",
+        "type": "object"
+      },
+      "RestartVerificationVaultItemOperationRequest": {
+        "additionalProperties": false,
+        "description": "Explicitly prepare a fresh local verification session for the same Kernel Visa purchase and connected wallet, only when restart_verification is advertised. Kernel must have durable proof of an initial attestation failure before intent dispatch. Replaces the spend_approval capability and discards session-bound verification data without calling the provider or granting spend consent. The cardholder must use the new link, verify again and explicitly approve the purchase. Unknown intent creation, legacy unclassified recovery, enrollment completion, issuance and confirmation cannot restart. Do not automatically retry this operation.",
+        "properties": {
+          "type": {
+            "enum": [
+              "restart_verification"
+            ],
+            "type": "string",
+            "x-go-type": "VaultItemOperationType"
+          }
+        },
+        "required": [
+          "type"
+        ],
         "type": "object"
       },
       "RotateApiKeyRequest": {
@@ -15880,7 +17119,8 @@
         "description": "Provider-native content retrieval. Available without requesting Kernel browser retrieval; may incur provider retrieval charges.",
         "properties": {
           "highlights": {
-            "description": "Return query-relevant provider excerpts.",
+            "default": true,
+            "description": "Return query-relevant provider excerpts. Defaults to true for Exa search requests; set false to disable.",
             "type": "boolean"
           },
           "text": {
@@ -15922,7 +17162,8 @@
       "SearchFallbackConditions": {
         "default": [
           "error",
-          "timeout"
+          "timeout",
+          "empty"
         ],
         "description": "Conditions that advance to the next provider under auto routing or an explicit providers chain. Ignored when provider pins a single provider. error means a retryable provider failure, including rate limiting, not invalid caller input or caller quotas. empty means zero results after required filtering. An empty list disables fallback. If every attempt is empty or fails, the response is the first valid empty response with the full attempt trail, or a 502 if none succeeded.",
         "items": {
@@ -16376,7 +17617,8 @@
             "type": "array"
           },
           "search_context_size": {
-            "description": "Provider context size supported by the selected model.",
+            "default": "medium",
+            "description": "Amount of page content Perplexity extracts per result. Defaults to medium unless max_tokens or max_tokens_per_page is set.",
             "enum": [
               "low",
               "medium",
@@ -18027,6 +19269,73 @@
         ],
         "type": "object"
       },
+      "VaultEncryptionKey": {
+        "additionalProperties": false,
+        "description": "Public key for encrypted_value on credential fields. Use this only if you run your own credential collection web app and want values encrypted in the browser, sent to your backend still encrypted, and forwarded to Kernel's API still encrypted. In every other case, including server-side code that already holds the plaintext, use value. Each vault has its own key; a value encrypted for one vault is rejected by every other vault. The key is created on first request and stays the same for the vault's lifetime, so it may be cached.",
+        "properties": {
+          "alg": {
+            "description": "JWE key management algorithm.",
+            "enum": [
+              "ECDH-ES"
+            ],
+            "type": "string"
+          },
+          "enc": {
+            "description": "JWE content encryption algorithm.",
+            "enum": [
+              "A256GCM"
+            ],
+            "type": "string"
+          },
+          "jwk": {
+            "$ref": "#/components/schemas/VaultEncryptionPublicJWK"
+          },
+          "kid": {
+            "description": "Key ID. Set it as the kid protected header of every encrypted_value.",
+            "type": "string"
+          }
+        },
+        "required": [
+          "kid",
+          "alg",
+          "enc",
+          "jwk"
+        ],
+        "type": "object"
+      },
+      "VaultEncryptionPublicJWK": {
+        "additionalProperties": false,
+        "description": "P-256 public key in JWK form.",
+        "properties": {
+          "crv": {
+            "enum": [
+              "P-256"
+            ],
+            "type": "string"
+          },
+          "kty": {
+            "enum": [
+              "EC"
+            ],
+            "type": "string"
+          },
+          "true": {
+            "description": "Base64url-encoded y coordinate.",
+            "type": "string"
+          },
+          "x": {
+            "description": "Base64url-encoded x coordinate.",
+            "type": "string"
+          }
+        },
+        "required": [
+          "kty",
+          "crv",
+          "x",
+          true
+        ],
+        "type": "object"
+      },
       "VaultFillField": {
         "additionalProperties": false,
         "properties": {
@@ -18192,6 +19501,16 @@
         "additionalProperties": false,
         "description": "Live, non-persisted data requested through the item GET expand parameter.",
         "properties": {
+          "link_shipping_addresses": {
+            "description": "Link's saved shipping addresses, present when the `link_shipping_addresses` expansion is requested.",
+            "items": {
+              "$ref": "#/components/schemas/LinkShippingAddress"
+            },
+            "type": "array"
+          },
+          "link_user_info": {
+            "$ref": "#/components/schemas/LinkUserInfo"
+          },
           "payment_methods": {
             "items": {
               "$ref": "#/components/schemas/VaultPaymentMethod"
@@ -18203,7 +19522,9 @@
       },
       "VaultItemExpansionType": {
         "enum": [
-          "payment_methods"
+          "payment_methods",
+          "link_user_info",
+          "link_shipping_addresses"
         ],
         "type": "string"
       },
@@ -18237,10 +19558,15 @@
             "1pw_fill": "#/components/schemas/OnePasswordFillVaultItemOperationRequest",
             "1pw_recover": "#/components/schemas/OnePasswordRecoverVaultItemOperationRequest",
             "1pw_update_access_token": "#/components/schemas/OnePasswordUpdateAccessTokenVaultItemOperationRequest",
+            "arm_passkey": "#/components/schemas/ArmPasskeyVaultItemOperationRequest",
             "authorize": "#/components/schemas/AuthorizeVaultItemOperationRequest",
             "collect": "#/components/schemas/CollectVaultItemOperationRequest",
+            "confirm_transaction": "#/components/schemas/ConfirmTransactionVaultItemOperationRequest",
+            "disarm_passkey": "#/components/schemas/DisarmPasskeyVaultItemOperationRequest",
             "fill": "#/components/schemas/FillVaultItemOperationRequest",
             "prepare_checkout": "#/components/schemas/PrepareCheckoutVaultItemOperationRequest",
+            "register_passkey": "#/components/schemas/RegisterPasskeyVaultItemOperationRequest",
+            "restart_verification": "#/components/schemas/RestartVerificationVaultItemOperationRequest",
             "webmcp_invoke": "#/components/schemas/WebMCPInvokeVaultItemOperationRequest"
           },
           "propertyName": "type"
@@ -18250,6 +19576,12 @@
             "$ref": "#/components/schemas/AuthorizeVaultItemOperationRequest"
           },
           {
+            "$ref": "#/components/schemas/RestartVerificationVaultItemOperationRequest"
+          },
+          {
+            "$ref": "#/components/schemas/ConfirmTransactionVaultItemOperationRequest"
+          },
+          {
             "$ref": "#/components/schemas/CollectVaultItemOperationRequest"
           },
           {
@@ -18257,6 +19589,15 @@
           },
           {
             "$ref": "#/components/schemas/FillVaultItemOperationRequest"
+          },
+          {
+            "$ref": "#/components/schemas/ArmPasskeyVaultItemOperationRequest"
+          },
+          {
+            "$ref": "#/components/schemas/RegisterPasskeyVaultItemOperationRequest"
+          },
+          {
+            "$ref": "#/components/schemas/DisarmPasskeyVaultItemOperationRequest"
           },
           {
             "$ref": "#/components/schemas/OnePasswordRequestAccessVaultItemOperationRequest"
@@ -18279,13 +19620,16 @@
         ]
       },
       "VaultItemOperationResponse": {
-        "description": "Authorization and preparation return the existing item shape. Fill returns a value-free result; WebMCP invocation returns the tool's output. Neither persists transient outcomes on the item.",
+        "description": "Authorization and preparation return the existing item shape. Fill and passkey operations return value-free results; WebMCP invocation returns the tool's output. None persist transient outcomes on the item.",
         "oneOf": [
           {
             "$ref": "#/components/schemas/VaultItem"
           },
           {
             "$ref": "#/components/schemas/FillVaultItemOperationResult"
+          },
+          {
+            "$ref": "#/components/schemas/PasskeyVaultItemOperationResult"
           },
           {
             "$ref": "#/components/schemas/OnePasswordFillVaultItemOperationResult"
@@ -18298,9 +19642,14 @@
       "VaultItemOperationType": {
         "enum": [
           "authorize",
+          "restart_verification",
+          "confirm_transaction",
           "collect",
           "prepare_checkout",
           "fill",
+          "arm_passkey",
+          "register_passkey",
+          "disarm_passkey",
           "1pw_create_access_request",
           "1pw_access_request_status",
           "1pw_fill",
@@ -18673,7 +20022,7 @@
         "additionalProperties": false,
         "properties": {
           "field": {
-            "description": "A declared, populated credential field or supported card field. A TOTP field supplies a fresh code, never its seed.",
+            "description": "A declared, populated credential field or supported card field. A TOTP field supplies a fresh code, never its seed. Passkey fields cannot be filled.",
             "minLength": 1,
             "type": "string"
           },
@@ -18713,6 +20062,11 @@
           },
           "created_at": {
             "format": "date-time",
+            "type": "string"
+          },
+          "description": {
+            "description": "Server-generated provider and lifecycle guidance for agents.",
+            "readOnly": true,
             "type": "string"
           },
           "expanded": {
@@ -23536,7 +24890,7 @@
     },
     "/browsers/{id_or_name}/playwright/execute": {
       "post": {
-        "description": "Execute arbitrary Playwright code in a fresh execution context against the browser.\nThe code runs in the same VM as the browser, minimizing latency and maximizing throughput.\nIt has access to 'page', 'context', 'browser', and 'webmcp' variables.\nUse 'webmcp.listTools()' to discover browser-wide WebMCP tools and\n'webmcp.invokeTool(toolRef, input?, { timeoutSec? })' to invoke an exact registration.\nIt can `return` a value, and this value is returned in the response.\n",
+        "description": "Execute arbitrary Playwright code in a fresh execution context against the browser.\nThe code runs in the same VM as the browser, minimizing latency and maximizing throughput.\nIt has access to 'page', 'context', 'browser', and 'webmcp' variables.\nUse 'webmcp.listTools()' to discover browser-wide WebMCP tools and\n'webmcp.invokeTool(toolRef, input?, { timeoutSec? })' to invoke an exact registration.\nIt can `return` a value, and this value is returned in the response.\n\nEvery call runs in an executor: a dedicated Node.js process with its own browser\nconnection. Calls on different executors run concurrently; calls on the same executor run\none at a time. A timeout, crash, or blocked event loop in one executor does not affect\nother executors. After a timeout the executor keeps its process and drops its browser\nconnection, so code abandoned by the timeout cannot keep driving the browser. After a\ncrash or a blocked event loop, the next call on that executor starts a fresh process.\n\nCalls without 'executor' run in the executor named 'default', which always exists and is\nthe same as passing 'executor: \"default\"'. In the default executor, 'page' is bound to an\nactive tab reported by Chrome. In single-window sessions, this is the foreground tab. When\nmultiple browser windows are open, Chrome reports one active tab per window and the\nselected window is unspecified. 'context' is the BrowserContext that owns the selected\npage. Use 'browser.contexts()' to select a context or page explicitly.\n\nPass any other name to run the call in a named executor. The first call with a new name\ncreates it. Each named executor owns a tab: its first call opens a new background tab in\nthe default browser context, and 'page' is bound to that tab on every later call while it\nstays open. Opening it does not change the active tab of an existing window. If the tab is\nclosed, the next call opens a new one and reports 'tab.created: true'. Executor code can\nstill reach other tabs through 'context' and 'browser'; ownership only decides what 'page'\nis bound to. Use named executors to drive several tabs of one browser in parallel.\n\nA browser can have at most 8 named executors; the default executor does not count. A call\nthat would create another returns 409 with the current executors; delete one with\nDELETE /browsers/{id_or_name}/playwright/executors/{name}. Named executors are not removed\nautomatically while the browser runs; when it shuts down, they are removed and their tabs\nclosed.\n",
         "operationId": "executePlaywrightCode",
         "parameters": [
           {
@@ -23574,6 +24928,16 @@
           "400": {
             "$ref": "#/components/responses/BadRequest"
           },
+          "409": {
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/PlaywrightExecutorLimitError"
+                }
+              }
+            },
+            "description": "The call would create a named executor beyond the per-browser limit"
+          },
           "500": {
             "$ref": "#/components/responses/InternalError"
           },
@@ -23587,6 +24951,117 @@
           }
         ],
         "summary": "Execute Playwright/TypeScript code against the browser",
+        "tags": [
+          "Browser Playwright"
+        ]
+      }
+    },
+    "/browsers/{id_or_name}/playwright/executors": {
+      "get": {
+        "description": "Lists the default executor first, then the named executors created by\nPOST /browsers/{id_or_name}/playwright/execute. Each entry reports whether a call is\nrunning on it and, for named executors, the target ID and URL of the tab it owns.\nReturns 404 for a browser whose image predates executors.\n",
+        "operationId": "listPlaywrightExecutors",
+        "parameters": [
+          {
+            "description": "Browser session ID or name",
+            "example": "htzv5orfit78e1m2biiifpbv",
+            "in": "path",
+            "name": "id_or_name",
+            "required": true,
+            "schema": {
+              "type": "string"
+            }
+          }
+        ],
+        "responses": {
+          "200": {
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/PlaywrightExecutorList"
+                }
+              }
+            },
+            "description": "Open executors"
+          },
+          "404": {
+            "$ref": "#/components/responses/NotFound"
+          },
+          "500": {
+            "$ref": "#/components/responses/InternalError"
+          },
+          "default": {
+            "$ref": "#/components/responses/BrowserProxyError"
+          }
+        },
+        "security": [
+          {
+            "bearerAuth": []
+          }
+        ],
+        "summary": "List Playwright executors",
+        "tags": [
+          "Browser Playwright"
+        ]
+      }
+    },
+    "/browsers/{id_or_name}/playwright/executors/{name}": {
+      "delete": {
+        "description": "Stops the executor's process. A call running on it fails with an error saying the\nexecutor was deleted. By default the executor's tab is closed too. The name can be\nreused; the next call with it creates a new executor and tab.\n\nThe default executor is restarted instead of removed: its process is stopped, a call\nrunning on it fails with an error saying the executor was restarted, and queued and later\ncalls run on a new process. It owns no tab, so 'close_tab' has no effect on it.\n",
+        "operationId": "deletePlaywrightExecutor",
+        "parameters": [
+          {
+            "description": "Browser session ID or name",
+            "example": "htzv5orfit78e1m2biiifpbv",
+            "in": "path",
+            "name": "id_or_name",
+            "required": true,
+            "schema": {
+              "type": "string"
+            }
+          },
+          {
+            "description": "Executor name",
+            "in": "path",
+            "name": "name",
+            "required": true,
+            "schema": {
+              "$ref": "#/components/schemas/PlaywrightExecutorName"
+            }
+          },
+          {
+            "description": "Close the executor's tab. Defaults to true.",
+            "in": "query",
+            "name": "close_tab",
+            "required": false,
+            "schema": {
+              "default": true,
+              "type": "boolean"
+            }
+          }
+        ],
+        "responses": {
+          "204": {
+            "description": "Executor deleted"
+          },
+          "400": {
+            "$ref": "#/components/responses/BadRequest"
+          },
+          "404": {
+            "$ref": "#/components/responses/NotFound"
+          },
+          "500": {
+            "$ref": "#/components/responses/InternalError"
+          },
+          "default": {
+            "$ref": "#/components/responses/BrowserProxyError"
+          }
+        },
+        "security": [
+          {
+            "bearerAuth": []
+          }
+        ],
+        "summary": "Delete a Playwright executor",
         "tags": [
           "Browser Playwright"
         ]
@@ -24533,7 +26008,7 @@
     },
     "/browsers/{id_or_name}/telemetry/stream": {
       "get": {
-        "description": "Streams browser telemetry events as a server-sent events (SSE) stream. The stream closes when the browser session terminates. Each event frame includes an id: field containing a monotonically increasing sequence number; pass it as Last-Event-ID on reconnect to resume without gaps. The event: field is never set; all frames carry JSON in the data: field. A keepalive comment frame is sent every 15 seconds when no events arrive. Returns 404 if the browser session does not exist. If telemetry was not enabled on the session, the stream opens but no events are delivered. Fresh connections only see new events; pass replay=all to start from the oldest retained event instead.\n",
+        "description": "Streams browser telemetry events as a server-sent events (SSE) stream. The stream closes when the browser session terminates. Each event frame includes an id: field containing a monotonically increasing sequence number; pass it as Last-Event-ID on reconnect to resume without gaps. The event: field is never set; event frames carry JSON in the data: field. A frame with an id: field and no data: field moves Last-Event-ID past events that were not delivered, because a type filter excluded them or they could not be decoded or exceeded the size limit; SSE clients dispatch no event for it. A keepalive comment frame is sent every 15 seconds when no events arrive. Returns 404 if the browser session does not exist. If telemetry was not enabled on the session, the stream opens but no events are delivered. Fresh connections only see new events; pass replay=all to start from the oldest retained event instead.\n",
         "operationId": "streamBrowserTelemetry",
         "parameters": [
           {
@@ -24560,6 +26035,18 @@
             "name": "replay",
             "schema": {
               "type": "string"
+            }
+          },
+          {
+            "description": "Deliver only these event types, such as captcha_solve_started or captcha_challenge_result. Repeat the parameter or pass comma-separated values for multiple types. Keepalive frames are always delivered. Filtered-out events are not sent. An id-only frame carrying the latest skipped id is sent about every 15 seconds while skipped events keep arriving, and otherwise with the next keepalive or when the stream ends, so the connection stays active and Last-Event-ID moves past them; a reconnect resumes after the skipped events.\n",
+            "in": "query",
+            "name": "type",
+            "required": false,
+            "schema": {
+              "items": {
+                "type": "string"
+              },
+              "type": "array"
             }
           }
         ],
@@ -27409,7 +28896,7 @@
         ]
       },
       "post": {
-        "description": "Create a new API key within the authenticated organization.",
+        "description": "Create a new API key. API keys may be scoped by project and may include a policy.",
         "operationId": "postApiKeys",
         "requestBody": {
           "content": {
@@ -27437,6 +28924,9 @@
           },
           "401": {
             "$ref": "#/components/responses/Unauthorized"
+          },
+          "403": {
+            "$ref": "#/components/responses/Forbidden"
           },
           "404": {
             "$ref": "#/components/responses/NotFound"
@@ -29615,14 +31105,15 @@
         ]
       }
     },
-    "/proxies/{id}": {
+    "/proxies/{id_or_name}": {
       "delete": {
         "description": "Soft delete a proxy. Session records referencing it are not modified. If egress binding polling is enabled, existing tunnels for active sessions using the proxy are terminated within one polling interval; subsequent connections through the deleted proxy are rejected.\n",
         "operationId": "deleteProxiesById",
         "parameters": [
           {
+            "description": "Proxy ID. Name-based addressing is supported only for retrieval.",
             "in": "path",
-            "name": "id",
+            "name": "id_or_name",
             "required": true,
             "schema": {
               "type": "string"
@@ -29660,12 +31151,12 @@
         ]
       },
       "get": {
-        "description": "Retrieve a proxy in the resolved project by ID.",
-        "operationId": "getProxiesById",
+        "description": "Retrieve a proxy in the resolved project by ID or exact name using the database collation. IDs take precedence when a value matches both an ID and a name. Proxy names are not unique; an ambiguous name returns a 400 response with code ambiguous_proxy_name.",
+        "operationId": "getProxiesByIdOrName",
         "parameters": [
           {
             "in": "path",
-            "name": "id",
+            "name": "id_or_name",
             "required": true,
             "schema": {
               "type": "string"
@@ -29682,6 +31173,9 @@
               }
             },
             "description": "Proxy retrieved"
+          },
+          "400": {
+            "$ref": "#/components/responses/BadRequest"
           },
           "401": {
             "$ref": "#/components/responses/Unauthorized"
@@ -29701,18 +31195,19 @@
             "bearerAuth": []
           }
         ],
-        "summary": "Get proxy by ID",
+        "summary": "Get proxy by ID or name",
         "tags": [
           "Proxies"
         ]
       },
       "patch": {
-        "description": "Update a proxy's name. Proxy names are not unique and are not ID-or-name addressable on this endpoint; duplicate names are allowed. Name-based session-create lookups can remain ambiguous until callers resolve proxies by ID or the API adds a stronger uniqueness contract.",
+        "description": "Update a proxy's name. Proxy names are not unique and duplicate names are allowed.",
         "operationId": "patchProxiesById",
         "parameters": [
           {
+            "description": "Proxy ID. Name-based addressing is supported only for retrieval.",
             "in": "path",
-            "name": "id",
+            "name": "id_or_name",
             "required": true,
             "schema": {
               "type": "string"
@@ -29764,14 +31259,15 @@
         ]
       }
     },
-    "/proxies/{id}/check": {
+    "/proxies/{id_or_name}/check": {
       "post": {
-        "description": "Run a health check on the proxy to verify it's working. Optionally specify a URL to test reachability against a specific target. For ISP and datacenter proxies, this reliably tests whether the target site is reachable from the proxy's stable exit IP. For residential and mobile proxies, the exit node varies between requests, so this validates proxy configuration and connectivity rather than guaranteeing site-specific reachability.",
+        "description": "Run a health check on the proxy to verify it's working. Optionally specify a URL to test reachability against a specific target. For ISP proxies, this reliably tests whether the target site is reachable from the proxy's stable exit IP. For residential and mobile proxies, the exit node varies between requests, so this validates proxy configuration and connectivity rather than guaranteeing site-specific reachability.",
         "operationId": "postProxiesByIdCheck",
         "parameters": [
           {
+            "description": "Proxy ID. Name-based addressing is supported only for retrieval.",
             "in": "path",
-            "name": "id",
+            "name": "id_or_name",
             "required": true,
             "schema": {
               "type": "string"
@@ -30723,6 +32219,606 @@
         ]
       }
     },
+    "/vault/card-captures/current": {
+      "get": {
+        "description": "Capability-only browser protocol for embedded card capture. Authorization is Bearer <capture_token>, not an API key. No cookies. Cross-origin GET, POST and OPTIONS are allowed without credentials. Query strings are rejected.",
+        "operationId": "getVaultCardCapture",
+        "parameters": [
+          {
+            "description": "Bearer <capture_token> from a Kernel wallet's card_enrollment action.",
+            "in": "header",
+            "name": "Authorization",
+            "required": true,
+            "schema": {
+              "type": "string"
+            }
+          }
+        ],
+        "responses": {
+          "200": {
+            "content": {
+              "application/json": {
+                "schema": {
+                  "properties": {
+                    "access_token": {
+                      "type": "string"
+                    },
+                    "environment": {
+                      "enum": [
+                        "sandbox",
+                        "live"
+                      ],
+                      "type": "string"
+                    },
+                    "expires_at": {
+                      "format": "date-time",
+                      "type": "string"
+                    },
+                    "status": {
+                      "enum": [
+                        "active",
+                        "completed"
+                      ],
+                      "type": "string"
+                    },
+                    "vault_id": {
+                      "type": "string"
+                    }
+                  },
+                  "required": [
+                    "status"
+                  ],
+                  "type": "object"
+                }
+              }
+            },
+            "description": "Capture state; active includes create-only Collect credentials, completed includes only status."
+          },
+          "400": {
+            "content": {
+              "application/json": {
+                "schema": {
+                  "properties": {
+                    "code": {
+                      "enum": [
+                        "invalid_request",
+                        "invalid_capture",
+                        "card_rejected",
+                        "capture_unauthorized",
+                        "capture_expired",
+                        "capture_unavailable",
+                        "capture_in_progress",
+                        "card_in_use",
+                        "capture_unconfirmed",
+                        "rate_limited",
+                        "capture_failed",
+                        "capture_retry"
+                      ],
+                      "type": "string"
+                    }
+                  },
+                  "required": [
+                    "code"
+                  ],
+                  "type": "object"
+                }
+              }
+            },
+            "description": "invalid_request, invalid_capture, or card_rejected."
+          },
+          "401": {
+            "content": {
+              "application/json": {
+                "schema": {
+                  "properties": {
+                    "code": {
+                      "enum": [
+                        "invalid_request",
+                        "invalid_capture",
+                        "card_rejected",
+                        "capture_unauthorized",
+                        "capture_expired",
+                        "capture_unavailable",
+                        "capture_in_progress",
+                        "card_in_use",
+                        "capture_unconfirmed",
+                        "rate_limited",
+                        "capture_failed",
+                        "capture_retry"
+                      ],
+                      "type": "string"
+                    }
+                  },
+                  "required": [
+                    "code"
+                  ],
+                  "type": "object"
+                }
+              }
+            },
+            "description": "capture_unauthorized."
+          },
+          "409": {
+            "content": {
+              "application/json": {
+                "schema": {
+                  "properties": {
+                    "code": {
+                      "enum": [
+                        "invalid_request",
+                        "invalid_capture",
+                        "card_rejected",
+                        "capture_unauthorized",
+                        "capture_expired",
+                        "capture_unavailable",
+                        "capture_in_progress",
+                        "card_in_use",
+                        "capture_unconfirmed",
+                        "rate_limited",
+                        "capture_failed",
+                        "capture_retry"
+                      ],
+                      "type": "string"
+                    }
+                  },
+                  "required": [
+                    "code"
+                  ],
+                  "type": "object"
+                }
+              }
+            },
+            "description": "capture_in_progress, card_in_use, or capture_unconfirmed."
+          },
+          "410": {
+            "content": {
+              "application/json": {
+                "schema": {
+                  "properties": {
+                    "code": {
+                      "enum": [
+                        "invalid_request",
+                        "invalid_capture",
+                        "card_rejected",
+                        "capture_unauthorized",
+                        "capture_expired",
+                        "capture_unavailable",
+                        "capture_in_progress",
+                        "card_in_use",
+                        "capture_unconfirmed",
+                        "rate_limited",
+                        "capture_failed",
+                        "capture_retry"
+                      ],
+                      "type": "string"
+                    }
+                  },
+                  "required": [
+                    "code"
+                  ],
+                  "type": "object"
+                }
+              }
+            },
+            "description": "capture_expired or capture_unavailable."
+          },
+          "429": {
+            "content": {
+              "application/json": {
+                "schema": {
+                  "properties": {
+                    "code": {
+                      "enum": [
+                        "invalid_request",
+                        "invalid_capture",
+                        "card_rejected",
+                        "capture_unauthorized",
+                        "capture_expired",
+                        "capture_unavailable",
+                        "capture_in_progress",
+                        "card_in_use",
+                        "capture_unconfirmed",
+                        "rate_limited",
+                        "capture_failed",
+                        "capture_retry"
+                      ],
+                      "type": "string"
+                    }
+                  },
+                  "required": [
+                    "code"
+                  ],
+                  "type": "object"
+                }
+              }
+            },
+            "description": "rate_limited."
+          },
+          "500": {
+            "content": {
+              "application/json": {
+                "schema": {
+                  "properties": {
+                    "code": {
+                      "enum": [
+                        "invalid_request",
+                        "invalid_capture",
+                        "card_rejected",
+                        "capture_unauthorized",
+                        "capture_expired",
+                        "capture_unavailable",
+                        "capture_in_progress",
+                        "card_in_use",
+                        "capture_unconfirmed",
+                        "rate_limited",
+                        "capture_failed",
+                        "capture_retry"
+                      ],
+                      "type": "string"
+                    }
+                  },
+                  "required": [
+                    "code"
+                  ],
+                  "type": "object"
+                }
+              }
+            },
+            "description": "capture_failed."
+          },
+          "503": {
+            "content": {
+              "application/json": {
+                "schema": {
+                  "properties": {
+                    "code": {
+                      "enum": [
+                        "invalid_request",
+                        "invalid_capture",
+                        "card_rejected",
+                        "capture_unauthorized",
+                        "capture_expired",
+                        "capture_unavailable",
+                        "capture_in_progress",
+                        "card_in_use",
+                        "capture_unconfirmed",
+                        "rate_limited",
+                        "capture_failed",
+                        "capture_retry"
+                      ],
+                      "type": "string"
+                    }
+                  },
+                  "required": [
+                    "code"
+                  ],
+                  "type": "object"
+                }
+              }
+            },
+            "description": "capture_retry."
+          }
+        },
+        "security": [],
+        "summary": "Read card capture state",
+        "tags": [
+          "Vaults"
+        ],
+        "x-cli-skip": true,
+        "x-hidden": true,
+        "x-stainless-skip": true
+      },
+      "post": {
+        "description": "Capability-only browser protocol for embedded card capture. Authorization is Bearer <capture_token>, not an API key. No cookies. Cross-origin GET, POST and OPTIONS are allowed without credentials. Query strings are rejected.",
+        "operationId": "postVaultCardCapture",
+        "parameters": [
+          {
+            "description": "Bearer <capture_token> from a Kernel wallet's card_enrollment action.",
+            "in": "header",
+            "name": "Authorization",
+            "required": true,
+            "schema": {
+              "type": "string"
+            }
+          }
+        ],
+        "requestBody": {
+          "content": {
+            "application/json": {
+              "examples": {
+                "enroll": {
+                  "value": {
+                    "card_id": "CRDexample12345",
+                    "email": "cardholder@example.com"
+                  }
+                }
+              },
+              "schema": {
+                "additionalProperties": false,
+                "properties": {
+                  "card_id": {
+                    "type": "string"
+                  },
+                  "email": {
+                    "format": "email",
+                    "maxLength": 254,
+                    "type": "string"
+                  }
+                },
+                "required": [
+                  "card_id",
+                  "email"
+                ],
+                "type": "object"
+              }
+            }
+          },
+          "required": true
+        },
+        "responses": {
+          "200": {
+            "content": {
+              "application/json": {
+                "examples": {
+                  "completed": {
+                    "value": {
+                      "status": "completed"
+                    }
+                  }
+                },
+                "schema": {
+                  "properties": {
+                    "status": {
+                      "enum": [
+                        "completed"
+                      ],
+                      "type": "string"
+                    }
+                  },
+                  "required": [
+                    "status"
+                  ],
+                  "type": "object"
+                }
+              }
+            },
+            "description": "Enrollment completed, including a safe resend of the same card ID."
+          },
+          "400": {
+            "content": {
+              "application/json": {
+                "schema": {
+                  "properties": {
+                    "code": {
+                      "enum": [
+                        "invalid_request",
+                        "invalid_capture",
+                        "card_rejected",
+                        "capture_unauthorized",
+                        "capture_expired",
+                        "capture_unavailable",
+                        "capture_in_progress",
+                        "card_in_use",
+                        "capture_unconfirmed",
+                        "rate_limited",
+                        "capture_failed",
+                        "capture_retry"
+                      ],
+                      "type": "string"
+                    }
+                  },
+                  "required": [
+                    "code"
+                  ],
+                  "type": "object"
+                }
+              }
+            },
+            "description": "invalid_request, invalid_capture, or card_rejected."
+          },
+          "401": {
+            "content": {
+              "application/json": {
+                "schema": {
+                  "properties": {
+                    "code": {
+                      "enum": [
+                        "invalid_request",
+                        "invalid_capture",
+                        "card_rejected",
+                        "capture_unauthorized",
+                        "capture_expired",
+                        "capture_unavailable",
+                        "capture_in_progress",
+                        "card_in_use",
+                        "capture_unconfirmed",
+                        "rate_limited",
+                        "capture_failed",
+                        "capture_retry"
+                      ],
+                      "type": "string"
+                    }
+                  },
+                  "required": [
+                    "code"
+                  ],
+                  "type": "object"
+                }
+              }
+            },
+            "description": "capture_unauthorized."
+          },
+          "409": {
+            "content": {
+              "application/json": {
+                "schema": {
+                  "properties": {
+                    "code": {
+                      "enum": [
+                        "invalid_request",
+                        "invalid_capture",
+                        "card_rejected",
+                        "capture_unauthorized",
+                        "capture_expired",
+                        "capture_unavailable",
+                        "capture_in_progress",
+                        "card_in_use",
+                        "capture_unconfirmed",
+                        "rate_limited",
+                        "capture_failed",
+                        "capture_retry"
+                      ],
+                      "type": "string"
+                    }
+                  },
+                  "required": [
+                    "code"
+                  ],
+                  "type": "object"
+                }
+              }
+            },
+            "description": "capture_in_progress, card_in_use, or capture_unconfirmed."
+          },
+          "410": {
+            "content": {
+              "application/json": {
+                "schema": {
+                  "properties": {
+                    "code": {
+                      "enum": [
+                        "invalid_request",
+                        "invalid_capture",
+                        "card_rejected",
+                        "capture_unauthorized",
+                        "capture_expired",
+                        "capture_unavailable",
+                        "capture_in_progress",
+                        "card_in_use",
+                        "capture_unconfirmed",
+                        "rate_limited",
+                        "capture_failed",
+                        "capture_retry"
+                      ],
+                      "type": "string"
+                    }
+                  },
+                  "required": [
+                    "code"
+                  ],
+                  "type": "object"
+                }
+              }
+            },
+            "description": "capture_expired or capture_unavailable."
+          },
+          "429": {
+            "content": {
+              "application/json": {
+                "schema": {
+                  "properties": {
+                    "code": {
+                      "enum": [
+                        "invalid_request",
+                        "invalid_capture",
+                        "card_rejected",
+                        "capture_unauthorized",
+                        "capture_expired",
+                        "capture_unavailable",
+                        "capture_in_progress",
+                        "card_in_use",
+                        "capture_unconfirmed",
+                        "rate_limited",
+                        "capture_failed",
+                        "capture_retry"
+                      ],
+                      "type": "string"
+                    }
+                  },
+                  "required": [
+                    "code"
+                  ],
+                  "type": "object"
+                }
+              }
+            },
+            "description": "rate_limited."
+          },
+          "500": {
+            "content": {
+              "application/json": {
+                "schema": {
+                  "properties": {
+                    "code": {
+                      "enum": [
+                        "invalid_request",
+                        "invalid_capture",
+                        "card_rejected",
+                        "capture_unauthorized",
+                        "capture_expired",
+                        "capture_unavailable",
+                        "capture_in_progress",
+                        "card_in_use",
+                        "capture_unconfirmed",
+                        "rate_limited",
+                        "capture_failed",
+                        "capture_retry"
+                      ],
+                      "type": "string"
+                    }
+                  },
+                  "required": [
+                    "code"
+                  ],
+                  "type": "object"
+                }
+              }
+            },
+            "description": "capture_failed."
+          },
+          "503": {
+            "content": {
+              "application/json": {
+                "schema": {
+                  "properties": {
+                    "code": {
+                      "enum": [
+                        "invalid_request",
+                        "invalid_capture",
+                        "card_rejected",
+                        "capture_unauthorized",
+                        "capture_expired",
+                        "capture_unavailable",
+                        "capture_in_progress",
+                        "card_in_use",
+                        "capture_unconfirmed",
+                        "rate_limited",
+                        "capture_failed",
+                        "capture_retry"
+                      ],
+                      "type": "string"
+                    }
+                  },
+                  "required": [
+                    "code"
+                  ],
+                  "type": "object"
+                }
+              }
+            },
+            "description": "capture_retry."
+          }
+        },
+        "security": [],
+        "summary": "Enroll a captured card",
+        "tags": [
+          "Vaults"
+        ],
+        "x-cli-skip": true,
+        "x-hidden": true,
+        "x-stainless-skip": true
+      }
+    },
     "/vaults": {
       "get": {
         "operationId": "getVaults",
@@ -30953,6 +33049,52 @@
         }
       ]
     },
+    "/vaults/{id_or_name}/encryption_key": {
+      "get": {
+        "description": "Returns the public key that custom credential collection web apps use to encrypt values in the browser. Use this only if you run your own credential collection web app and want values encrypted in the browser, sent to your backend still encrypted, and forwarded to Kernel's API still encrypted. In every other case, including server-side code that already holds the plaintext, use value. The page encrypts each value to this key, your backend forwards the ciphertext unchanged as encrypted_value when creating or updating a credential item in this vault, and Kernel decrypts it.",
+        "operationId": "getVaultEncryptionKey",
+        "responses": {
+          "200": {
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/VaultEncryptionKey"
+                }
+              }
+            },
+            "description": "Vault encryption key"
+          },
+          "401": {
+            "$ref": "#/components/responses/Unauthorized"
+          },
+          "404": {
+            "$ref": "#/components/responses/NotFound"
+          },
+          "500": {
+            "$ref": "#/components/responses/InternalError"
+          }
+        },
+        "security": [
+          {
+            "bearerAuth": []
+          }
+        ],
+        "summary": "Get a vault's public key for browser-encrypted credential values",
+        "tags": [
+          "Vaults"
+        ]
+      },
+      "parameters": [
+        {
+          "in": "path",
+          "name": "id_or_name",
+          "required": true,
+          "schema": {
+            "type": "string"
+          }
+        }
+      ]
+    },
     "/vaults/{id_or_name}/items": {
       "get": {
         "description": "Credential entries include safe field metadata and non-sensitive values. Listing never creates or renews collection sessions; only an existing unexpired active session is included. Use single-item GET or collect to obtain a fresh link.",
@@ -31004,7 +33146,7 @@
     },
     "/vaults/{id_or_name}/items/{key}": {
       "delete": {
-        "description": "Unresolved payment operations normally block deletion, including operations on child cards of a wallet. Deleting a connected Kernel wallet first blocks new payments on it, then removes its enrolled card. If that fails, the wallet is kept and keeps refusing payments; retry the deletion. An AgentCard card in recovery_required whose checkout create response returned no authorization ID may be explicitly abandoned by deleting that card directly; deleting its wallet or vault remains blocked. Deleting or recreating an item is not proof that a payment did not occur. Deleting a managed auth credential item leaves the connection and its saved credential unchanged.",
+        "description": "Unresolved payment operations normally block deletion, including operations on child cards of a wallet. Deleting a connected Kernel wallet first blocks new payments on it, then removes its enrolled card. If that fails, the wallet is kept and keeps refusing payments; retry the deletion. A Link or Kernel card in recovery_required for issuance, or an AgentCard card in recovery_required whose checkout create response returned no authorization ID, may be explicitly abandoned by deleting that card directly; deleting its wallet or vault remains blocked until the card is deleted. Deleting or recreating an item is not proof that a payment did not occur. Deleting a managed auth credential item leaves the connection and its saved credential unchanged.",
         "operationId": "deleteVaultItem",
         "responses": {
           "204": {
@@ -31070,6 +33212,11 @@
           "200": {
             "content": {
               "application/json": {
+                "examples": {
+                  "link_wallet_user_info_and_shipping_addresses": {
+                    "$ref": "#/components/examples/ExampleLinkWalletUserInfoAndShippingAddresses"
+                  }
+                },
                 "schema": {
                   "$ref": "#/components/schemas/VaultItem"
                 }
@@ -31088,6 +33235,9 @@
           },
           "409": {
             "$ref": "#/components/responses/Conflict"
+          },
+          "429": {
+            "$ref": "#/components/responses/TooManyRequests"
           },
           "500": {
             "$ref": "#/components/responses/InternalError"
@@ -31124,7 +33274,7 @@
         }
       ],
       "patch": {
-        "description": "Credential updates require type credential and the current version, and change only values or description; omitted values are preserved, nonempty strings replace, and null or empty strings clear supported fields. Clearing required text/email/password values returns pending_collection; browser forms still require nonempty required inputs. Card updates may omit type for compatibility with legacy requests. Requested cards accept a replacement specification. Pending issuance requests may update provider-supported fields on their existing request, subject to atomic provider approval checks; omitted optional fields remain unchanged and explicit empty lists clear them. Wallet/provider binding and unsupported fields cannot change after authorization starts. An uncertain update enters recovery_required and must not be retried. Checkout cards may be edited between authorizations.",
+        "description": "Credential updates require type credential and the current version, and change only values or description; omitted values are preserved, nonempty strings replace, and null or empty strings clear supported fields. Clearing required text/email/password values returns pending_collection; browser forms still require nonempty required inputs. Card updates may omit type for compatibility with legacy requests. Requested cards accept a replacement specification. Pending issuance requests may update provider-supported fields on their existing request, subject to atomic provider approval checks; omitted optional fields remain unchanged and explicit empty lists clear them. Wallet/provider binding and unsupported fields cannot change after authorization starts. An uncertain update enters recovery_required; delete the card and create a new one rather than retrying the update. Checkout cards may be edited between authorizations. A Link card authorized with browser_id and page_url cannot be changed; delete it and create a new card with the updated details.",
         "operationId": "patchVaultItem",
         "requestBody": {
           "content": {
@@ -31132,6 +33282,20 @@
               "examples": {
                 "agentcard": {
                   "$ref": "#/components/examples/ExampleAgentCardCardEdit"
+                },
+                "credential": {
+                  "summary": "Update one credential value at the current version",
+                  "value": {
+                    "spec": {
+                      "fields": {
+                        "password": {
+                          "value": "new-password"
+                        }
+                      }
+                    },
+                    "type": "credential",
+                    "version": 1
+                  }
                 },
                 "link": {
                   "$ref": "#/components/examples/ExampleLinkCardEdit"
@@ -31151,6 +33315,40 @@
                 "examples": {
                   "agentcard": {
                     "$ref": "#/components/examples/ExampleAgentCardCardUpdated"
+                  },
+                  "credential": {
+                    "summary": "Updated credential metadata without sensitive values",
+                    "value": {
+                      "available_expansions": [],
+                      "available_operations": [],
+                      "created_at": "2026-01-01T12:00:00Z",
+                      "id": "credential-example",
+                      "key": "login",
+                      "spec": {
+                        "description": "Example account",
+                        "fields": [
+                          {
+                            "name": "password",
+                            "required": true,
+                            "sensitive": true,
+                            "type": "password"
+                          }
+                        ],
+                        "provider": "kernel"
+                      },
+                      "state": {
+                        "fields": {
+                          "password": {
+                            "has_value": true
+                          }
+                        },
+                        "provider": "kernel",
+                        "status": "ready"
+                      },
+                      "type": "credential",
+                      "updated_at": "2026-01-01T12:01:00Z",
+                      "version": 2
+                    }
                   },
                   "link": {
                     "$ref": "#/components/examples/ExampleLinkCardUpdated"
@@ -31438,7 +33636,7 @@
     },
     "/vaults/{id_or_name}/items/{key}/operations": {
       "post": {
-        "description": "Retrieve the item first and invoke only an operation listed in\n`available_operations`, following its natural-language description.\nAvailability is rechecked at execution time; unavailable operations return 409.\nAuthorization and preparation may call an external provider and return updated state.\nLink cards advertise authorize without checkout context. Eligible unused\nAgentCard cards advertise prepare_checkout, which requires checkout context\nand obtains device approval before native Square Pay. Keep the returned\napproval page open, poll until ready_to_submit, then submit before\npreparation.expires_at. Unused preparations expire automatically and cannot\nbe reused. If spend-request creation is rejected with a non-retryable\nprovider error, the card item is deleted and the provider's error code and\nmessage are returned. Rate limits return HTTP 429 and retain the card item;\nstop, back off, and retry the same authorize operation.\n\nFill returns a value-free execution result. Validation failures before\nwriting return 400 (invalid request or targets), 403 (access or destination\ndenied), 404 (resource not found), or 409 (item or browser not ready).\nOnce writing starts, known partial failures and indeterminate field outcomes\nreturn 200 with status `failed` or `unknown`, not an automatic-retry signal.\nA transport error may leave the outcome unknown; do not automatically retry.\n",
+        "description": "Retrieve the item first and invoke only an operation listed in\n`available_operations`, following its natural-language description.\nAvailability is rechecked at execution time; unavailable operations return 409.\nAuthorization and preparation may call an external provider and return updated state.\nLink cards advertise authorize; pass browser_id and page_url from the final\ncheckout page so Kernel can inspect the checkout. Eligible unused\nAgentCard cards advertise prepare_checkout, which requires checkout context\nand obtains device approval before native Square Pay. Keep the returned\napproval page open, poll until ready_to_submit, then submit before\npreparation.expires_at. Unused preparations expire automatically and cannot\nbe reused. If spend-request creation is rejected with a non-retryable\nprovider error, the card item is deleted and the provider's error code and\nmessage are returned. Rate limits return HTTP 429 and retain the card item;\nstop, back off, and retry the same authorize operation.\n\nReady Kernel cards advertise fill. Fill delivers card details for a few\nminutes; submit checkout promptly after filling. A repeated fill is safe.\n\nFill returns a value-free execution result. Validation failures before\nwriting return 400 (invalid request or targets), 403 (access or destination\ndenied), 404 (resource not found), or 409 (item or browser not ready).\nOnce writing starts, known partial failures and indeterminate field outcomes\nreturn 200 with status `failed` or `unknown`. Fill never submits the page, so\nit is safe to retry after a failure, an `unknown` outcome, or a transport error.\n",
         "operationId": "postVaultItemOperation",
         "parameters": [
           {
@@ -31474,8 +33672,10 @@
                   }
                 },
                 "link_authorize": {
-                  "summary": "Authorize a Link card that advertises this operation",
+                  "summary": "Authorize a Link card at its final checkout page",
                   "value": {
+                    "browser_id": "browser-session-id",
+                    "page_url": "https://store.example.com/checkout",
                     "type": "authorize"
                   }
                 },
@@ -31494,9 +33694,8 @@
                   }
                 },
                 "one_password_request_access": {
-                  "summary": "Request a 1Password credential through a Kernel browser",
+                  "summary": "Request access to a 1Password credential",
                   "value": {
-                    "browser_id": "browser-session-id",
                     "goal": "Manage a SaaS subscription",
                     "keywords": [
                       "personal"
@@ -31518,6 +33717,9 @@
             "content": {
               "application/json": {
                 "examples": {
+                  "agentcard_prepare_checkout": {
+                    "$ref": "#/components/examples/ExampleAgentCardCard"
+                  },
                   "link_authorize": {
                     "$ref": "#/components/examples/ExampleLinkApproval"
                   }
@@ -31591,7 +33793,7 @@
       "name": "Browser Computer Controls"
     },
     {
-      "description": "Execute Playwright code against the browser instance.",
+      "description": "Execute Playwright code against the browser instance and manage the executors it runs in.",
       "name": "Browser Playwright"
     },
     {

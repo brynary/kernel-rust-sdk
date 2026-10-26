@@ -2,6 +2,7 @@
 // upstream/api.python.md. Do not edit by hand.
 
 pub mod fs;
+pub mod playwright;
 pub mod webmcp;
 
 /// Parameters for `browsers.telemetry.events`.
@@ -76,6 +77,9 @@ pub struct TelemetryStreamParams {
     /// Pass `all` to start from the oldest retained event instead of only new events; any other value is treated as from-now. The buffer is bounded, so the first event id may be greater than 1 if older events were evicted.
     #[serde(default, skip_serializing_if = "Option::is_none")]
     pub replay: Option<String>,
+    /// Deliver only these event types, such as captcha_solve_started or captcha_challenge_result. Repeat the parameter or pass comma-separated values for multiple types. Keepalive frames are always delivered. Filtered-out events are not sent. An id-only frame carrying the latest skipped id is sent about every 15 seconds while skipped events keep arriving, and otherwise with the next keepalive or when the stream ends, so the connection stays active and Last-Event-ID moves past them; a reconnect resumes after the skipped events.
+    #[serde(default, skip_serializing_if = "Option::is_none")]
+    pub r#type: Option<Vec<String>>,
     /// Last event sequence number for SSE reconnection (sent by SSE clients on reconnect). Takes precedence over replay when both are present, so reconnect resumes instead of re-replaying.
     #[serde(
         rename = "Last-Event-ID",
@@ -91,6 +95,7 @@ impl TelemetryStreamParams {
     pub fn new() -> Self {
         Self {
             replay: None,
+            r#type: None,
             last_event_id: None,
         }
     }
@@ -931,6 +936,11 @@ pub struct PlaywrightExecuteParams {
     /// Example: "await page.goto('<https://example.com'>); return await page.title();"
     #[serde(default)]
     pub code: String,
+    /// Name of a Playwright executor. Calls with the same name run in the same executor, one at a
+    /// time; the first call with a new name creates it. Calls on different executors run
+    /// concurrently. 'default' names the executor that runs calls without a name.
+    #[serde(default, skip_serializing_if = "Option::is_none")]
+    pub executor: Option<crate::types::PlaywrightExecutorName>,
     /// Maximum execution time in seconds. Default is 60.
     #[serde(default, skip_serializing_if = "Option::is_none")]
     pub timeout_sec: Option<i64>,
@@ -942,6 +952,7 @@ impl PlaywrightExecuteParams {
     pub fn new(code: impl Into<String>) -> Self {
         Self {
             code: code.into(),
+            executor: None,
             timeout_sec: None,
         }
     }
@@ -1153,6 +1164,12 @@ pub type BrowserTelemetryOtlpExportConfig = crate::types::BrowserTelemetryOtlpEx
 
 /// Alias for the `BrowserTelemetryStorageConfig` type.
 pub type BrowserTelemetryStorageConfig = crate::types::BrowserTelemetryStorageConfig;
+
+/// Alias for the `PlaywrightExecutorLimitError` type.
+pub type ExecutorLimitError = crate::types::PlaywrightExecutorLimitError;
+
+/// Alias for the `PlaywrightTab` type.
+pub type Tab = crate::types::PlaywrightTab;
 
 /// Alias for the `WebMcpCustomToolSource` type.
 pub type CustomToolSource = crate::types::WebMcpCustomToolSource;
