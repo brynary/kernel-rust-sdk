@@ -115,6 +115,9 @@ pub type AgentcardCheckoutPreparation = crate::types::AgentCardCheckoutPreparati
 /// Alias for the `AgentCardPreparedProcessor` type.
 pub type AgentcardPreparedProcessor = crate::types::AgentCardPreparedProcessor;
 
+/// Alias for the `ArmPasskeyVaultItemOperationRequest` type.
+pub type ArmPasskeyVaultItemOperationRequest = crate::types::ArmPasskeyVaultItemOperationRequest;
+
 /// Alias for the `AuthorizeVaultItemOperationRequest` type.
 pub type AuthorizeVaultItemOperationRequest = crate::types::AuthorizeVaultItemOperationRequest;
 
@@ -127,6 +130,10 @@ pub type CardVaultItemState = crate::types::CardVaultItemState;
 /// Alias for the `CollectVaultItemOperationRequest` type.
 pub type CollectVaultItemOperationRequest = crate::types::CollectVaultItemOperationRequest;
 
+/// Alias for the `ConfirmTransactionVaultItemOperationRequest` type.
+pub type ConfirmTransactionVaultItemOperationRequest =
+    crate::types::ConfirmTransactionVaultItemOperationRequest;
+
 /// Alias for the `CredentialAccountVaultItem` type.
 pub type CredentialAccountVaultItem = crate::types::CredentialAccountVaultItem;
 
@@ -138,6 +145,9 @@ pub type CredentialCollectionAction = crate::types::CredentialCollectionAction;
 
 /// Alias for the `CredentialVaultFieldDefinition` type.
 pub type CredentialVaultFieldDefinition = crate::types::CredentialVaultFieldDefinition;
+
+/// Alias for the `CredentialVaultFieldDefinitionInput` type.
+pub type CredentialVaultFieldDefinitionInput = crate::types::CredentialVaultFieldDefinitionInput;
 
 /// Alias for the `CredentialVaultFieldInput` type.
 pub type CredentialVaultFieldInput = crate::types::CredentialVaultFieldInput;
@@ -172,6 +182,10 @@ pub type CredentialVaultItemState = crate::types::CredentialVaultItemState;
 /// Alias for the `CredentialVaultItemUpdateRequest` type.
 pub type CredentialVaultItemUpdateRequest = crate::types::CredentialVaultItemUpdateRequest;
 
+/// Alias for the `DisarmPasskeyVaultItemOperationRequest` type.
+pub type DisarmPasskeyVaultItemOperationRequest =
+    crate::types::DisarmPasskeyVaultItemOperationRequest;
+
 /// Alias for the `FillVaultItemOperationRequest` type.
 pub type FillVaultItemOperationRequest = crate::types::FillVaultItemOperationRequest;
 
@@ -198,6 +212,12 @@ pub type KernelWalletState = crate::types::KernelWalletState;
 
 /// Alias for the `KernelWalletVaultItemSpec` type.
 pub type KernelWalletVaultItemSpec = crate::types::KernelWalletVaultItemSpec;
+
+/// Alias for the `LinkShippingAddress` type.
+pub type LinkShippingAddress = crate::types::LinkShippingAddress;
+
+/// Alias for the `LinkUserInfo` type.
+pub type LinkUserInfo = crate::types::LinkUserInfo;
 
 /// Alias for the `ManagedAuthCredentialVaultField` type.
 pub type ManagedAuthCredentialVaultField = crate::types::ManagedAuthCredentialVaultField;
@@ -247,9 +267,20 @@ pub type OnePasswordRecoverVaultItemOperationRequest =
 pub type OnePasswordRequestAccessVaultItemOperationRequest =
     crate::types::OnePasswordRequestAccessVaultItemOperationRequest;
 
+/// Alias for the `PasskeyVaultItemOperationResult` type.
+pub type PasskeyVaultItemOperationResult = crate::types::PasskeyVaultItemOperationResult;
+
 /// Alias for the `PrepareCheckoutVaultItemOperationRequest` type.
 pub type PrepareCheckoutVaultItemOperationRequest =
     crate::types::PrepareCheckoutVaultItemOperationRequest;
+
+/// Alias for the `RegisterPasskeyVaultItemOperationRequest` type.
+pub type RegisterPasskeyVaultItemOperationRequest =
+    crate::types::RegisterPasskeyVaultItemOperationRequest;
+
+/// Alias for the `RestartVerificationVaultItemOperationRequest` type.
+pub type RestartVerificationVaultItemOperationRequest =
+    crate::types::RestartVerificationVaultItemOperationRequest;
 
 /// Alias for the `VaultCardAliases` type.
 pub type VaultCardAliases = crate::types::VaultCardAliases;
